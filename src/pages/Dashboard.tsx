@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { 
   Car, 
   Plus, 
@@ -16,7 +19,8 @@ import {
   Image as ImageIcon,
   LogOut,
   QrCode,
-  Download
+  Download,
+  Upload
 } from "lucide-react";
 
 // Mock data
@@ -71,7 +75,42 @@ const statusConfig = {
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("vehicles");
-  const totalCost = mockMaintenances.reduce((sum, m) => sum + m.cost, 0);
+  const [maintenances, setMaintenances] = useState(mockMaintenances);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    date: "",
+    type: "",
+    km: "",
+    cost: "",
+    hasAttachment: false
+  });
+  
+  const totalCost = maintenances.reduce((sum, m) => sum + m.cost, 0);
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({ ...prev, hasAttachment: e.target.files ? e.target.files.length > 0 : false }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const newMaintenance = {
+      id: maintenances.length + 1,
+      date: formData.date.split("-").reverse().join("/"),
+      type: formData.type,
+      km: parseInt(formData.km),
+      cost: parseFloat(formData.cost),
+      hasAttachment: formData.hasAttachment
+    };
+
+    setMaintenances(prev => [newMaintenance, ...prev]);
+    setFormData({ date: "", type: "", km: "", cost: "", hasAttachment: false });
+    setIsDialogOpen(false);
+  };
 
   const getStatusBadgeClass = (color: "success" | "warning" | "danger") => {
     switch (color) {
@@ -173,10 +212,88 @@ const Dashboard = () => {
           <TabsContent value="maintenance" className="space-y-6 animate-fade-in">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-semibold">Histórico de Manutenções</h2>
-              <Button variant="success">
-                <Plus className="mr-2 h-4 w-4" />
-                Registrar manutenção
-              </Button>
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="success">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Registrar manutenção
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[500px]">
+                  <DialogHeader>
+                    <DialogTitle>Registrar nova manutenção</DialogTitle>
+                    <DialogDescription>
+                      Adicione os detalhes da manutenção realizada no seu veículo.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <form onSubmit={handleSubmit} className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="date">Data da manutenção</Label>
+                      <Input
+                        id="date"
+                        type="date"
+                        value={formData.date}
+                        onChange={(e) => handleInputChange("date", e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="type">Tipo de serviço</Label>
+                      <Input
+                        id="type"
+                        placeholder="Ex: Troca de óleo, Revisão completa..."
+                        value={formData.type}
+                        onChange={(e) => handleInputChange("type", e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="km">Quilometragem</Label>
+                      <Input
+                        id="km"
+                        type="number"
+                        placeholder="Ex: 45000"
+                        value={formData.km}
+                        onChange={(e) => handleInputChange("km", e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="cost">Custo (R$)</Label>
+                      <Input
+                        id="cost"
+                        type="number"
+                        step="0.01"
+                        placeholder="Ex: 280.00"
+                        value={formData.cost}
+                        onChange={(e) => handleInputChange("cost", e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="attachment">Anexar nota fiscal ou foto (opcional)</Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          id="attachment"
+                          type="file"
+                          accept="image/*,.pdf"
+                          onChange={handleFileChange}
+                          className="cursor-pointer"
+                        />
+                        <Upload className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                    </div>
+                    <div className="flex gap-3 pt-4">
+                      <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="flex-1">
+                        Cancelar
+                      </Button>
+                      <Button type="submit" variant="success" className="flex-1">
+                        Salvar manutenção
+                      </Button>
+                    </div>
+                  </form>
+                </DialogContent>
+              </Dialog>
             </div>
 
             <Card className="shadow-lg">
@@ -193,7 +310,7 @@ const Dashboard = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {mockMaintenances.map((maintenance) => (
+                      {maintenances.map((maintenance) => (
                         <tr key={maintenance.id} className="border-b hover:bg-surface/50 transition-colors">
                           <td className="p-4">
                             <div className="flex items-center gap-2">
@@ -252,7 +369,7 @@ const Dashboard = () => {
                   <div className="bg-surface p-4 rounded-lg space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Total de manutenções:</span>
-                      <span className="font-semibold">{mockMaintenances.length}</span>
+                      <span className="font-semibold">{maintenances.length}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Investimento total:</span>
