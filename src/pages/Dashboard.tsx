@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuth } from "@/contexts/AuthContext";
 import { 
   Car, 
   Plus, 
@@ -77,11 +79,18 @@ const statusConfig = {
 };
 
 const Dashboard = () => {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("vehicles");
   const [vehicles, setVehicles] = useState(mockVehicles);
   const [maintenances, setMaintenances] = useState(mockMaintenances);
   const [isMaintenanceDialogOpen, setIsMaintenanceDialogOpen] = useState(false);
   const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/login");
+  };
   const [maintenanceFormData, setMaintenanceFormData] = useState({
     date: "",
     type: "",
@@ -158,7 +167,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-surface">
       {/* Header */}
-      <header className="bg-card border-b border-border shadow-sm">
+      <header className="bg-card border-b border-border shadow-sm sticky top-0 z-50 backdrop-blur-lg">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2 group">
             <div className="bg-primary rounded-lg p-2 group-hover:shadow-glow-primary transition-all duration-300">
@@ -168,13 +177,26 @@ const Dashboard = () => {
           </Link>
           
           <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground hidden sm:inline">João Silva</span>
-            <Link to="/">
-              <Button variant="ghost" size="sm">
-                <LogOut className="h-4 w-4 mr-2" />
-                Sair
-              </Button>
-            </Link>
+            <div className="hidden md:flex items-center gap-3">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={user?.user_metadata?.avatar_url} alt={user?.user_metadata?.full_name || user?.user_metadata?.name} />
+                <AvatarFallback className="bg-primary text-primary-foreground">
+                  {(user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || "U")
+                    .split(" ")
+                    .map((n: string) => n[0])
+                    .join("")
+                    .toUpperCase()
+                    .slice(0, 2)}
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-sm text-muted-foreground">
+                <strong className="text-foreground">{user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email}</strong>
+              </span>
+            </div>
+            <Button variant="ghost" size="sm" onClick={handleSignOut}>
+              <LogOut className="h-4 w-4 mr-2" />
+              Sair
+            </Button>
           </div>
         </div>
       </header>
