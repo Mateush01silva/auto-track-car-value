@@ -18,6 +18,8 @@ const Login = () => {
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
   const [signupName, setSignupName] = useState("");
+  const [signupPhone, setSignupPhone] = useState("");
+  const [signupCity, setSignupCity] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -39,7 +41,7 @@ const Login = () => {
   const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    const { error } = await signUpWithEmail(signupEmail, signupPassword, signupName);
+    const { error } = await signUpWithEmail(signupEmail, signupPassword, signupName, signupPhone, signupCity);
     setIsLoading(false);
     if (!error) {
       // Auto-login after signup since email is auto-confirmed
@@ -151,6 +153,26 @@ const Login = () => {
                     placeholder="Seu nome"
                     value={signupName}
                     onChange={(e) => setSignupName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-phone">Telefone (opcional)</Label>
+                  <Input
+                    id="signup-phone"
+                    type="tel"
+                    placeholder="(11) 98765-4321"
+                    value={signupPhone}
+                    onChange={(e) => setSignupPhone(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-city">Cidade (opcional)</Label>
+                  <Input
+                    id="signup-city"
+                    type="text"
+                    placeholder="São Paulo, SP"
+                    value={signupCity}
+                    onChange={(e) => setSignupCity(e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">

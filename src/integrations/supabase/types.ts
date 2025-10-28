@@ -14,32 +14,145 @@ export type Database = {
   }
   public: {
     Tables: {
+      maintenances: {
+        Row: {
+          attachment_url: string | null
+          cost: number
+          created_at: string
+          date: string
+          id: string
+          km: number
+          notes: string | null
+          service_type: string
+          updated_at: string
+          user_id: string
+          vehicle_id: string
+        }
+        Insert: {
+          attachment_url?: string | null
+          cost?: number
+          created_at?: string
+          date: string
+          id?: string
+          km: number
+          notes?: string | null
+          service_type: string
+          updated_at?: string
+          user_id: string
+          vehicle_id: string
+        }
+        Update: {
+          attachment_url?: string | null
+          cost?: number
+          created_at?: string
+          date?: string
+          id?: string
+          km?: number
+          notes?: string | null
+          service_type?: string
+          updated_at?: string
+          user_id?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenances_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenances_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
+          city: string | null
           created_at: string
           email: string | null
           full_name: string | null
           id: string
+          phone: string | null
           updated_at: string
         }
         Insert: {
           avatar_url?: string | null
+          city?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
           id: string
+          phone?: string | null
           updated_at?: string
         }
         Update: {
           avatar_url?: string | null
+          city?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
           id?: string
+          phone?: string | null
           updated_at?: string
         }
         Relationships: []
+      }
+      vehicles: {
+        Row: {
+          brand: string
+          created_at: string
+          current_km: number
+          id: string
+          model: string
+          plate: string
+          status: string
+          updated_at: string
+          user_id: string
+          version: string | null
+          year: number
+        }
+        Insert: {
+          brand: string
+          created_at?: string
+          current_km?: number
+          id?: string
+          model: string
+          plate: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          version?: string | null
+          year: number
+        }
+        Update: {
+          brand?: string
+          created_at?: string
+          current_km?: number
+          id?: string
+          model?: string
+          plate?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          version?: string | null
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
