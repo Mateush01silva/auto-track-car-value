@@ -16,6 +16,7 @@ import { VehicleFormDialog } from "@/components/VehicleFormDialog";
 import { ProfileEditDialog } from "@/components/ProfileEditDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { MAINTENANCE_CATEGORIES, getSubcategoriesByCategory, getFullServiceLabel } from "@/constants/maintenanceCategories";
 import { 
   Car, 
   Plus, 
@@ -52,7 +53,8 @@ const Dashboard = () => {
   const [maintenanceFormData, setMaintenanceFormData] = useState({
     vehicle_id: "",
     date: "",
-    service_type: "",
+    category: "",
+    subcategory: "",
     km: "",
     cost: "",
     notes: "",
@@ -95,7 +97,14 @@ const Dashboard = () => {
   };
 
   const handleMaintenanceInputChange = (field: string, value: string) => {
-    setMaintenanceFormData(prev => ({ ...prev, [field]: value }));
+    setMaintenanceFormData(prev => {
+      const updated = { ...prev, [field]: value };
+      // Reset subcategory when category changes
+      if (field === "category") {
+        updated.subcategory = "";
+      }
+      return updated;
+    });
   };
 
   const handleMaintenanceSubmit = async (e: React.FormEvent) => {
@@ -110,12 +119,23 @@ const Dashboard = () => {
       return;
     }
 
+    if (!maintenanceFormData.category || !maintenanceFormData.subcategory) {
+      toast({
+        title: "Erro",
+        description: "Por favor, selecione a categoria e subcategoria do serviço",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSubmittingMaintenance(true);
     try {
+      const serviceType = getFullServiceLabel(maintenanceFormData.category, maintenanceFormData.subcategory);
+      
       await addMaintenance({
         vehicle_id: maintenanceFormData.vehicle_id,
         date: maintenanceFormData.date,
-        service_type: maintenanceFormData.service_type,
+        service_type: serviceType,
         km: parseInt(maintenanceFormData.km),
         cost: parseFloat(maintenanceFormData.cost),
         notes: maintenanceFormData.notes || null,
@@ -125,7 +145,8 @@ const Dashboard = () => {
       setMaintenanceFormData({
         vehicle_id: "",
         date: "",
-        service_type: "",
+        category: "",
+        subcategory: "",
         km: "",
         cost: "",
         notes: "",
@@ -353,15 +374,45 @@ const Dashboard = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="type">Tipo de serviço</Label>
-                      <Input
-                        id="type"
-                        placeholder="Ex: Troca de óleo, Revisão completa..."
-                        value={maintenanceFormData.service_type}
-                        onChange={(e) => handleMaintenanceInputChange("service_type", e.target.value)}
+                      <Label htmlFor="category">Categoria do serviço</Label>
+                      <Select 
+                        value={maintenanceFormData.category} 
+                        onValueChange={(value) => handleMaintenanceInputChange("category", value)} 
                         required
-                      />
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a categoria" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {MAINTENANCE_CATEGORIES.map((category) => (
+                            <SelectItem key={category.value} value={category.value}>
+                              {category.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
+                    {maintenanceFormData.category && (
+                      <div className="space-y-2">
+                        <Label htmlFor="subcategory">Tipo de serviço</Label>
+                        <Select 
+                          value={maintenanceFormData.subcategory} 
+                          onValueChange={(value) => handleMaintenanceInputChange("subcategory", value)} 
+                          required
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o serviço" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {getSubcategoriesByCategory(maintenanceFormData.category).map((subcategory) => (
+                              <SelectItem key={subcategory.value} value={subcategory.value}>
+                                {subcategory.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                     <div className="space-y-2">
                       <Label htmlFor="km">Quilometragem</Label>
                       <Input
