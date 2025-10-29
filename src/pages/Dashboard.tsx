@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,150 +7,159 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
+import { useVehicles } from "@/hooks/useVehicles";
+import { useMaintenances } from "@/hooks/useMaintenances";
+import { VehicleFormDialog } from "@/components/VehicleFormDialog";
+import { ProfileEditDialog } from "@/components/ProfileEditDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Car, 
   Plus, 
   FileText, 
-  TrendingUp, 
   User, 
-  Calendar,
   Wrench,
   DollarSign,
-  Image as ImageIcon,
   LogOut,
   QrCode,
   Download,
-  Upload
+  Upload,
+  Edit,
+  Trash2,
+  Loader2
 } from "lucide-react";
-
-// Mock data
-const mockVehicles = [
-  {
-    id: 1,
-    model: "Honda Civic EXL 2.0",
-    year: 2020,
-    plate: "ABC-1234",
-    km: 45230,
-    status: "up-to-date" as const
-  }
-];
-
-const mockMaintenances = [
-  {
-    id: 1,
-    date: "15/01/2025",
-    type: "Troca de óleo",
-    km: 45000,
-    cost: 280,
-    hasAttachment: true
-  },
-  {
-    id: 2,
-    date: "10/12/2024",
-    type: "Revisão completa",
-    km: 40000,
-    cost: 850,
-    hasAttachment: true
-  },
-  {
-    id: 3,
-    date: "05/09/2024",
-    type: "Alinhamento e balanceamento",
-    km: 35000,
-    cost: 180,
-    hasAttachment: false
-  },
-  {
-    id: 4,
-    date: "20/06/2024",
-    type: "Troca de pastilhas de freio",
-    km: 30000,
-    cost: 420,
-    hasAttachment: true
-  }
-];
-
-const statusConfig = {
-  "up-to-date": { label: "Em dia", color: "success" as const },
-  "due-soon": { label: "Próxima revisão", color: "warning" as const },
-  "overdue": { label: "Atrasada", color: "danger" as const }
-};
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
+  const { toast } = useToast();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("vehicles");
-  const [vehicles, setVehicles] = useState(mockVehicles);
-  const [maintenances, setMaintenances] = useState(mockMaintenances);
-  const [isMaintenanceDialogOpen, setIsMaintenanceDialogOpen] = useState(false);
+  const { vehicles, loading: loadingVehicles, deleteVehicle } = useVehicles();
+  const { maintenances, loading: loadingMaintenances, addMaintenance, deleteMaintenance } = useMaintenances();
+  
   const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
+  const [isMaintenanceDialogOpen, setIsMaintenanceDialogOpen] = useState(false);
+  const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
+  const [editingVehicle, setEditingVehicle] = useState<any>(null);
+  const [submittingMaintenance, setSubmittingMaintenance] = useState(false);
+
+  const [profile, setProfile] = useState<any>(null);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+
+  const [maintenanceFormData, setMaintenanceFormData] = useState({
+    vehicle_id: "",
+    date: "",
+    service_type: "",
+    km: "",
+    cost: "",
+    notes: "",
+  });
+
+  const statusConfig = {
+    "up-to-date": { label: "Em dia", color: "success" as const },
+    "due-soon": { label: "Próxima revisão", color: "warning" as const },
+    "overdue": { label: "Atrasada", color: "danger" as const }
+  };
+
+  useEffect(() => {
+    if (user) {
+      loadProfile();
+    }
+  }, [user]);
+
+  const loadProfile = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      if (error) throw error;
+      setProfile(data);
+    } catch (error: any) {
+      console.error("Erro ao carregar perfil:", error);
+    } finally {
+      setLoadingProfile(false);
+    }
+  };
 
   const handleSignOut = async () => {
     await signOut();
     navigate("/login");
   };
-  const [maintenanceFormData, setMaintenanceFormData] = useState({
-    date: "",
-    type: "",
-    km: "",
-    cost: "",
-    hasAttachment: false
-  });
-  const [vehicleFormData, setVehicleFormData] = useState({
-    model: "",
-    year: "",
-    plate: "",
-    km: ""
-  });
-  
-  const totalCost = maintenances.reduce((sum, m) => sum + m.cost, 0);
 
   const handleMaintenanceInputChange = (field: string, value: string) => {
     setMaintenanceFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleVehicleInputChange = (field: string, value: string) => {
-    setVehicleFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setMaintenanceFormData(prev => ({ ...prev, hasAttachment: e.target.files ? e.target.files.length > 0 : false }));
-  };
-
-  const handleMaintenanceSubmit = (e: React.FormEvent) => {
+  const handleMaintenanceSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const newMaintenance = {
-      id: maintenances.length + 1,
-      date: maintenanceFormData.date.split("-").reverse().join("/"),
-      type: maintenanceFormData.type,
-      km: parseInt(maintenanceFormData.km),
-      cost: parseFloat(maintenanceFormData.cost),
-      hasAttachment: maintenanceFormData.hasAttachment
-    };
+    if (!maintenanceFormData.vehicle_id) {
+      toast({
+        title: "Erro",
+        description: "Por favor, selecione um veículo",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    setMaintenances(prev => [newMaintenance, ...prev]);
-    setMaintenanceFormData({ date: "", type: "", km: "", cost: "", hasAttachment: false });
-    setIsMaintenanceDialogOpen(false);
+    setSubmittingMaintenance(true);
+    try {
+      await addMaintenance({
+        vehicle_id: maintenanceFormData.vehicle_id,
+        date: maintenanceFormData.date,
+        service_type: maintenanceFormData.service_type,
+        km: parseInt(maintenanceFormData.km),
+        cost: parseFloat(maintenanceFormData.cost),
+        notes: maintenanceFormData.notes || null,
+        attachment_url: null,
+      });
+
+      setMaintenanceFormData({
+        vehicle_id: "",
+        date: "",
+        service_type: "",
+        km: "",
+        cost: "",
+        notes: "",
+      });
+      setIsMaintenanceDialogOpen(false);
+    } catch (error) {
+      console.error("Erro ao salvar manutenção:", error);
+    } finally {
+      setSubmittingMaintenance(false);
+    }
   };
 
-  const handleVehicleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    const newVehicle = {
-      id: vehicles.length + 1,
-      model: vehicleFormData.model,
-      year: parseInt(vehicleFormData.year),
-      plate: vehicleFormData.plate,
-      km: parseInt(vehicleFormData.km),
-      status: "up-to-date" as const
-    };
+  const handleDeleteVehicle = async (vehicleId: string) => {
+    if (confirm("Tem certeza que deseja excluir este veículo? Todas as manutenções associadas também serão excluídas.")) {
+      await deleteVehicle(vehicleId);
+    }
+  };
 
-    setVehicles(prev => [...prev, newVehicle]);
-    setVehicleFormData({ model: "", year: "", plate: "", km: "" });
-    setIsVehicleDialogOpen(false);
+  const handleEditVehicle = (vehicle: any) => {
+    setEditingVehicle(vehicle);
+    setIsVehicleDialogOpen(true);
+  };
+
+  const handleVehicleDialogClose = (open: boolean) => {
+    setIsVehicleDialogOpen(open);
+    if (!open) {
+      setEditingVehicle(null);
+    }
+  };
+
+  const handleDeleteMaintenance = async (maintenanceId: string) => {
+    if (confirm("Tem certeza que deseja excluir esta manutenção?")) {
+      await deleteMaintenance(maintenanceId);
+    }
   };
 
   const getStatusBadgeClass = (color: "success" | "warning" | "danger") => {
@@ -164,9 +173,18 @@ const Dashboard = () => {
     }
   };
 
+  const getVehicleMaintenances = (vehicleId: string) => {
+    return maintenances.filter(m => m.vehicle_id === vehicleId);
+  };
+
+  const getTotalCostForVehicle = (vehicleId: string) => {
+    return getVehicleMaintenances(vehicleId).reduce((sum, m) => sum + parseFloat(m.cost.toString()), 0);
+  };
+
+  const totalCost = maintenances.reduce((sum, m) => sum + parseFloat(m.cost.toString()), 0);
+
   return (
     <div className="min-h-screen bg-surface">
-      {/* Header */}
       <header className="bg-card border-b border-border shadow-sm sticky top-0 z-50 backdrop-blur-lg">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2 group">
@@ -219,117 +237,75 @@ const Dashboard = () => {
           <TabsContent value="vehicles" className="space-y-6 animate-fade-in">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-semibold">Meus Veículos</h2>
-              <Dialog open={isVehicleDialogOpen} onOpenChange={setIsVehicleDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="success">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Adicionar veículo
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[500px]">
-                  <DialogHeader>
-                    <DialogTitle>Adicionar novo veículo</DialogTitle>
-                    <DialogDescription>
-                      Cadastre um novo veículo para começar a registrar seu histórico de manutenções.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <form onSubmit={handleVehicleSubmit} className="space-y-4 py-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="model">Modelo do veículo</Label>
-                      <Input
-                        id="model"
-                        placeholder="Ex: Honda Civic EXL 2.0"
-                        value={vehicleFormData.model}
-                        onChange={(e) => handleVehicleInputChange("model", e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="year">Ano</Label>
-                      <Input
-                        id="year"
-                        type="number"
-                        placeholder="Ex: 2020"
-                        min="1900"
-                        max="2025"
-                        value={vehicleFormData.year}
-                        onChange={(e) => handleVehicleInputChange("year", e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="plate">Placa</Label>
-                      <Input
-                        id="plate"
-                        placeholder="Ex: ABC-1234"
-                        value={vehicleFormData.plate}
-                        onChange={(e) => handleVehicleInputChange("plate", e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="vehicle-km">Quilometragem atual</Label>
-                      <Input
-                        id="vehicle-km"
-                        type="number"
-                        placeholder="Ex: 45000"
-                        value={vehicleFormData.km}
-                        onChange={(e) => handleVehicleInputChange("km", e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="flex gap-3 pt-4">
-                      <Button type="button" variant="outline" onClick={() => setIsVehicleDialogOpen(false)} className="flex-1">
-                        Cancelar
-                      </Button>
-                      <Button type="submit" variant="success" className="flex-1">
-                        Adicionar veículo
-                      </Button>
-                    </div>
-                  </form>
-                </DialogContent>
-              </Dialog>
+              <Button variant="default" onClick={() => setIsVehicleDialogOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Adicionar veículo
+              </Button>
             </div>
 
-            <div className="grid gap-6">
-              {vehicles.map((vehicle) => (
-                <Card key={vehicle.id} className="shadow-lg hover:shadow-xl transition-shadow">
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle>{vehicle.model}</CardTitle>
-                        <CardDescription>
-                          {vehicle.year} • {vehicle.plate}
-                        </CardDescription>
+            {loadingVehicles ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : vehicles.length === 0 ? (
+              <Card className="p-12 text-center">
+                <Car className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-lg font-semibold mb-2">Nenhum veículo cadastrado</h3>
+                <p className="text-muted-foreground mb-4">Adicione seu primeiro veículo para começar</p>
+                <Button onClick={() => setIsVehicleDialogOpen(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Adicionar veículo
+                </Button>
+              </Card>
+            ) : (
+              <div className="grid gap-6">
+                {vehicles.map((vehicle) => (
+                  <Card key={vehicle.id} className="shadow-lg hover:shadow-xl transition-shadow">
+                    <CardHeader>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <CardTitle>{vehicle.brand} {vehicle.model}</CardTitle>
+                          <CardDescription>
+                            {vehicle.year} • {vehicle.plate}
+                          </CardDescription>
+                        </div>
+                        <div className="flex gap-2 items-center">
+                          <Badge className={getStatusBadgeClass(statusConfig[vehicle.status].color)}>
+                            {statusConfig[vehicle.status].label}
+                          </Badge>
+                          <Button variant="ghost" size="sm" onClick={() => handleEditVehicle(vehicle)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => handleDeleteVehicle(vehicle.id)}>
+                            <Trash2 className="h-4 w-4 text-danger" />
+                          </Button>
+                        </div>
                       </div>
-                      <Badge className={getStatusBadgeClass(statusConfig[vehicle.status].color)}>
-                        {statusConfig[vehicle.status].label}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="space-y-1">
-                        <p className="text-sm text-muted-foreground">Quilometragem</p>
-                        <p className="text-lg font-semibold">{vehicle.km.toLocaleString()} km</p>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">Quilometragem</p>
+                          <p className="text-lg font-semibold">{vehicle.current_km.toLocaleString()} km</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">Manutenções</p>
+                          <p className="text-lg font-semibold">{getVehicleMaintenances(vehicle.id).length}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">Gasto total</p>
+                          <p className="text-lg font-semibold">R$ {getTotalCostForVehicle(vehicle.id).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">Status</p>
+                          <p className="text-lg font-semibold text-success">Ativo</p>
+                        </div>
                       </div>
-                      <div className="space-y-1">
-                        <p className="text-sm text-muted-foreground">Manutenções</p>
-                        <p className="text-lg font-semibold">{maintenances.length}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-sm text-muted-foreground">Gasto total</p>
-                        <p className="text-lg font-semibold">R$ {totalCost.toLocaleString()}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-sm text-muted-foreground">Status</p>
-                        <p className="text-lg font-semibold text-success">Ativo</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </TabsContent>
 
           {/* Manutenções Tab */}
@@ -338,7 +314,7 @@ const Dashboard = () => {
               <h2 className="text-2xl font-semibold">Histórico de Manutenções</h2>
               <Dialog open={isMaintenanceDialogOpen} onOpenChange={setIsMaintenanceDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="success">
+                  <Button variant="default" disabled={vehicles.length === 0}>
                     <Plus className="mr-2 h-4 w-4" />
                     Registrar manutenção
                   </Button>
@@ -351,6 +327,21 @@ const Dashboard = () => {
                     </DialogDescription>
                   </DialogHeader>
                   <form onSubmit={handleMaintenanceSubmit} className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="vehicle">Veículo</Label>
+                      <Select value={maintenanceFormData.vehicle_id} onValueChange={(value) => handleMaintenanceInputChange("vehicle_id", value)} required>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o veículo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {vehicles.map((vehicle) => (
+                            <SelectItem key={vehicle.id} value={vehicle.id}>
+                              {vehicle.brand} {vehicle.model} - {vehicle.plate}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <div className="space-y-2">
                       <Label htmlFor="date">Data da manutenção</Label>
                       <Input
@@ -366,8 +357,8 @@ const Dashboard = () => {
                       <Input
                         id="type"
                         placeholder="Ex: Troca de óleo, Revisão completa..."
-                        value={maintenanceFormData.type}
-                        onChange={(e) => handleMaintenanceInputChange("type", e.target.value)}
+                        value={maintenanceFormData.service_type}
+                        onChange={(e) => handleMaintenanceInputChange("service_type", e.target.value)}
                         required
                       />
                     </div>
@@ -395,23 +386,20 @@ const Dashboard = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="attachment">Anexar nota fiscal ou foto (opcional)</Label>
-                      <div className="flex items-center gap-2">
-                        <Input
-                          id="attachment"
-                          type="file"
-                          accept="image/*,.pdf"
-                          onChange={handleFileChange}
-                          className="cursor-pointer"
-                        />
-                        <Upload className="h-5 w-5 text-muted-foreground" />
-                      </div>
+                      <Label htmlFor="notes">Observações (opcional)</Label>
+                      <Input
+                        id="notes"
+                        placeholder="Notas adicionais..."
+                        value={maintenanceFormData.notes}
+                        onChange={(e) => handleMaintenanceInputChange("notes", e.target.value)}
+                      />
                     </div>
                     <div className="flex gap-3 pt-4">
                       <Button type="button" variant="outline" onClick={() => setIsMaintenanceDialogOpen(false)} className="flex-1">
                         Cancelar
                       </Button>
-                      <Button type="submit" variant="success" className="flex-1">
+                      <Button type="submit" variant="default" className="flex-1" disabled={submittingMaintenance}>
+                        {submittingMaintenance && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Salvar manutenção
                       </Button>
                     </div>
@@ -420,92 +408,88 @@ const Dashboard = () => {
               </Dialog>
             </div>
 
-            <Card className="shadow-lg">
-              <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-surface border-b">
-                      <tr>
-                        <th className="text-left p-4 font-semibold">Data</th>
-                        <th className="text-left p-4 font-semibold">Tipo de serviço</th>
-                        <th className="text-left p-4 font-semibold">KM</th>
-                        <th className="text-left p-4 font-semibold">Custo</th>
-                        <th className="text-center p-4 font-semibold">Anexo</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {maintenances.map((maintenance) => (
-                        <tr key={maintenance.id} className="border-b hover:bg-surface/50 transition-colors">
-                          <td className="p-4">
-                            <div className="flex items-center gap-2">
-                              <Calendar className="h-4 w-4 text-muted-foreground" />
-                              {maintenance.date}
-                            </div>
-                          </td>
-                          <td className="p-4">
-                            <div className="flex items-center gap-2">
-                              <Wrench className="h-4 w-4 text-primary" />
-                              {maintenance.type}
-                            </div>
-                          </td>
-                          <td className="p-4">{maintenance.km.toLocaleString()} km</td>
-                          <td className="p-4">
-                            <div className="flex items-center gap-1 font-semibold text-success">
-                              <DollarSign className="h-4 w-4" />
-                              R$ {maintenance.cost.toLocaleString()}
-                            </div>
-                          </td>
-                          <td className="p-4 text-center">
-                            {maintenance.hasAttachment && (
-                              <ImageIcon className="h-5 w-5 text-primary mx-auto" />
-                            )}
-                          </td>
+            {vehicles.length === 0 ? (
+              <Card className="p-12 text-center">
+                <Car className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-lg font-semibold mb-2">Adicione um veículo primeiro</h3>
+                <p className="text-muted-foreground mb-4">Você precisa cadastrar um veículo antes de registrar manutenções</p>
+                <Button onClick={() => setActiveTab("vehicles")}>
+                  Ir para Veículos
+                </Button>
+              </Card>
+            ) : loadingMaintenances ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : maintenances.length === 0 ? (
+              <Card className="p-12 text-center">
+                <Wrench className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-lg font-semibold mb-2">Nenhuma manutenção registrada</h3>
+                <p className="text-muted-foreground mb-4">Comece a registrar suas manutenções</p>
+                <Button onClick={() => setIsMaintenanceDialogOpen(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Registrar manutenção
+                </Button>
+              </Card>
+            ) : (
+              <Card className="shadow-lg">
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-surface border-b">
+                        <tr>
+                          <th className="text-left p-4 font-semibold">Veículo</th>
+                          <th className="text-left p-4 font-semibold">Data</th>
+                          <th className="text-left p-4 font-semibold">Tipo de serviço</th>
+                          <th className="text-left p-4 font-semibold">KM</th>
+                          <th className="text-left p-4 font-semibold">Custo</th>
+                          <th className="text-center p-4 font-semibold">Ações</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
+                      </thead>
+                      <tbody>
+                        {maintenances.map((maintenance) => {
+                          const vehicle = vehicles.find(v => v.id === maintenance.vehicle_id);
+                          return (
+                            <tr key={maintenance.id} className="border-b hover:bg-surface/50 transition-colors">
+                              <td className="p-4">
+                                {vehicle ? `${vehicle.brand} ${vehicle.model}` : "N/A"}
+                              </td>
+                              <td className="p-4">{new Date(maintenance.date).toLocaleDateString('pt-BR')}</td>
+                              <td className="p-4">{maintenance.service_type}</td>
+                              <td className="p-4">{maintenance.km.toLocaleString()} km</td>
+                              <td className="p-4 font-semibold text-success">R$ {parseFloat(maintenance.cost.toString()).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                              <td className="p-4 text-center">
+                                <Button variant="ghost" size="sm" onClick={() => handleDeleteMaintenance(maintenance.id)}>
+                                  <Trash2 className="h-4 w-4 text-danger" />
+                                </Button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           {/* Relatórios Tab */}
           <TabsContent value="reports" className="space-y-6 animate-fade-in">
-            <div>
-              <h2 className="text-2xl font-semibold mb-2">Relatórios</h2>
-              <p className="text-muted-foreground">
-                Gere relatórios profissionais do histórico do seu veículo
-              </p>
-            </div>
-
+            <h2 className="text-2xl font-semibold">Relatórios</h2>
+            
             <div className="grid md:grid-cols-2 gap-6">
-              <Card className="shadow-lg">
+              <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-primary" />
+                    <FileText className="h-5 w-5" />
                     Relatório Completo
                   </CardTitle>
-                  <CardDescription>
-                    Histórico detalhado com todas as manutenções realizadas
-                  </CardDescription>
+                  <CardDescription>Gere um relatório completo com todo o histórico</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="bg-surface p-4 rounded-lg space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Total de manutenções:</span>
-                      <span className="font-semibold">{maintenances.length}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Investimento total:</span>
-                      <span className="font-semibold text-success">R$ {totalCost.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Período:</span>
-                      <span className="font-semibold">Jun/2024 - Jan/2025</span>
-                    </div>
-                  </div>
+                <CardContent>
                   <Link to="/report">
-                    <Button variant="default" className="w-full">
+                    <Button className="w-full" variant="default">
                       <Download className="mr-2 h-4 w-4" />
                       Gerar Relatório
                     </Button>
@@ -513,44 +497,43 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
 
-              <Card className="shadow-lg">
+              <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <QrCode className="h-5 w-5 text-success" />
-                    Compartilhar via QR Code
+                    <QrCode className="h-5 w-5" />
+                    QR Code
                   </CardTitle>
-                  <CardDescription>
-                    Gere um link com QR Code para compartilhar o histórico
-                  </CardDescription>
+                  <CardDescription>Compartilhe seu histórico via QR Code</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="bg-gradient-to-br from-primary/10 to-success/10 p-6 rounded-lg flex items-center justify-center">
-                    <div className="bg-card p-4 rounded-lg">
-                      <QrCode className="h-24 w-24 text-primary" />
-                    </div>
-                  </div>
-                  <Link to="/report">
-                    <Button variant="success" className="w-full">
-                      <QrCode className="mr-2 h-4 w-4" />
-                      Gerar QR Code
-                    </Button>
-                  </Link>
+                <CardContent>
+                  <Button className="w-full" variant="outline" disabled>
+                    <QrCode className="mr-2 h-4 w-4" />
+                    Em breve
+                  </Button>
                 </CardContent>
               </Card>
             </div>
 
-            <Card className="shadow-lg bg-gradient-to-br from-success/5 to-primary/5 border-success/20">
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <div className="bg-success/10 p-3 rounded-lg">
-                    <TrendingUp className="h-6 w-6 text-success" />
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="h-5 w-5" />
+                  Resumo Financeiro
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">Total de veículos</p>
+                    <p className="text-3xl font-bold">{vehicles.length}</p>
                   </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg mb-1">Valorize seu veículo!</h3>
-                    <p className="text-muted-foreground text-sm">
-                      Veículos com histórico completo de manutenção podem valer até 15% a mais na revenda. 
-                      Continue registrando todas as manutenções para maximizar o valor do seu carro.
-                    </p>
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">Total de manutenções</p>
+                    <p className="text-3xl font-bold">{maintenances.length}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">Gasto total</p>
+                    <p className="text-3xl font-bold text-success">R$ {totalCost.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                   </div>
                 </div>
               </CardContent>
@@ -559,63 +542,77 @@ const Dashboard = () => {
 
           {/* Perfil Tab */}
           <TabsContent value="profile" className="space-y-6 animate-fade-in">
-            <h2 className="text-2xl font-semibold">Meu Perfil</h2>
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-semibold">Meu Perfil</h2>
+              <Button variant="default" onClick={() => setIsProfileDialogOpen(true)}>
+                <Edit className="mr-2 h-4 w-4" />
+                Editar Perfil
+              </Button>
+            </div>
 
-            <Card className="shadow-lg">
+            <Card>
               <CardHeader>
-                <CardTitle>Informações pessoais</CardTitle>
-                <CardDescription>Seus dados cadastrados no AutoTrack</CardDescription>
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-20 w-20">
+                    <AvatarImage src={user?.user_metadata?.avatar_url} />
+                    <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
+                      {(profile?.full_name || user?.email || "U")
+                        .split(" ")
+                        .map((n: string) => n[0])
+                        .join("")
+                        .toUpperCase()
+                        .slice(0, 2)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <CardTitle>{profile?.full_name || "Usuário"}</CardTitle>
+                    <CardDescription>{user?.email}</CardDescription>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center gap-4">
-                  <div className="bg-primary rounded-full p-4">
-                    <User className="h-8 w-8 text-primary-foreground" />
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Nome completo</Label>
+                    <p className="text-foreground font-medium">{profile?.full_name || "Não informado"}</p>
                   </div>
-                  <div>
-                    <p className="font-semibold text-lg">João Silva</p>
-                    <p className="text-sm text-muted-foreground">Membro desde Janeiro 2025</p>
+                  <div className="space-y-2">
+                    <Label>Email</Label>
+                    <p className="text-foreground font-medium">{user?.email}</p>
                   </div>
-                </div>
-
-                <div className="grid gap-4 pt-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-1">E-mail</p>
-                    <p className="font-medium">joao.silva@email.com</p>
+                  <div className="space-y-2">
+                    <Label>Telefone</Label>
+                    <p className="text-foreground font-medium">{profile?.phone || "Não informado"}</p>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-1">Cidade</p>
-                    <p className="font-medium">São Paulo, SP</p>
+                  <div className="space-y-2">
+                    <Label>Cidade</Label>
+                    <p className="text-foreground font-medium">{profile?.city || "Não informado"}</p>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-1">Telefone</p>
-                    <p className="font-medium">(11) 98765-4321</p>
-                  </div>
-                </div>
-
-                <div className="pt-4">
-                  <Button variant="outline" className="w-full">
-                    Editar perfil
-                  </Button>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="shadow-lg bg-surface-light">
-              <CardContent className="p-6">
-                <div className="text-center space-y-2">
-                  <p className="text-sm text-muted-foreground">
-                    🚀 <strong>Esta é uma versão MVP (beta)</strong>
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Todos os dados exibidos são simulados para fins de demonstração. 
-                    Em breve, você poderá cadastrar seus veículos reais!
-                  </p>
-                </div>
+            <Card className="bg-surface/50">
+              <CardContent className="pt-6">
+                <p className="text-sm text-muted-foreground text-center">
+                  🚀 <strong>Versão Beta</strong> - Esta é uma demonstração do AutoTrack.
+                </p>
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
       </div>
+
+      <VehicleFormDialog
+        open={isVehicleDialogOpen}
+        onOpenChange={handleVehicleDialogClose}
+        vehicle={editingVehicle}
+      />
+
+      <ProfileEditDialog
+        open={isProfileDialogOpen}
+        onOpenChange={setIsProfileDialogOpen}
+      />
     </div>
   );
 };
