@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +17,9 @@ import { ProfileEditDialog } from "@/components/ProfileEditDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { MAINTENANCE_CATEGORIES, getSubcategoriesByCategory, getFullServiceLabel } from "@/constants/maintenanceCategories";
+import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import * as XLSX from 'xlsx';
+import QRCode from 'qrcode';
 import { 
   Car, 
   Plus, 
@@ -25,12 +28,14 @@ import {
   Wrench,
   DollarSign,
   LogOut,
-  QrCode,
+  QrCode as QrCodeIcon,
   Download,
   Upload,
   Edit,
   Trash2,
-  Loader2
+  Loader2,
+  Share2,
+  Filter
 } from "lucide-react";
 
 const Dashboard = () => {
@@ -59,6 +64,13 @@ const Dashboard = () => {
     cost: "",
     notes: "",
   });
+
+  // Report filters
+  const [selectedVehicleFilter, setSelectedVehicleFilter] = useState<string>("all");
+  const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
+  const [selectedMonth, setSelectedMonth] = useState<string>("all");
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>("");
+  const [showQrDialog, setShowQrDialog] = useState(false);
 
   const statusConfig = {
     "up-to-date": { label: "Em dia", color: "success" as const },
@@ -203,6 +215,125 @@ const Dashboard = () => {
   };
 
   const totalCost = maintenances.reduce((sum, m) => sum + parseFloat(m.cost.toString()), 0);
+
+  // Filter maintenances based on selected filters
+  const filteredMaintenances = useMemo(() => {
+    return maintenances.filter(m => {
+      const maintenanceDate = new Date(m.date);
+      const matchesVehicle = selectedVehicleFilter === "all" || m.vehicle_id === selectedVehicleFilter;
+      const matchesYear = maintenanceDate.getFullYear().toString() === selectedYear;
+      const matchesMonth = selectedMonth === "all" || (maintenanceDate.getMonth() + 1).toString() === selectedMonth;
+      
+      return matchesVehicle && matchesYear && matchesMonth;
+    });
+  }, [maintenances, selectedVehicleFilter, selectedYear, selectedMonth]);
+
+  // Calculate data for charts
+  const monthlyData = useMemo(() => {
+    const data: { [key: string]: { month: string; cost: number; count: number } } = {};
+    
+    filteredMaintenances.forEach(m => {
+      const date = new Date(m.date);
+      const monthKey = date.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
+      
+      if (!data[monthKey]) {
+        data[monthKey] = { month: monthKey, cost: 0, count: 0 };
+      }
+      
+      data[monthKey].cost += parseFloat(m.cost.toString());
+      data[monthKey].count += 1;
+    });
+    
+    return Object.values(data).sort((a, b) => {
+      const [aMonth, aYear] = a.month.split(' ');
+      const [bMonth, bYear] = b.month.split(' ');
+      return new Date(`${aMonth} 1, ${aYear}`).getTime() - new Date(`${bMonth} 1, ${bYear}`).getTime();
+    });
+  }, [filteredMaintenances]);
+
+  const categoryData = useMemo(() => {
+    const data: { [key: string]: number } = {};
+    
+    filteredMaintenances.forEach(m => {
+      const category = m.service_type.split(' - ')[0] || 'Outros';
+      data[category] = (data[category] || 0) + parseFloat(m.cost.toString());
+    });
+    
+    return Object.entries(data).map(([name, value]) => ({ name, value }));
+  }, [filteredMaintenances]);
+
+  const COLORS = ['hsl(var(--primary))', 'hsl(var(--success))', 'hsl(var(--warning))', 'hsl(var(--danger))', 'hsl(var(--accent))', 'hsl(var(--muted))'];
+
+  // Available years from maintenances
+  const availableYears = useMemo(() => {
+    const years = new Set(maintenances.map(m => new Date(m.date).getFullYear()));
+    return Array.from(years).sort((a, b) => b - a);
+  }, [maintenances]);
+
+  // Export to Excel
+  const handleExportExcel = () => {
+    const exportData = filteredMaintenances.map(m => {
+      const vehicle = vehicles.find(v => v.id === m.vehicle_id);
+      return {
+        'Data': new Date(m.date).toLocaleDateString('pt-BR'),
+        'Veículo': vehicle ? `${vehicle.brand} ${vehicle.model} (${vehicle.plate})` : 'N/A',
+        'Tipo de Serviço': m.service_type,
+        'Quilometragem': m.km,
+        'Custo (R$)': parseFloat(m.cost.toString()).toFixed(2),
+        'Observações': m.notes || ''
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Manutenções");
+    
+    const fileName = `autotrack_manutencoes_${selectedYear}${selectedMonth !== 'all' ? `_${selectedMonth}` : ''}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+    
+    toast({
+      title: "Relatório exportado!",
+      description: `Arquivo ${fileName} baixado com sucesso.`,
+    });
+  };
+
+  // Generate QR Code
+  const handleGenerateQrCode = async () => {
+    try {
+      const vehicleId = selectedVehicleFilter !== "all" ? selectedVehicleFilter : vehicles[0]?.id;
+      if (!vehicleId) {
+        toast({
+          title: "Erro",
+          description: "Selecione um veículo para gerar o QR Code",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const url = `${window.location.origin}/report/${vehicleId}`;
+      const qrDataUrl = await QRCode.toDataURL(url, {
+        width: 300,
+        margin: 2,
+        color: {
+          dark: '#0A2540',
+          light: '#FFFFFF'
+        }
+      });
+      
+      setQrCodeDataUrl(qrDataUrl);
+      setShowQrDialog(true);
+    } catch (error) {
+      console.error("Erro ao gerar QR Code:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível gerar o QR Code",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const filteredTotalCost = filteredMaintenances.reduce((sum, m) => sum + parseFloat(m.cost.toString()), 0);
+  const filteredAverageCost = filteredMaintenances.length > 0 ? filteredTotalCost / filteredMaintenances.length : 0;
 
   return (
     <div className="min-h-screen bg-surface">
@@ -527,68 +658,250 @@ const Dashboard = () => {
 
           {/* Relatórios Tab */}
           <TabsContent value="reports" className="space-y-6 animate-fade-in">
-            <h2 className="text-2xl font-semibold">Relatórios</h2>
-            
-            <div className="grid md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    Relatório Completo
-                  </CardTitle>
-                  <CardDescription>Gere um relatório completo com todo o histórico</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Link to="/report">
-                    <Button className="w-full" variant="default">
-                      <Download className="mr-2 h-4 w-4" />
-                      Gerar Relatório
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <QrCode className="h-5 w-5" />
-                    QR Code
-                  </CardTitle>
-                  <CardDescription>Compartilhe seu histórico via QR Code</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button className="w-full" variant="outline" disabled>
-                    <QrCode className="mr-2 h-4 w-4" />
-                    Em breve
-                  </Button>
-                </CardContent>
-              </Card>
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-semibold">Relatórios e Gráficos</h2>
+              <div className="flex gap-2">
+                <Button onClick={handleExportExcel} disabled={filteredMaintenances.length === 0}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Exportar Excel
+                </Button>
+                <Button onClick={handleGenerateQrCode} variant="outline" disabled={vehicles.length === 0}>
+                  <QrCodeIcon className="mr-2 h-4 w-4" />
+                  Gerar QR Code
+                </Button>
+              </div>
             </div>
 
+            {/* Filters */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="h-5 w-5" />
-                  Resumo Financeiro
+                  <Filter className="h-5 w-5" />
+                  Filtros
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">Total de veículos</p>
-                    <p className="text-3xl font-bold">{vehicles.length}</p>
+                    <Label>Veículo</Label>
+                    <Select value={selectedVehicleFilter} onValueChange={setSelectedVehicleFilter}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o veículo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos os veículos</SelectItem>
+                        {vehicles.map((vehicle) => (
+                          <SelectItem key={vehicle.id} value={vehicle.id}>
+                            {vehicle.brand} {vehicle.model} ({vehicle.plate})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">Total de manutenções</p>
-                    <p className="text-3xl font-bold">{maintenances.length}</p>
+                    <Label>Ano</Label>
+                    <Select value={selectedYear} onValueChange={setSelectedYear}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o ano" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableYears.map((year) => (
+                          <SelectItem key={year} value={year.toString()}>
+                            {year}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">Gasto total</p>
-                    <p className="text-3xl font-bold text-success">R$ {totalCost.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    <Label>Mês</Label>
+                    <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o mês" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos os meses</SelectItem>
+                        <SelectItem value="1">Janeiro</SelectItem>
+                        <SelectItem value="2">Fevereiro</SelectItem>
+                        <SelectItem value="3">Março</SelectItem>
+                        <SelectItem value="4">Abril</SelectItem>
+                        <SelectItem value="5">Maio</SelectItem>
+                        <SelectItem value="6">Junho</SelectItem>
+                        <SelectItem value="7">Julho</SelectItem>
+                        <SelectItem value="8">Agosto</SelectItem>
+                        <SelectItem value="9">Setembro</SelectItem>
+                        <SelectItem value="10">Outubro</SelectItem>
+                        <SelectItem value="11">Novembro</SelectItem>
+                        <SelectItem value="12">Dezembro</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               </CardContent>
             </Card>
+
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Manutenções no Período</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-3xl font-bold">{filteredMaintenances.length}</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Custo Total</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-3xl font-bold text-success">
+                    R$ {filteredTotalCost.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Custo Médio</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-3xl font-bold text-primary">
+                    R$ {filteredAverageCost.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Charts */}
+            {filteredMaintenances.length > 0 ? (
+              <>
+                {/* Monthly Cost Chart */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Custos por Mês</CardTitle>
+                    <CardDescription>Evolução dos gastos ao longo do tempo</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <LineChart data={monthlyData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="month" />
+                        <YAxis />
+                        <Tooltip 
+                          formatter={(value: any) => [`R$ ${parseFloat(value).toFixed(2)}`, 'Custo']}
+                        />
+                        <Legend />
+                        <Line 
+                          type="monotone" 
+                          dataKey="cost" 
+                          stroke="hsl(var(--success))" 
+                          strokeWidth={2}
+                          name="Custo Total"
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                {/* Category Distribution Charts */}
+                <div className="grid md:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Custos por Categoria</CardTitle>
+                      <CardDescription>Distribuição dos gastos por tipo de serviço</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <PieChart>
+                          <Pie
+                            data={categoryData}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                            outerRadius={80}
+                            fill="#8884d8"
+                            dataKey="value"
+                          >
+                            {categoryData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(value: any) => `R$ ${parseFloat(value).toFixed(2)}`} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Comparativo por Categoria</CardTitle>
+                      <CardDescription>Valores em reais por tipo de serviço</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={categoryData}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
+                          <YAxis />
+                          <Tooltip formatter={(value: any) => `R$ ${parseFloat(value).toFixed(2)}`} />
+                          <Bar dataKey="value" fill="hsl(var(--primary))" name="Custo Total" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Maintenance History Table */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Histórico de Manutenções</CardTitle>
+                    <CardDescription>Lista detalhada das manutenções no período selecionado</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-surface border-b">
+                          <tr>
+                            <th className="text-left p-4 font-semibold">Data</th>
+                            <th className="text-left p-4 font-semibold">Veículo</th>
+                            <th className="text-left p-4 font-semibold">Tipo de Serviço</th>
+                            <th className="text-left p-4 font-semibold">KM</th>
+                            <th className="text-left p-4 font-semibold">Custo</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredMaintenances.map((maintenance) => {
+                            const vehicle = vehicles.find(v => v.id === maintenance.vehicle_id);
+                            return (
+                              <tr key={maintenance.id} className="border-b hover:bg-surface/50 transition-colors">
+                                <td className="p-4">{new Date(maintenance.date).toLocaleDateString('pt-BR')}</td>
+                                <td className="p-4">
+                                  {vehicle ? `${vehicle.brand} ${vehicle.model} (${vehicle.plate})` : "N/A"}
+                                </td>
+                                <td className="p-4">{maintenance.service_type}</td>
+                                <td className="p-4">{maintenance.km.toLocaleString()} km</td>
+                                <td className="p-4 font-semibold text-success">
+                                  R$ {parseFloat(maintenance.cost.toString()).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            ) : (
+              <Card className="p-12 text-center">
+                <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-lg font-semibold mb-2">Nenhum dado encontrado</h3>
+                <p className="text-muted-foreground">
+                  Ajuste os filtros ou adicione manutenções para visualizar os relatórios
+                </p>
+              </Card>
+            )}
           </TabsContent>
 
           {/* Perfil Tab */}
@@ -664,6 +977,61 @@ const Dashboard = () => {
         open={isProfileDialogOpen}
         onOpenChange={setIsProfileDialogOpen}
       />
+
+      {/* QR Code Dialog */}
+      <Dialog open={showQrDialog} onOpenChange={setShowQrDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>QR Code do Relatório</DialogTitle>
+            <DialogDescription>
+              Compartilhe este QR Code para que outros possam visualizar o histórico de manutenções
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-4 py-4">
+            {qrCodeDataUrl && (
+              <>
+                <img src={qrCodeDataUrl} alt="QR Code" className="border-4 border-primary/20 rounded-lg" />
+                <div className="w-full space-y-2">
+                  <Label>Link compartilhável</Label>
+                  <div className="flex gap-2">
+                    <Input 
+                      readOnly 
+                      value={`${window.location.origin}/report/${selectedVehicleFilter !== "all" ? selectedVehicleFilter : vehicles[0]?.id}`}
+                      className="font-mono text-xs"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        navigator.clipboard.writeText(`${window.location.origin}/report/${selectedVehicleFilter !== "all" ? selectedVehicleFilter : vehicles[0]?.id}`);
+                        toast({
+                          title: "Link copiado!",
+                          description: "O link foi copiado para a área de transferência",
+                        });
+                      }}
+                    >
+                      <Share2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    const link = document.createElement('a');
+                    link.download = 'autotrack-qrcode.png';
+                    link.href = qrCodeDataUrl;
+                    link.click();
+                  }}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Baixar QR Code
+                </Button>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

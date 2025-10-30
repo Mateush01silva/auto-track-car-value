@@ -1,7 +1,10 @@
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
 import { 
   Car, 
   ArrowLeft,
@@ -12,24 +15,113 @@ import {
   QrCode
 } from "lucide-react";
 
-const mockData = {
-  vehicle: {
-    model: "Honda Civic EXL 2.0",
-    year: 2020,
-    plate: "ABC-1234",
-    currentKm: 45230
-  },
-  maintenances: [
-    { date: "Jan 2025", type: "Troca de óleo", cost: 280, km: 45000 },
-    { date: "Dez 2024", type: "Revisão completa", cost: 850, km: 40000 },
-    { date: "Set 2024", type: "Alinhamento", cost: 180, km: 35000 },
-    { date: "Jun 2024", type: "Pastilhas de freio", cost: 420, km: 30000 }
-  ]
-};
+interface Vehicle {
+  id: string;
+  brand: string;
+  model: string;
+  year: number;
+  plate: string;
+  current_km: number;
+}
+
+interface Maintenance {
+  id: string;
+  date: string;
+  service_type: string;
+  cost: number;
+  km: number;
+}
 
 const Report = () => {
-  const totalCost = mockData.maintenances.reduce((sum, m) => sum + m.cost, 0);
-  const averageCost = (totalCost / mockData.maintenances.length).toFixed(0);
+  const { vehicleId } = useParams<{ vehicleId?: string }>();
+  const [vehicle, setVehicle] = useState<Vehicle | null>(null);
+  const [maintenances, setMaintenances] = useState<Maintenance[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadData();
+  }, [vehicleId]);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      
+      if (vehicleId) {
+        // Load specific vehicle
+        const { data: vehicleData, error: vehicleError } = await supabase
+          .from("vehicles")
+          .select("*")
+          .eq("id", vehicleId)
+          .single();
+
+        if (vehicleError) throw vehicleError;
+        setVehicle(vehicleData);
+
+        // Load maintenances for this vehicle
+        const { data: maintenancesData, error: maintenancesError } = await supabase
+          .from("maintenances")
+          .select("*")
+          .eq("vehicle_id", vehicleId)
+          .order("date", { ascending: false });
+
+        if (maintenancesError) throw maintenancesError;
+        setMaintenances(maintenancesData || []);
+      } else {
+        // Load first vehicle from user
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user) {
+          const { data: vehiclesData, error: vehiclesError } = await supabase
+            .from("vehicles")
+            .select("*")
+            .eq("user_id", user.id)
+            .limit(1)
+            .single();
+
+          if (vehiclesError) throw vehiclesError;
+          setVehicle(vehiclesData);
+
+          // Load maintenances for this vehicle
+          const { data: maintenancesData, error: maintenancesError } = await supabase
+            .from("maintenances")
+            .select("*")
+            .eq("vehicle_id", vehiclesData.id)
+            .order("date", { ascending: false });
+
+          if (maintenancesError) throw maintenancesError;
+          setMaintenances(maintenancesData || []);
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao carregar dados:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-surface via-background to-surface flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!vehicle) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-surface via-background to-surface flex items-center justify-center">
+        <Card className="p-8 text-center">
+          <h3 className="text-lg font-semibold mb-2">Veículo não encontrado</h3>
+          <Link to="/dashboard">
+            <Button>Voltar ao Dashboard</Button>
+          </Link>
+        </Card>
+      </div>
+    );
+  }
+
+  const totalCost = maintenances.reduce((sum, m) => sum + parseFloat(m.cost.toString()), 0);
+  const averageCost = maintenances.length > 0 ? (totalCost / maintenances.length).toFixed(0) : "0";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-surface via-background to-surface">
@@ -73,10 +165,10 @@ const Report = () => {
                   Histórico de Manutenção
                 </CardTitle>
                 <p className="text-primary-foreground/80">
-                  {mockData.vehicle.model} • {mockData.vehicle.year}
+                  {vehicle.brand} {vehicle.model} • {vehicle.year}
                 </p>
                 <p className="text-sm text-primary-foreground/70 mt-1">
-                  Placa: {mockData.vehicle.plate} | KM atual: {mockData.vehicle.currentKm.toLocaleString()}
+                  Placa: {vehicle.plate} | KM atual: {vehicle.current_km.toLocaleString()}
                 </p>
               </div>
               <Badge className="bg-success text-success-foreground">
@@ -91,12 +183,12 @@ const Report = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
               <div className="bg-surface rounded-lg p-4 text-center">
                 <Calendar className="h-6 w-6 text-primary mx-auto mb-2" />
-                <p className="text-2xl font-bold text-foreground">{mockData.maintenances.length}</p>
+                <p className="text-2xl font-bold text-foreground">{maintenances.length}</p>
                 <p className="text-sm text-muted-foreground">Manutenções</p>
               </div>
               <div className="bg-surface rounded-lg p-4 text-center">
                 <DollarSign className="h-6 w-6 text-success mx-auto mb-2" />
-                <p className="text-2xl font-bold text-foreground">R$ {totalCost.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-foreground">R$ {totalCost.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                 <p className="text-sm text-muted-foreground">Investimento Total</p>
               </div>
               <div className="bg-surface rounded-lg p-4 text-center">
@@ -114,19 +206,23 @@ const Report = () => {
               </h3>
               
               <div className="space-y-4">
-                {mockData.maintenances.map((maintenance, index) => (
+                {maintenances.map((maintenance, index) => (
                   <div 
-                    key={index}
+                    key={maintenance.id}
                     className="relative pl-8 pb-4 border-l-2 border-primary/30 last:border-transparent"
                   >
                     <div className="absolute -left-2 top-0 w-4 h-4 rounded-full bg-primary border-4 border-background" />
                     <div className="bg-surface rounded-lg p-4 hover:shadow-md transition-shadow">
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <p className="font-semibold text-foreground">{maintenance.type}</p>
-                          <p className="text-sm text-muted-foreground">{maintenance.date}</p>
+                          <p className="font-semibold text-foreground">{maintenance.service_type}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {new Date(maintenance.date).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}
+                          </p>
                         </div>
-                        <p className="font-bold text-success">R$ {maintenance.cost.toLocaleString()}</p>
+                        <p className="font-bold text-success">
+                          R$ {parseFloat(maintenance.cost.toString()).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </p>
                       </div>
                       <p className="text-xs text-muted-foreground">
                         Quilometragem: {maintenance.km.toLocaleString()} km
@@ -138,24 +234,29 @@ const Report = () => {
             </div>
 
             {/* Cost Chart (Simplified) */}
-            <div className="bg-gradient-to-br from-primary/5 to-success/5 rounded-lg p-6">
-              <h3 className="font-semibold text-lg mb-4">Evolução dos Custos</h3>
-              <div className="h-40 flex items-end gap-2 justify-around">
-                {mockData.maintenances.map((m, i) => {
-                  const height = (m.cost / Math.max(...mockData.maintenances.map(x => x.cost))) * 100;
-                  return (
-                    <div key={i} className="flex-1 flex flex-col items-center gap-2">
-                      <div 
-                        className="w-full bg-gradient-to-t from-success to-success-hover rounded-t-lg transition-all hover:opacity-80 cursor-pointer"
-                        style={{ height: `${height}%` }}
-                        title={`R$ ${m.cost}`}
-                      />
-                      <p className="text-xs text-muted-foreground text-center">{m.date}</p>
-                    </div>
-                  );
-                })}
+            {maintenances.length > 0 && (
+              <div className="bg-gradient-to-br from-primary/5 to-success/5 rounded-lg p-6">
+                <h3 className="font-semibold text-lg mb-4">Evolução dos Custos</h3>
+                <div className="h-40 flex items-end gap-2 justify-around">
+                  {maintenances.slice(0, 10).reverse().map((m, i) => {
+                    const maxCost = Math.max(...maintenances.map(x => parseFloat(x.cost.toString())));
+                    const height = (parseFloat(m.cost.toString()) / maxCost) * 100;
+                    return (
+                      <div key={m.id} className="flex-1 flex flex-col items-center gap-2">
+                        <div 
+                          className="w-full bg-gradient-to-t from-success to-success-hover rounded-t-lg transition-all hover:opacity-80 cursor-pointer"
+                          style={{ height: `${height}%` }}
+                          title={`R$ ${parseFloat(m.cost.toString()).toFixed(2)}`}
+                        />
+                        <p className="text-xs text-muted-foreground text-center">
+                          {new Date(m.date).toLocaleDateString('pt-BR', { month: 'short' })}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            )}
           </CardContent>
         </Card>
 
@@ -170,7 +271,7 @@ const Report = () => {
               Escaneie o QR Code acima ou use o link abaixo para acessar este relatório
             </p>
             <div className="bg-surface rounded-lg p-3 font-mono text-xs text-muted-foreground break-all">
-              https://autotrack.app/report/abc1234-sample
+              {window.location.origin}/report/{vehicle.id}
             </div>
           </CardContent>
         </Card>
