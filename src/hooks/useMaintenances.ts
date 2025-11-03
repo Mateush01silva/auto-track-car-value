@@ -56,13 +56,53 @@ export const useMaintenances = (vehicleId?: string) => {
     fetchMaintenances();
   }, [user, vehicleId]);
 
-  const addMaintenance = async (maintenanceData: Omit<Maintenance, "id" | "user_id" | "created_at" | "updated_at">) => {
+  const uploadAttachment = async (file: File): Promise<string | null> => {
+    if (!user) return null;
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('maintenance-attachments')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      return fileName;
+    } catch (error: any) {
+      toast({
+        title: "Erro ao fazer upload do arquivo",
+        description: error.message,
+        variant: "destructive",
+      });
+      return null;
+    }
+  };
+
+  const addMaintenance = async (
+    maintenanceData: Omit<Maintenance, "id" | "user_id" | "created_at" | "updated_at">,
+    attachmentFile?: File
+  ) => {
     if (!user) return;
 
     try {
+      let attachment_url = maintenanceData.attachment_url;
+
+      // Upload attachment if provided
+      if (attachmentFile) {
+        const uploadedPath = await uploadAttachment(attachmentFile);
+        if (uploadedPath) {
+          attachment_url = uploadedPath;
+        }
+      }
+
       const { data, error } = await supabase
         .from("maintenances")
-        .insert([{ ...maintenanceData, user_id: user.id }])
+        .insert([{ ...maintenanceData, attachment_url, user_id: user.id }])
         .select()
         .single();
 
@@ -135,6 +175,28 @@ export const useMaintenances = (vehicleId?: string) => {
     }
   };
 
+  const getAttachmentUrl = (path: string | null): string | null => {
+    if (!path) return null;
+    
+    const { data } = supabase.storage
+      .from('maintenance-attachments')
+      .getPublicUrl(path);
+    
+    return data.publicUrl;
+  };
+
+  const deleteAttachment = async (path: string) => {
+    try {
+      const { error } = await supabase.storage
+        .from('maintenance-attachments')
+        .remove([path]);
+
+      if (error) throw error;
+    } catch (error: any) {
+      console.error("Erro ao deletar anexo:", error);
+    }
+  };
+
   return {
     maintenances,
     loading,
@@ -142,5 +204,7 @@ export const useMaintenances = (vehicleId?: string) => {
     updateMaintenance,
     deleteMaintenance,
     refetch: fetchMaintenances,
+    getAttachmentUrl,
+    deleteAttachment,
   };
 };

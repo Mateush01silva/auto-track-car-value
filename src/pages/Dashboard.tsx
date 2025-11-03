@@ -47,7 +47,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("vehicles");
   const { vehicles, loading: loadingVehicles, deleteVehicle } = useVehicles();
-  const { maintenances, loading: loadingMaintenances, addMaintenance, deleteMaintenance } = useMaintenances();
+  const { maintenances, loading: loadingMaintenances, addMaintenance, deleteMaintenance, getAttachmentUrl } = useMaintenances();
   const alerts = useMaintenanceAlerts(vehicles, maintenances);
   
   const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
@@ -68,6 +68,7 @@ const Dashboard = () => {
     cost: "",
     notes: "",
   });
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
 
   // Report filters
   const [selectedVehicleFilter, setSelectedVehicleFilter] = useState<string>("all");
@@ -159,15 +160,18 @@ const Dashboard = () => {
     try {
       const serviceType = getFullServiceLabel(maintenanceFormData.category, maintenanceFormData.subcategory);
       
-      await addMaintenance({
-        vehicle_id: maintenanceFormData.vehicle_id,
-        date: maintenanceFormData.date,
-        service_type: serviceType,
-        km: parseInt(maintenanceFormData.km),
-        cost: parseFloat(maintenanceFormData.cost),
-        notes: maintenanceFormData.notes || null,
-        attachment_url: null,
-      });
+      await addMaintenance(
+        {
+          vehicle_id: maintenanceFormData.vehicle_id,
+          date: maintenanceFormData.date,
+          service_type: serviceType,
+          km: parseInt(maintenanceFormData.km),
+          cost: parseFloat(maintenanceFormData.cost),
+          notes: maintenanceFormData.notes || null,
+          attachment_url: null,
+        },
+        attachmentFile || undefined
+      );
 
       setMaintenanceFormData({
         vehicle_id: "",
@@ -178,6 +182,7 @@ const Dashboard = () => {
         cost: "",
         notes: "",
       });
+      setAttachmentFile(null);
       setIsMaintenanceDialogOpen(false);
     } catch (error) {
       console.error("Erro ao salvar manutenção:", error);
@@ -600,6 +605,37 @@ const Dashboard = () => {
                         onChange={(e) => handleMaintenanceInputChange("notes", e.target.value)}
                       />
                     </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="attachment">Comprovante (opcional)</Label>
+                      <Input
+                        id="attachment"
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,application/pdf"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            if (file.size > 5 * 1024 * 1024) {
+                              toast({
+                                title: "Arquivo muito grande",
+                                description: "O arquivo deve ter no máximo 5MB",
+                                variant: "destructive",
+                              });
+                              e.target.value = "";
+                              return;
+                            }
+                            setAttachmentFile(file);
+                          }
+                        }}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Formatos aceitos: JPG, PNG, WEBP, PDF (máx. 5MB)
+                      </p>
+                      {attachmentFile && (
+                        <p className="text-xs text-success">
+                          ✓ {attachmentFile.name}
+                        </p>
+                      )}
+                    </div>
                     <div className="flex gap-3 pt-4">
                       <Button type="button" variant="outline" onClick={() => setIsMaintenanceDialogOpen(false)} className="flex-1">
                         Cancelar
@@ -649,6 +685,7 @@ const Dashboard = () => {
                           <th className="text-left p-4 font-semibold">Tipo de serviço</th>
                           <th className="text-left p-4 font-semibold">KM</th>
                           <th className="text-left p-4 font-semibold">Custo</th>
+                          <th className="text-center p-4 font-semibold">Comprovante</th>
                           <th className="text-center p-4 font-semibold">Ações</th>
                         </tr>
                       </thead>
@@ -664,6 +701,22 @@ const Dashboard = () => {
                               <td className="p-4">{maintenance.service_type}</td>
                               <td className="p-4">{maintenance.km.toLocaleString()} km</td>
                               <td className="p-4 font-semibold text-success">R$ {parseFloat(maintenance.cost.toString()).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                              <td className="p-4 text-center">
+                                {maintenance.attachment_url ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      const url = getAttachmentUrl(maintenance.attachment_url);
+                                      if (url) window.open(url, '_blank');
+                                    }}
+                                  >
+                                    <FileText className="h-4 w-4 text-primary" />
+                                  </Button>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">—</span>
+                                )}
+                              </td>
                               <td className="p-4 text-center">
                                 <Button variant="ghost" size="sm" onClick={() => handleDeleteMaintenance(maintenance.id)}>
                                   <Trash2 className="h-4 w-4 text-danger" />
