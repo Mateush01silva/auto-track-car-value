@@ -12,7 +12,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useVehicles } from "@/hooks/useVehicles";
 import { useMaintenances } from "@/hooks/useMaintenances";
+import { useMaintenanceAlerts } from "@/hooks/useMaintenanceAlerts";
 import { VehicleFormDialog } from "@/components/VehicleFormDialog";
+import { MaintenanceAlerts } from "@/components/MaintenanceAlerts";
 import { ProfileEditDialog } from "@/components/ProfileEditDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -35,7 +37,8 @@ import {
   Trash2,
   Loader2,
   Share2,
-  Filter
+  Filter,
+  Bell
 } from "lucide-react";
 
 const Dashboard = () => {
@@ -45,6 +48,7 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("vehicles");
   const { vehicles, loading: loadingVehicles, deleteVehicle } = useVehicles();
   const { maintenances, loading: loadingMaintenances, addMaintenance, deleteMaintenance } = useMaintenances();
+  const alerts = useMaintenanceAlerts(vehicles, maintenances);
   
   const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
   const [isMaintenanceDialogOpen, setIsMaintenanceDialogOpen] = useState(false);
@@ -106,6 +110,17 @@ const Dashboard = () => {
   const handleSignOut = async () => {
     await signOut();
     navigate("/login");
+  };
+
+  const handleRegisterMaintenanceFromAlert = (vehicleId: string, serviceName: string) => {
+    setMaintenanceFormData({
+      ...maintenanceFormData,
+      vehicle_id: vehicleId,
+      category: "",
+      subcategory: serviceName,
+    });
+    setIsMaintenanceDialogOpen(true);
+    setActiveTab("maintenance");
   };
 
   const handleMaintenanceInputChange = (field: string, value: string) => {
@@ -378,9 +393,18 @@ const Dashboard = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
             <TabsTrigger value="vehicles">Veículos</TabsTrigger>
             <TabsTrigger value="maintenance">Manutenções</TabsTrigger>
+            <TabsTrigger value="alerts">
+              <Bell className="mr-2 h-4 w-4" />
+              Alertas
+              {alerts.filter(a => a.status === "overdue").length > 0 && (
+                <Badge variant="destructive" className="ml-2">
+                  {alerts.filter(a => a.status === "overdue").length}
+                </Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="reports">Relatórios</TabsTrigger>
             <TabsTrigger value="profile">Perfil</TabsTrigger>
           </TabsList>
@@ -654,6 +678,14 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
             )}
+          </TabsContent>
+
+          {/* Alertas Tab */}
+          <TabsContent value="alerts" className="space-y-6 animate-fade-in">
+            <MaintenanceAlerts 
+              alerts={alerts} 
+              onRegisterMaintenance={handleRegisterMaintenanceFromAlert}
+            />
           </TabsContent>
 
           {/* Relatórios Tab */}
