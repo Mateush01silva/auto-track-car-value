@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -20,6 +21,10 @@ export const ProfileEditDialog = ({ open, onOpenChange }: ProfileEditDialogProps
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [city, setCity] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [gender, setGender] = useState("");
+  const [cnhNumber, setCnhNumber] = useState("");
+  const [preferredContact, setPreferredContact] = useState("email");
 
   useEffect(() => {
     if (open && user) {
@@ -43,6 +48,10 @@ export const ProfileEditDialog = ({ open, onOpenChange }: ProfileEditDialogProps
         setFullName(data.full_name || "");
         setPhone(data.phone || "");
         setCity(data.city || "");
+        setDateOfBirth(data.date_of_birth || "");
+        setGender(data.gender || "");
+        setCnhNumber(data.cnh_number || "");
+        setPreferredContact(data.preferred_contact || "email");
       }
     } catch (error: any) {
       toast({
@@ -65,6 +74,10 @@ export const ProfileEditDialog = ({ open, onOpenChange }: ProfileEditDialogProps
           full_name: fullName,
           phone: phone,
           city: city,
+          date_of_birth: dateOfBirth || null,
+          gender: gender || null,
+          cnh_number: cnhNumber || null,
+          preferred_contact: preferredContact,
         })
         .eq("id", user.id);
 
@@ -126,6 +139,53 @@ export const ProfileEditDialog = ({ open, onOpenChange }: ProfileEditDialogProps
               value={city}
               onChange={(e) => setCity(e.target.value)}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="dateOfBirth">Data de nascimento</Label>
+            <Input
+              id="dateOfBirth"
+              type="date"
+              value={dateOfBirth}
+              onChange={(e) => setDateOfBirth(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="gender">Sexo</Label>
+            <Select value={gender} onValueChange={setGender}>
+              <SelectTrigger id="gender">
+                <SelectValue placeholder="Selecione..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="masculino">Masculino</SelectItem>
+                <SelectItem value="feminino">Feminino</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="cnhNumber">Número da CNH</Label>
+            <Input
+              id="cnhNumber"
+              placeholder="12345678900"
+              value={cnhNumber}
+              onChange={(e) => setCnhNumber(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="preferredContact">Preferência de contato</Label>
+            <Select value={preferredContact} onValueChange={setPreferredContact}>
+              <SelectTrigger id="preferredContact">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="email">E-mail</SelectItem>
+                <SelectItem value="phone">Telefone</SelectItem>
+                <SelectItem value="whatsapp">WhatsApp</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex gap-3 pt-4">
