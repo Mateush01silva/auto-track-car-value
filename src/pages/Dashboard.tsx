@@ -1019,25 +1019,141 @@ const Dashboard = () => {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Nome completo</Label>
-                    <p className="text-foreground font-medium">{profile?.full_name || "Não informado"}</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Email</Label>
-                    <p className="text-foreground font-medium">{user?.email}</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Telefone</Label>
-                    <p className="text-foreground font-medium">{profile?.phone || "Não informado"}</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Cidade</Label>
-                    <p className="text-foreground font-medium">{profile?.city || "Não informado"}</p>
+              <CardContent className="space-y-6">
+                {/* Informações Básicas */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Informações Básicas</h3>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <Label className="text-muted-foreground">Nome completo</Label>
+                      <p className="text-foreground font-medium">{profile?.full_name || "Não informado"}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-muted-foreground">Email</Label>
+                      <p className="text-foreground font-medium">{user?.email}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-muted-foreground">Telefone</Label>
+                      <p className="text-foreground font-medium">{profile?.phone || "Não informado"}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-muted-foreground">Data de nascimento</Label>
+                      <p className="text-foreground font-medium">
+                        {profile?.date_of_birth ? new Date(profile.date_of_birth).toLocaleDateString('pt-BR') : "Não informado"}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-muted-foreground">Sexo</Label>
+                      <p className="text-foreground font-medium capitalize">{profile?.gender || "Não informado"}</p>
+                    </div>
                   </div>
                 </div>
+
+                {/* Localização */}
+                {(profile?.state || profile?.municipality) && (
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Localização</h3>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <Label className="text-muted-foreground">Estado</Label>
+                        <p className="text-foreground font-medium">{profile?.state || "Não informado"}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-muted-foreground">Município</Label>
+                        <p className="text-foreground font-medium">{profile?.municipality || "Não informado"}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Perfil de Uso */}
+                {(profile?.average_monthly_km || profile?.vehicles_count || profile?.vehicle_usage_type || profile?.residence_type) && (
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Perfil de Uso</h3>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      {profile?.average_monthly_km && (
+                        <div className="space-y-1">
+                          <Label className="text-muted-foreground">Km média mensal</Label>
+                          <p className="text-foreground font-medium">{profile.average_monthly_km} km</p>
+                        </div>
+                      )}
+                      {profile?.vehicles_count && (
+                        <div className="space-y-1">
+                          <Label className="text-muted-foreground">Veículos</Label>
+                          <p className="text-foreground font-medium">{profile.vehicles_count}</p>
+                        </div>
+                      )}
+                      {profile?.vehicle_usage_type && (
+                        <div className="space-y-1">
+                          <Label className="text-muted-foreground">Tipo de uso</Label>
+                          <p className="text-foreground font-medium capitalize">{profile.vehicle_usage_type}</p>
+                        </div>
+                      )}
+                      {profile?.residence_type && (
+                        <div className="space-y-1">
+                          <Label className="text-muted-foreground">Tipo de residência</Label>
+                          <p className="text-foreground font-medium capitalize">{profile.residence_type}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Preferências */}
+                {(profile?.preferred_contact || profile?.mechanical_knowledge || profile?.maintenance_frequency) && (
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Preferências</h3>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      {profile?.preferred_contact && (
+                        <div className="space-y-1">
+                          <Label className="text-muted-foreground">Canal preferido</Label>
+                          <p className="text-foreground font-medium capitalize">{profile.preferred_contact}</p>
+                        </div>
+                      )}
+                      {profile?.mechanical_knowledge && (
+                        <div className="space-y-1">
+                          <Label className="text-muted-foreground">Conhecimento mecânico</Label>
+                          <p className="text-foreground font-medium capitalize">{profile.mechanical_knowledge}</p>
+                        </div>
+                      )}
+                      {profile?.maintenance_frequency && (
+                        <div className="space-y-1">
+                          <Label className="text-muted-foreground">Frequência de manutenção</Label>
+                          <p className="text-foreground font-medium">
+                            {profile.maintenance_frequency === 'preventiva' ? 'Preventiva' : 'Só quando necessário'}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Dados Socioeconômicos */}
+                {(profile?.income_range || profile?.profession) && (
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Dados Socioeconômicos</h3>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      {profile?.income_range && (
+                        <div className="space-y-1">
+                          <Label className="text-muted-foreground">Faixa de renda</Label>
+                          <p className="text-foreground font-medium">
+                            {profile.income_range === 'ate-2k' && 'Até R$ 2.000'}
+                            {profile.income_range === '2k-5k' && 'R$ 2.000 - R$ 5.000'}
+                            {profile.income_range === '5k-10k' && 'R$ 5.000 - R$ 10.000'}
+                            {profile.income_range === '10k-20k' && 'R$ 10.000 - R$ 20.000'}
+                            {profile.income_range === 'acima-20k' && 'Acima de R$ 20.000'}
+                          </p>
+                        </div>
+                      )}
+                      {profile?.profession && (
+                        <div className="space-y-1">
+                          <Label className="text-muted-foreground">Profissão</Label>
+                          <p className="text-foreground font-medium capitalize">{profile.profession}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -1061,6 +1177,7 @@ const Dashboard = () => {
       <ProfileEditDialog
         open={isProfileDialogOpen}
         onOpenChange={setIsProfileDialogOpen}
+        onProfileUpdated={loadProfile}
       />
 
       {/* QR Code Dialog */}

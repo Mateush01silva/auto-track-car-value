@@ -74,45 +74,69 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
-          city: string | null
-          cnh_number: string | null
+          average_monthly_km: number | null
           created_at: string
           date_of_birth: string | null
           email: string | null
           full_name: string | null
           gender: string | null
           id: string
+          income_range: string | null
+          maintenance_frequency: string | null
+          mechanical_knowledge: string | null
+          municipality: string | null
           phone: string | null
           preferred_contact: string | null
+          profession: string | null
+          residence_type: string | null
+          state: string | null
           updated_at: string
+          vehicle_usage_type: string | null
+          vehicles_count: number | null
         }
         Insert: {
           avatar_url?: string | null
-          city?: string | null
-          cnh_number?: string | null
+          average_monthly_km?: number | null
           created_at?: string
           date_of_birth?: string | null
           email?: string | null
           full_name?: string | null
           gender?: string | null
           id: string
+          income_range?: string | null
+          maintenance_frequency?: string | null
+          mechanical_knowledge?: string | null
+          municipality?: string | null
           phone?: string | null
           preferred_contact?: string | null
+          profession?: string | null
+          residence_type?: string | null
+          state?: string | null
           updated_at?: string
+          vehicle_usage_type?: string | null
+          vehicles_count?: number | null
         }
         Update: {
           avatar_url?: string | null
-          city?: string | null
-          cnh_number?: string | null
+          average_monthly_km?: number | null
           created_at?: string
           date_of_birth?: string | null
           email?: string | null
           full_name?: string | null
           gender?: string | null
           id?: string
+          income_range?: string | null
+          maintenance_frequency?: string | null
+          mechanical_knowledge?: string | null
+          municipality?: string | null
           phone?: string | null
           preferred_contact?: string | null
+          profession?: string | null
+          residence_type?: string | null
+          state?: string | null
           updated_at?: string
+          vehicle_usage_type?: string | null
+          vehicles_count?: number | null
         }
         Relationships: []
       }
