@@ -68,7 +68,8 @@ export const ProfileEditDialog = ({ open, onOpenChange, onProfileUpdated }: Prof
       if (data) {
         setFullName(data.full_name || "");
         setPhone(data.phone || "");
-        setDateOfBirth(data.date_of_birth || "");
+        // Extract only the date part to avoid timezone issues
+        setDateOfBirth(data.date_of_birth ? data.date_of_birth.split('T')[0] : "");
         setGender(data.gender || "");
         setState(data.state || "");
         setMunicipality(data.municipality || "");
