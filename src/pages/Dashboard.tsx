@@ -13,9 +13,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useVehicles } from "@/hooks/useVehicles";
 import { useMaintenances } from "@/hooks/useMaintenances";
 import { useMaintenanceAlerts } from "@/hooks/useMaintenanceAlerts";
+import { useSubscription } from "@/hooks/useSubscription";
 import { VehicleFormDialog } from "@/components/VehicleFormDialog";
 import { MaintenanceAlerts } from "@/components/MaintenanceAlerts";
 import { ProfileEditDialog } from "@/components/ProfileEditDialog";
+import TrialBanner from "@/components/TrialBanner";
+import UpgradeDialog from "@/components/UpgradeDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { MAINTENANCE_CATEGORIES, getSubcategoriesByCategory, getFullServiceLabel } from "@/constants/maintenanceCategories";
@@ -49,10 +52,13 @@ const Dashboard = () => {
   const { vehicles, loading: loadingVehicles, deleteVehicle } = useVehicles();
   const { maintenances, loading: loadingMaintenances, addMaintenance, deleteMaintenance, getAttachmentUrl } = useMaintenances();
   const alerts = useMaintenanceAlerts(vehicles, maintenances);
+  const { subscription, loading: loadingSubscription, refetch: refetchSubscription, showUpgradeMessage } = useSubscription();
   
   const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
   const [isMaintenanceDialogOpen, setIsMaintenanceDialogOpen] = useState(false);
   const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
+  const [isUpgradeDialogOpen, setIsUpgradeDialogOpen] = useState(false);
+  const [upgradeFeature, setUpgradeFeature] = useState<string>("");
   const [editingVehicle, setEditingVehicle] = useState<any>(null);
   const [submittingMaintenance, setSubmittingMaintenance] = useState(false);
 
@@ -292,6 +298,12 @@ const Dashboard = () => {
 
   // Export to Excel
   const handleExportExcel = () => {
+    if (!subscription?.canExportExcel) {
+      setUpgradeFeature("exportar relatórios em Excel");
+      setIsUpgradeDialogOpen(true);
+      return;
+    }
+
     const exportData = filteredMaintenances.map(m => {
       const vehicle = vehicles.find(v => v.id === m.vehicle_id);
       return {
@@ -319,6 +331,12 @@ const Dashboard = () => {
 
   // Generate QR Code
   const handleGenerateQrCode = async () => {
+    if (!subscription?.canShareLink) {
+      setUpgradeFeature("compartilhar histórico via QR Code");
+      setIsUpgradeDialogOpen(true);
+      return;
+    }
+
     try {
       const vehicleId = selectedVehicleFilter !== "all" ? selectedVehicleFilter : vehicles[0]?.id;
       if (!vehicleId) {
@@ -397,6 +415,17 @@ const Dashboard = () => {
           <p className="text-muted-foreground">Gerencie seus veículos e histórico de manutenção</p>
         </div>
 
+        {/* Trial Banner */}
+        {subscription && subscription.isTrialActive && (
+          <div className="mb-6">
+            <TrialBanner 
+              daysRemaining={subscription.trialDaysRemaining}
+              maintenancesCount={maintenances.length}
+              vehiclesCount={vehicles.length}
+            />
+          </div>
+        )}
+
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
             <TabsTrigger value="vehicles">Veículos</TabsTrigger>
@@ -418,7 +447,17 @@ const Dashboard = () => {
           <TabsContent value="vehicles" className="space-y-6 animate-fade-in">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-semibold">Meus Veículos</h2>
-              <Button variant="default" onClick={() => setIsVehicleDialogOpen(true)}>
+              <Button 
+                variant="default" 
+                onClick={() => {
+                  if (!subscription?.canAddVehicle) {
+                    setUpgradeFeature("adicionar mais veículos");
+                    setIsUpgradeDialogOpen(true);
+                    return;
+                  }
+                  setIsVehicleDialogOpen(true);
+                }}
+              >
                 <Plus className="mr-2 h-4 w-4" />
                 Adicionar veículo
               </Button>
@@ -495,7 +534,18 @@ const Dashboard = () => {
               <h2 className="text-2xl font-semibold">Histórico de Manutenções</h2>
               <Dialog open={isMaintenanceDialogOpen} onOpenChange={setIsMaintenanceDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="default" disabled={vehicles.length === 0}>
+                  <Button 
+                    variant="default" 
+                    disabled={vehicles.length === 0}
+                    onClick={(e) => {
+                      if (!subscription?.canAddMaintenance) {
+                        e.preventDefault();
+                        setUpgradeFeature("registrar mais manutenções este mês");
+                        setIsUpgradeDialogOpen(true);
+                        return;
+                      }
+                    }}
+                  >
                     <Plus className="mr-2 h-4 w-4" />
                     Registrar manutenção
                   </Button>
@@ -1234,6 +1284,13 @@ const Dashboard = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <UpgradeDialog 
+        open={isUpgradeDialogOpen}
+        onOpenChange={setIsUpgradeDialogOpen}
+        feature={upgradeFeature}
+        trialDaysRemaining={subscription?.trialDaysRemaining}
+      />
     </div>
   );
 };

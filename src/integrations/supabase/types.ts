@@ -76,12 +76,14 @@ export type Database = {
           avatar_url: string | null
           average_monthly_km: number | null
           created_at: string
+          cta_dismiss_count: number | null
           date_of_birth: string | null
           email: string | null
           full_name: string | null
           gender: string | null
           id: string
           income_range: string | null
+          last_cta_shown_at: string | null
           maintenance_frequency: string | null
           mechanical_knowledge: string | null
           municipality: string | null
@@ -90,6 +92,16 @@ export type Database = {
           profession: string | null
           residence_type: string | null
           state: string | null
+          subscription_ends_at: string | null
+          subscription_plan:
+            | Database["public"]["Enums"]["subscription_plan"]
+            | null
+          subscription_started_at: string | null
+          subscription_status:
+            | Database["public"]["Enums"]["subscription_status"]
+            | null
+          trial_ends_at: string | null
+          trial_started_at: string | null
           updated_at: string
           vehicle_usage_type: string | null
           vehicles_count: number | null
@@ -98,12 +110,14 @@ export type Database = {
           avatar_url?: string | null
           average_monthly_km?: number | null
           created_at?: string
+          cta_dismiss_count?: number | null
           date_of_birth?: string | null
           email?: string | null
           full_name?: string | null
           gender?: string | null
           id: string
           income_range?: string | null
+          last_cta_shown_at?: string | null
           maintenance_frequency?: string | null
           mechanical_knowledge?: string | null
           municipality?: string | null
@@ -112,6 +126,16 @@ export type Database = {
           profession?: string | null
           residence_type?: string | null
           state?: string | null
+          subscription_ends_at?: string | null
+          subscription_plan?:
+            | Database["public"]["Enums"]["subscription_plan"]
+            | null
+          subscription_started_at?: string | null
+          subscription_status?:
+            | Database["public"]["Enums"]["subscription_status"]
+            | null
+          trial_ends_at?: string | null
+          trial_started_at?: string | null
           updated_at?: string
           vehicle_usage_type?: string | null
           vehicles_count?: number | null
@@ -120,12 +144,14 @@ export type Database = {
           avatar_url?: string | null
           average_monthly_km?: number | null
           created_at?: string
+          cta_dismiss_count?: number | null
           date_of_birth?: string | null
           email?: string | null
           full_name?: string | null
           gender?: string | null
           id?: string
           income_range?: string | null
+          last_cta_shown_at?: string | null
           maintenance_frequency?: string | null
           mechanical_knowledge?: string | null
           municipality?: string | null
@@ -134,6 +160,16 @@ export type Database = {
           profession?: string | null
           residence_type?: string | null
           state?: string | null
+          subscription_ends_at?: string | null
+          subscription_plan?:
+            | Database["public"]["Enums"]["subscription_plan"]
+            | null
+          subscription_started_at?: string | null
+          subscription_status?:
+            | Database["public"]["Enums"]["subscription_status"]
+            | null
+          trial_ends_at?: string | null
+          trial_started_at?: string | null
           updated_at?: string
           vehicle_usage_type?: string | null
           vehicles_count?: number | null
@@ -195,10 +231,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_trial_days_remaining: { Args: { user_id: string }; Returns: number }
+      has_pro_plan: { Args: { user_id: string }; Returns: boolean }
+      is_trial_active: { Args: { user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      subscription_plan: "free_trial" | "pro_monthly" | "pro_yearly"
+      subscription_status: "active" | "expired" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -325,6 +364,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      subscription_plan: ["free_trial", "pro_monthly", "pro_yearly"],
+      subscription_status: ["active", "expired", "cancelled"],
+    },
   },
 } as const
