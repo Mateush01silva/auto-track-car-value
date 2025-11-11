@@ -15,6 +15,7 @@ import { useMaintenances } from "@/hooks/useMaintenances";
 import { useMaintenanceAlerts } from "@/hooks/useMaintenanceAlerts";
 import { useSubscription } from "@/hooks/useSubscription";
 import { VehicleFormDialog } from "@/components/VehicleFormDialog";
+import { MaintenanceFormDialog } from "@/components/MaintenanceFormDialog";
 import { MaintenanceAlerts } from "@/components/MaintenanceAlerts";
 import { ProfileEditDialog } from "@/components/ProfileEditDialog";
 import TrialBanner from "@/components/TrialBanner";
@@ -50,7 +51,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("vehicles");
   const { vehicles, loading: loadingVehicles, deleteVehicle } = useVehicles();
-  const { maintenances, loading: loadingMaintenances, addMaintenance, deleteMaintenance, getAttachmentUrl } = useMaintenances();
+  const { maintenances, loading: loadingMaintenances, addMaintenance, updateMaintenance, deleteMaintenance, getAttachmentUrl } = useMaintenances();
   const alerts = useMaintenanceAlerts(vehicles, maintenances);
   const { subscription, loading: loadingSubscription, refetch: refetchSubscription, showUpgradeMessage } = useSubscription();
   
@@ -60,21 +61,10 @@ const Dashboard = () => {
   const [isUpgradeDialogOpen, setIsUpgradeDialogOpen] = useState(false);
   const [upgradeFeature, setUpgradeFeature] = useState<string>("");
   const [editingVehicle, setEditingVehicle] = useState<any>(null);
-  const [submittingMaintenance, setSubmittingMaintenance] = useState(false);
+  const [editingMaintenance, setEditingMaintenance] = useState<any>(null);
 
   const [profile, setProfile] = useState<any>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
-
-  const [maintenanceFormData, setMaintenanceFormData] = useState({
-    vehicle_id: "",
-    date: "",
-    category: "",
-    subcategory: "",
-    km: "",
-    cost: "",
-    notes: "",
-  });
-  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
 
   // Report filters
   const [selectedVehicleFilter, setSelectedVehicleFilter] = useState<string>("all");
@@ -120,80 +110,40 @@ const Dashboard = () => {
   };
 
   const handleRegisterMaintenanceFromAlert = (vehicleId: string, serviceName: string) => {
-    setMaintenanceFormData({
-      ...maintenanceFormData,
-      vehicle_id: vehicleId,
-      category: "",
-      subcategory: serviceName,
-    });
+    setEditingMaintenance(null);
     setIsMaintenanceDialogOpen(true);
     setActiveTab("maintenance");
   };
 
-  const handleMaintenanceInputChange = (field: string, value: string) => {
-    setMaintenanceFormData(prev => {
-      const updated = { ...prev, [field]: value };
-      // Reset subcategory when category changes
-      if (field === "category") {
-        updated.subcategory = "";
-      }
-      return updated;
-    });
-  };
-
-  const handleMaintenanceSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!maintenanceFormData.vehicle_id) {
-      toast({
-        title: "Erro",
-        description: "Por favor, selecione um veículo",
-        variant: "destructive",
-      });
+  const handleMaintenanceSubmit = async (data: any, file?: File) => {
+    if (!subscription?.canAddMaintenance && !editingMaintenance) {
+      setUpgradeFeature("registrar mais manutenções este mês");
+      setIsUpgradeDialogOpen(true);
       return;
     }
 
-    if (!maintenanceFormData.category || !maintenanceFormData.subcategory) {
-      toast({
-        title: "Erro",
-        description: "Por favor, selecione a categoria e subcategoria do serviço",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setSubmittingMaintenance(true);
-    try {
-      const serviceType = getFullServiceLabel(maintenanceFormData.category, maintenanceFormData.subcategory);
-      
+    if (editingMaintenance) {
+      await updateMaintenance(editingMaintenance.id, data);
+    } else {
       await addMaintenance(
         {
-          vehicle_id: maintenanceFormData.vehicle_id,
-          date: maintenanceFormData.date,
-          service_type: serviceType,
-          km: parseInt(maintenanceFormData.km),
-          cost: parseFloat(maintenanceFormData.cost),
-          notes: maintenanceFormData.notes || null,
+          ...data,
           attachment_url: null,
         },
-        attachmentFile || undefined
+        file
       );
+    }
+  };
 
-      setMaintenanceFormData({
-        vehicle_id: "",
-        date: "",
-        category: "",
-        subcategory: "",
-        km: "",
-        cost: "",
-        notes: "",
-      });
-      setAttachmentFile(null);
-      setIsMaintenanceDialogOpen(false);
-    } catch (error) {
-      console.error("Erro ao salvar manutenção:", error);
-    } finally {
-      setSubmittingMaintenance(false);
+  const handleEditMaintenance = (maintenance: any) => {
+    setEditingMaintenance(maintenance);
+    setIsMaintenanceDialogOpen(true);
+  };
+
+  const handleMaintenanceDialogClose = (open: boolean) => {
+    setIsMaintenanceDialogOpen(open);
+    if (!open) {
+      setEditingMaintenance(null);
     }
   };
 
@@ -532,173 +482,30 @@ const Dashboard = () => {
           <TabsContent value="maintenance" className="space-y-6 animate-fade-in">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-semibold">Histórico de Manutenções</h2>
-              <Dialog open={isMaintenanceDialogOpen} onOpenChange={setIsMaintenanceDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button 
-                    variant="default" 
-                    disabled={vehicles.length === 0}
-                    onClick={(e) => {
-                      if (!subscription?.canAddMaintenance) {
-                        e.preventDefault();
-                        setUpgradeFeature("registrar mais manutenções este mês");
-                        setIsUpgradeDialogOpen(true);
-                        return;
-                      }
-                    }}
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Registrar manutenção
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[500px]">
-                  <DialogHeader>
-                    <DialogTitle>Registrar nova manutenção</DialogTitle>
-                    <DialogDescription>
-                      Adicione os detalhes da manutenção realizada no seu veículo.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <form onSubmit={handleMaintenanceSubmit} className="space-y-4 py-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="vehicle">Veículo</Label>
-                      <Select value={maintenanceFormData.vehicle_id} onValueChange={(value) => handleMaintenanceInputChange("vehicle_id", value)} required>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o veículo" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {vehicles.map((vehicle) => (
-                            <SelectItem key={vehicle.id} value={vehicle.id}>
-                              {vehicle.brand} {vehicle.model} - {vehicle.plate}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="date">Data da manutenção</Label>
-                      <Input
-                        id="date"
-                        type="date"
-                        value={maintenanceFormData.date}
-                        onChange={(e) => handleMaintenanceInputChange("date", e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="category">Categoria do serviço</Label>
-                      <Select 
-                        value={maintenanceFormData.category} 
-                        onValueChange={(value) => handleMaintenanceInputChange("category", value)} 
-                        required
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione a categoria" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {MAINTENANCE_CATEGORIES.map((category) => (
-                            <SelectItem key={category.value} value={category.value}>
-                              {category.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    {maintenanceFormData.category && (
-                      <div className="space-y-2">
-                        <Label htmlFor="subcategory">Tipo de serviço</Label>
-                        <Select 
-                          value={maintenanceFormData.subcategory} 
-                          onValueChange={(value) => handleMaintenanceInputChange("subcategory", value)} 
-                          required
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o serviço" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {getSubcategoriesByCategory(maintenanceFormData.category).map((subcategory) => (
-                              <SelectItem key={subcategory.value} value={subcategory.value}>
-                                {subcategory.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-                    <div className="space-y-2">
-                      <Label htmlFor="km">Quilometragem</Label>
-                      <Input
-                        id="km"
-                        type="number"
-                        placeholder="Ex: 45000"
-                        value={maintenanceFormData.km}
-                        onChange={(e) => handleMaintenanceInputChange("km", e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="cost">Custo (R$)</Label>
-                      <Input
-                        id="cost"
-                        type="number"
-                        step="0.01"
-                        placeholder="Ex: 280.00"
-                        value={maintenanceFormData.cost}
-                        onChange={(e) => handleMaintenanceInputChange("cost", e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="notes">Observações (opcional)</Label>
-                      <Input
-                        id="notes"
-                        placeholder="Notas adicionais..."
-                        value={maintenanceFormData.notes}
-                        onChange={(e) => handleMaintenanceInputChange("notes", e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="attachment">Comprovante (opcional)</Label>
-                      <Input
-                        id="attachment"
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp,application/pdf"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            if (file.size > 5 * 1024 * 1024) {
-                              toast({
-                                title: "Arquivo muito grande",
-                                description: "O arquivo deve ter no máximo 5MB",
-                                variant: "destructive",
-                              });
-                              e.target.value = "";
-                              return;
-                            }
-                            setAttachmentFile(file);
-                          }
-                        }}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Formatos aceitos: JPG, PNG, WEBP, PDF (máx. 5MB)
-                      </p>
-                      {attachmentFile && (
-                        <p className="text-xs text-success">
-                          ✓ {attachmentFile.name}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex gap-3 pt-4">
-                      <Button type="button" variant="outline" onClick={() => setIsMaintenanceDialogOpen(false)} className="flex-1">
-                        Cancelar
-                      </Button>
-                      <Button type="submit" variant="default" className="flex-1" disabled={submittingMaintenance}>
-                        {submittingMaintenance && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Salvar manutenção
-                      </Button>
-                    </div>
-                  </form>
-                </DialogContent>
-              </Dialog>
+              <Button 
+                variant="default" 
+                disabled={vehicles.length === 0}
+                onClick={() => {
+                  if (!subscription?.canAddMaintenance) {
+                    setUpgradeFeature("registrar mais manutenções este mês");
+                    setIsUpgradeDialogOpen(true);
+                    return;
+                  }
+                  setIsMaintenanceDialogOpen(true);
+                }}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Registrar manutenção
+              </Button>
             </div>
+
+            <MaintenanceFormDialog
+              open={isMaintenanceDialogOpen}
+              onOpenChange={handleMaintenanceDialogClose}
+              vehicles={vehicles}
+              onSubmit={handleMaintenanceSubmit}
+              editingMaintenance={editingMaintenance}
+            />
 
             {vehicles.length === 0 ? (
               <Card className="p-12 text-center">
@@ -768,9 +575,14 @@ const Dashboard = () => {
                                 )}
                               </td>
                               <td className="p-4 text-center">
-                                <Button variant="ghost" size="sm" onClick={() => handleDeleteMaintenance(maintenance.id)}>
-                                  <Trash2 className="h-4 w-4 text-danger" />
-                                </Button>
+                                <div className="flex justify-center gap-2">
+                                  <Button variant="ghost" size="sm" onClick={() => handleEditMaintenance(maintenance)}>
+                                    <Edit className="h-4 w-4 text-primary" />
+                                  </Button>
+                                  <Button variant="ghost" size="sm" onClick={() => handleDeleteMaintenance(maintenance.id)}>
+                                    <Trash2 className="h-4 w-4 text-danger" />
+                                  </Button>
+                                </div>
                               </td>
                             </tr>
                           );

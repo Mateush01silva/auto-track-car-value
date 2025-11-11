@@ -1,0 +1,280 @@
+import { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
+import { MAINTENANCE_CATEGORIES, getSubcategoriesByCategory, getFullServiceLabel } from "@/constants/maintenanceCategories";
+import type { Maintenance } from "@/hooks/useMaintenances";
+
+interface MaintenanceFormDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  vehicles: any[];
+  onSubmit: (data: any, file?: File) => Promise<void>;
+  editingMaintenance?: Maintenance | null;
+}
+
+export function MaintenanceFormDialog({
+  open,
+  onOpenChange,
+  vehicles,
+  onSubmit,
+  editingMaintenance,
+}: MaintenanceFormDialogProps) {
+  const { toast } = useToast();
+  const [submitting, setSubmitting] = useState(false);
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
+  
+  const [formData, setFormData] = useState({
+    vehicle_id: "",
+    date: "",
+    category: "",
+    subcategory: "",
+    km: "",
+    cost: "",
+    notes: "",
+  });
+
+  useEffect(() => {
+    if (editingMaintenance) {
+      // Parse service_type to get category and subcategory
+      const [category, subcategory] = editingMaintenance.service_type.split(" - ");
+      const categoryItem = MAINTENANCE_CATEGORIES.find(c => c.label === category);
+      
+      setFormData({
+        vehicle_id: editingMaintenance.vehicle_id,
+        date: editingMaintenance.date,
+        category: categoryItem?.value || "",
+        subcategory: subcategory || "",
+        km: editingMaintenance.km.toString(),
+        cost: editingMaintenance.cost.toString(),
+        notes: editingMaintenance.notes || "",
+      });
+    } else {
+      setFormData({
+        vehicle_id: "",
+        date: "",
+        category: "",
+        subcategory: "",
+        km: "",
+        cost: "",
+        notes: "",
+      });
+    }
+    setAttachmentFile(null);
+  }, [editingMaintenance, open]);
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => {
+      const updated = { ...prev, [field]: value };
+      if (field === "category") {
+        updated.subcategory = "";
+      }
+      return updated;
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.vehicle_id) {
+      toast({
+        title: "Erro",
+        description: "Por favor, selecione um veículo",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.category || !formData.subcategory) {
+      toast({
+        title: "Erro",
+        description: "Por favor, selecione a categoria e subcategoria do serviço",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const serviceType = getFullServiceLabel(formData.category, formData.subcategory);
+      
+      await onSubmit(
+        {
+          vehicle_id: formData.vehicle_id,
+          date: formData.date,
+          service_type: serviceType,
+          km: parseInt(formData.km),
+          cost: parseFloat(formData.cost),
+          notes: formData.notes || null,
+        },
+        attachmentFile || undefined
+      );
+
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Erro ao salvar manutenção:", error);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>
+            {editingMaintenance ? "Editar manutenção" : "Registrar nova manutenção"}
+          </DialogTitle>
+          <DialogDescription>
+            {editingMaintenance 
+              ? "Atualize os detalhes da manutenção."
+              : "Adicione os detalhes da manutenção realizada no seu veículo."}
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="vehicle">Veículo</Label>
+            <Select value={formData.vehicle_id} onValueChange={(value) => handleInputChange("vehicle_id", value)} required>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o veículo" />
+              </SelectTrigger>
+              <SelectContent>
+                {vehicles.map((vehicle) => (
+                  <SelectItem key={vehicle.id} value={vehicle.id}>
+                    {vehicle.brand} {vehicle.model} - {vehicle.plate}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="date">Data da manutenção</Label>
+            <Input
+              id="date"
+              type="date"
+              value={formData.date}
+              onChange={(e) => handleInputChange("date", e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="category">Categoria do serviço</Label>
+            <Select 
+              value={formData.category} 
+              onValueChange={(value) => handleInputChange("category", value)} 
+              required
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione a categoria" />
+              </SelectTrigger>
+              <SelectContent>
+                {MAINTENANCE_CATEGORIES.map((category) => (
+                  <SelectItem key={category.value} value={category.value}>
+                    {category.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {formData.category && (
+            <div className="space-y-2">
+              <Label htmlFor="subcategory">Tipo de serviço</Label>
+              <Select 
+                value={formData.subcategory} 
+                onValueChange={(value) => handleInputChange("subcategory", value)} 
+                required
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o serviço" />
+                </SelectTrigger>
+                <SelectContent>
+                  {getSubcategoriesByCategory(formData.category).map((subcategory) => (
+                    <SelectItem key={subcategory.value} value={subcategory.value}>
+                      {subcategory.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <div className="space-y-2">
+            <Label htmlFor="km">Quilometragem</Label>
+            <Input
+              id="km"
+              type="number"
+              placeholder="Ex: 45000"
+              value={formData.km}
+              onChange={(e) => handleInputChange("km", e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="cost">Custo (R$)</Label>
+            <Input
+              id="cost"
+              type="number"
+              step="0.01"
+              placeholder="Ex: 280.00"
+              value={formData.cost}
+              onChange={(e) => handleInputChange("cost", e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="notes">Observações (opcional)</Label>
+            <Input
+              id="notes"
+              placeholder="Notas adicionais..."
+              value={formData.notes}
+              onChange={(e) => handleInputChange("notes", e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="attachment">Comprovante (opcional)</Label>
+            <Input
+              id="attachment"
+              type="file"
+              accept="image/jpeg,image/png,image/webp,application/pdf"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  if (file.size > 5 * 1024 * 1024) {
+                    toast({
+                      title: "Arquivo muito grande",
+                      description: "O arquivo deve ter no máximo 5MB",
+                      variant: "destructive",
+                    });
+                    e.target.value = "";
+                    return;
+                  }
+                  setAttachmentFile(file);
+                }
+              }}
+            />
+            <p className="text-xs text-muted-foreground">
+              Formatos aceitos: JPG, PNG, WEBP, PDF (máx. 5MB)
+            </p>
+            {attachmentFile && (
+              <p className="text-xs text-success">
+                ✓ {attachmentFile.name}
+              </p>
+            )}
+          </div>
+          <div className="flex gap-3 pt-4">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
+              Cancelar
+            </Button>
+            <Button type="submit" variant="default" className="flex-1" disabled={submitting}>
+              {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {editingMaintenance ? "Atualizar" : "Salvar"} manutenção
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
