@@ -6,8 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Car } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { BRAZILIAN_STATES, MUNICIPALITIES_BY_STATE } from "@/constants/brazilLocations";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -19,7 +21,8 @@ const Login = () => {
   const [signupPassword, setSignupPassword] = useState("");
   const [signupName, setSignupName] = useState("");
   const [signupPhone, setSignupPhone] = useState("");
-  const [signupCity, setSignupCity] = useState("");
+  const [signupState, setSignupState] = useState("");
+  const [signupMunicipality, setSignupMunicipality] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -41,7 +44,7 @@ const Login = () => {
   const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    const { error } = await signUpWithEmail(signupEmail, signupPassword, signupName, signupPhone, signupCity);
+    const { error } = await signUpWithEmail(signupEmail, signupPassword, signupName, signupPhone, signupState, signupMunicipality);
     setIsLoading(false);
     if (!error) {
       // Auto-login after signup since email is auto-confirmed
@@ -156,26 +159,6 @@ const Login = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-phone">Telefone (opcional)</Label>
-                  <Input
-                    id="signup-phone"
-                    type="tel"
-                    placeholder="(11) 98765-4321"
-                    value={signupPhone}
-                    onChange={(e) => setSignupPhone(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-city">Cidade (opcional)</Label>
-                  <Input
-                    id="signup-city"
-                    type="text"
-                    placeholder="São Paulo, SP"
-                    value={signupCity}
-                    onChange={(e) => setSignupCity(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
                   <Label htmlFor="signup-email">Email</Label>
                   <Input
                     id="signup-email"
@@ -198,6 +181,55 @@ const Login = () => {
                     minLength={6}
                   />
                   <p className="text-xs text-muted-foreground">Mínimo de 6 caracteres</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-phone">Telefone (opcional)</Label>
+                  <Input
+                    id="signup-phone"
+                    type="tel"
+                    placeholder="(11) 98765-4321"
+                    value={signupPhone}
+                    onChange={(e) => setSignupPhone(e.target.value)}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-state">Estado</Label>
+                    <Select value={signupState} onValueChange={(value) => {
+                      setSignupState(value);
+                      setSignupMunicipality("");
+                    }}>
+                      <SelectTrigger id="signup-state">
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {BRAZILIAN_STATES.map((state) => (
+                          <SelectItem key={state.value} value={state.value}>
+                            {state.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-municipality">Município</Label>
+                    <Select 
+                      value={signupMunicipality} 
+                      onValueChange={setSignupMunicipality}
+                      disabled={!signupState}
+                    >
+                      <SelectTrigger id="signup-municipality">
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {signupState && MUNICIPALITIES_BY_STATE[signupState]?.map((city) => (
+                          <SelectItem key={city} value={city}>
+                            {city}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? "Criando conta..." : "Criar Conta"}
