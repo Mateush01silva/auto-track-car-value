@@ -35,13 +35,15 @@ const Index = () => {
                     <ArrowRight className="ml-2" />
                   </Button>
                 </Link>
-                <Button 
-                  variant="outline" 
-                  size="lg" 
-                  className="w-full sm:w-auto bg-primary-foreground/10 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/20"
-                >
-                  Quero ser um dos primeiros
-                </Button>
+                <Link to="/login">
+                  <Button 
+                    variant="outline" 
+                    size="lg" 
+                    className="w-full sm:w-auto bg-primary-foreground/10 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/20"
+                  >
+                    Quero ser um dos primeiros
+                  </Button>
+                </Link>
               </div>
               <div className="flex items-center gap-8 pt-4">
                 <div className="text-center">
