@@ -10,7 +10,7 @@ const Header = () => {
           <div className="bg-primary rounded-lg p-2 group-hover:shadow-glow-primary transition-all duration-300">
             <Car className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="text-xl font-bold text-primary">AutoTrack</span>
+          <span className="text-xl font-bold text-primary">WiseDrive</span>
         </Link>
         
         <nav className="hidden md:flex items-center gap-6">

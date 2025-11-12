@@ -65,7 +65,7 @@ const Index = () => {
               <div className="absolute inset-0 bg-success/20 rounded-3xl blur-3xl" />
               <img 
                 src={heroImage}
-                alt="AutoTrack Dashboard"
+                alt="WiseDrive Dashboard"
                 className="relative rounded-3xl shadow-2xl w-full"
               />
             </div>
@@ -78,7 +78,7 @@ const Index = () => {
         <div className="container mx-auto px-4">
           <div className="text-center mb-16 animate-fade-in-up">
             <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-              Por que usar o AutoTrack?
+              Por que usar o WiseDrive?
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Transforme o histórico de manutenção em um ativo de valor para seu veículo
@@ -155,7 +155,7 @@ const Index = () => {
               e mais transparência para o mercado
             </h2>
             <p className="text-xl text-primary-foreground/90">
-              AutoTrack está revolucionando a forma como o histórico de veículos 
+              WiseDrive está revolucionando a forma como o histórico de veículos 
               é compartilhado no Brasil
             </p>
             <Link to="/login">

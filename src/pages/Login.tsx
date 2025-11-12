@@ -62,7 +62,7 @@ const Login = () => {
             <div className="bg-primary rounded-lg p-2 group-hover:shadow-glow-primary transition-all duration-300">
               <Car className="h-6 w-6 text-primary-foreground" />
             </div>
-            <span className="text-2xl font-bold text-primary">AutoTrack</span>
+            <span className="text-2xl font-bold text-primary">WiseDrive</span>
           </Link>
           
           <div className="text-center">
@@ -278,7 +278,7 @@ const Login = () => {
             <p className="text-xs text-center text-muted-foreground">
               🚀 <strong>MVP em fase de testes</strong>
               <br />
-              Esta é uma demonstração do AutoTrack. Os dados são simulados.
+              Esta é uma demonstração do WiseDrive. Os dados são simulados.
             </p>
           </div>
         </CardContent>

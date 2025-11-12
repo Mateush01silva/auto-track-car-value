@@ -11,7 +11,7 @@ const Footer = () => {
               <div className="bg-success rounded-lg p-2">
                 <Car className="h-5 w-5" />
               </div>
-              <span className="text-xl font-bold">AutoTrack</span>
+              <span className="text-xl font-bold">WiseDrive</span>
             </div>
             <p className="text-sm text-primary-foreground/80">
               Transparência que valoriza seu carro.
@@ -46,7 +46,7 @@ const Footer = () => {
         </div>
         
         <div className="border-t border-primary-foreground/20 mt-8 pt-8 text-center text-sm text-primary-foreground/60">
-          <p>© 2025 AutoTrack. Todos os direitos reservados.</p>
+          <p>© 2025 WiseDrive. Todos os direitos reservados.</p>
         </div>
       </div>
     </footer>

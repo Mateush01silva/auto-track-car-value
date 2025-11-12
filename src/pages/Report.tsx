@@ -132,7 +132,7 @@ const Report = () => {
             <div className="bg-primary rounded-lg p-2 group-hover:shadow-glow-primary transition-all duration-300">
               <Car className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold text-primary">AutoTrack</span>
+            <span className="text-xl font-bold text-primary">WiseDrive</span>
           </Link>
           
           <Link to="/dashboard">
@@ -148,7 +148,7 @@ const Report = () => {
         {/* Info Banner */}
         <div className="mb-8 p-4 bg-success/10 border border-success/20 rounded-lg animate-fade-in">
           <p className="text-sm text-center">
-            <strong className="text-success">📱 Este é um exemplo de histórico gerado pelo AutoTrack</strong>
+            <strong className="text-success">📱 Este é um exemplo de histórico gerado pelo WiseDrive</strong>
             <br />
             <span className="text-muted-foreground text-xs">
               Este relatório pode ser compartilhado via link ou QR Code com potenciais compradores
@@ -280,7 +280,7 @@ const Report = () => {
         <div className="mt-8 text-center">
           <p className="text-xs text-muted-foreground">
             Relatório gerado em {new Date().toLocaleDateString('pt-BR')} • Powered by{" "}
-            <span className="font-semibold text-primary">AutoTrack</span>
+            <span className="font-semibold text-primary">WiseDrive</span>
           </p>
         </div>
       </div>

@@ -270,7 +270,7 @@ const Dashboard = () => {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Manutenções");
     
-    const fileName = `autotrack_manutencoes_${selectedYear}${selectedMonth !== 'all' ? `_${selectedMonth}` : ''}.xlsx`;
+    const fileName = `wisedrive_manutencoes_${selectedYear}${selectedMonth !== 'all' ? `_${selectedMonth}` : ''}.xlsx`;
     XLSX.writeFile(wb, fileName);
     
     toast({
@@ -331,7 +331,7 @@ const Dashboard = () => {
             <div className="bg-primary rounded-lg p-2 group-hover:shadow-glow-primary transition-all duration-300">
               <Car className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold text-primary">AutoTrack</span>
+            <span className="text-xl font-bold text-primary">WiseDrive</span>
           </Link>
           
           <div className="flex items-center gap-4">
@@ -377,20 +377,20 @@ const Dashboard = () => {
         )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
-            <TabsTrigger value="vehicles">Veículos</TabsTrigger>
-            <TabsTrigger value="maintenance">Manutenções</TabsTrigger>
-            <TabsTrigger value="alerts">
-              <Bell className="mr-2 h-4 w-4" />
-              Alertas
+          <TabsList className="flex flex-wrap gap-1 h-auto p-1 bg-muted rounded-md">
+            <TabsTrigger value="vehicles" className="flex-1 min-w-[80px] text-xs sm:text-sm">Veículos</TabsTrigger>
+            <TabsTrigger value="maintenance" className="flex-1 min-w-[80px] text-xs sm:text-sm">Manutenções</TabsTrigger>
+            <TabsTrigger value="alerts" className="flex-1 min-w-[80px] text-xs sm:text-sm">
+              <Bell className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Alertas</span>
               {alerts.filter(a => a.status === "overdue").length > 0 && (
-                <Badge variant="destructive" className="ml-2">
+                <Badge variant="destructive" className="ml-1 text-[10px] px-1 py-0 h-4">
                   {alerts.filter(a => a.status === "overdue").length}
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="reports">Relatórios</TabsTrigger>
-            <TabsTrigger value="profile">Perfil</TabsTrigger>
+            <TabsTrigger value="reports" className="flex-1 min-w-[80px] text-xs sm:text-sm">Relatórios</TabsTrigger>
+            <TabsTrigger value="profile" className="flex-1 min-w-[80px] text-xs sm:text-sm">Perfil</TabsTrigger>
           </TabsList>
 
           {/* Veículos Tab */}
@@ -1022,7 +1022,7 @@ const Dashboard = () => {
             <Card className="bg-surface/50">
               <CardContent className="pt-6">
                 <p className="text-sm text-muted-foreground text-center">
-                  🚀 <strong>Versão Beta</strong> - Esta é uma demonstração do AutoTrack.
+                  🚀 <strong>Versão Beta</strong> - Esta é uma demonstração do WiseDrive.
                 </p>
               </CardContent>
             </Card>
@@ -1083,7 +1083,7 @@ const Dashboard = () => {
                   className="w-full"
                   onClick={() => {
                     const link = document.createElement('a');
-                    link.download = 'autotrack-qrcode.png';
+                    link.download = 'wisedrive-qrcode.png';
                     link.href = qrCodeDataUrl;
                     link.click();
                   }}
