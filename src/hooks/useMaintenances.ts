@@ -63,17 +63,25 @@ export const useMaintenances = (vehicleId?: string) => {
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}/${Date.now()}.${fileExt}`;
 
-      const { error: uploadError } = await supabase.storage
+      console.log('Uploading file:', fileName, 'Type:', file.type, 'Size:', file.size);
+
+      const { data, error: uploadError } = await supabase.storage
         .from('maintenance-attachments')
         .upload(fileName, file, {
           cacheControl: '3600',
-          upsert: false
+          upsert: false,
+          contentType: file.type || 'application/octet-stream'
         });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw uploadError;
+      }
 
+      console.log('Upload successful:', data);
       return fileName;
     } catch (error: any) {
+      console.error('Upload catch error:', error);
       toast({
         title: "Erro ao fazer upload do arquivo",
         description: error.message,
