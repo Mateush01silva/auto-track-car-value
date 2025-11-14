@@ -126,7 +126,7 @@ const Dashboard = () => {
     }
 
     if (editingMaintenance) {
-      await updateMaintenance(editingMaintenance.id, data);
+      await updateMaintenance(editingMaintenance.id, data, file);
     } else {
       await addMaintenance(
         {

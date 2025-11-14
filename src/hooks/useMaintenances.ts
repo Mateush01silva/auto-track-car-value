@@ -132,11 +132,25 @@ export const useMaintenances = (vehicleId?: string) => {
     }
   };
 
-  const updateMaintenance = async (id: string, updates: Partial<Maintenance>) => {
+  const updateMaintenance = async (
+    id: string,
+    updates: Partial<Maintenance>,
+    attachmentFile?: File
+  ) => {
     try {
+      let finalUpdates = { ...updates };
+
+      // Upload attachment if provided
+      if (attachmentFile) {
+        const uploadedPath = await uploadAttachment(attachmentFile);
+        if (uploadedPath) {
+          finalUpdates.attachment_url = uploadedPath;
+        }
+      }
+
       const { data, error } = await supabase
         .from("maintenances")
-        .update(updates)
+        .update(finalUpdates)
         .eq("id", id)
         .select()
         .single();
