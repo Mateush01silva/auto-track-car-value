@@ -18,6 +18,7 @@ import { VehicleFormDialog } from "@/components/VehicleFormDialog";
 import { MaintenanceFormDialog } from "@/components/MaintenanceFormDialog";
 import { MaintenanceAlerts } from "@/components/MaintenanceAlerts";
 import { ProfileEditDialog } from "@/components/ProfileEditDialog";
+import { AttachmentViewer } from "@/components/AttachmentViewer";
 import TrialBanner from "@/components/TrialBanner";
 import UpgradeDialog from "@/components/UpgradeDialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -59,6 +60,8 @@ const Dashboard = () => {
   const [isMaintenanceDialogOpen, setIsMaintenanceDialogOpen] = useState(false);
   const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
   const [isUpgradeDialogOpen, setIsUpgradeDialogOpen] = useState(false);
+  const [isAttachmentViewerOpen, setIsAttachmentViewerOpen] = useState(false);
+  const [selectedAttachment, setSelectedAttachment] = useState<string | null>(null);
   const [upgradeFeature, setUpgradeFeature] = useState<string>("");
   const [editingVehicle, setEditingVehicle] = useState<any>(null);
   const [editingMaintenance, setEditingMaintenance] = useState<any>(null);
@@ -123,7 +126,7 @@ const Dashboard = () => {
     }
 
     if (editingMaintenance) {
-      await updateMaintenance(editingMaintenance.id, data);
+      await updateMaintenance(editingMaintenance.id, data, file);
     } else {
       await addMaintenance(
         {
@@ -563,9 +566,9 @@ const Dashboard = () => {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={async () => {
-                                      const url = await getAttachmentUrl(maintenance.attachment_url);
-                                      if (url) window.open(url, '_blank');
+                                    onClick={() => {
+                                      setSelectedAttachment(maintenance.attachment_url);
+                                      setIsAttachmentViewerOpen(true);
                                     }}
                                   >
                                     <FileText className="h-4 w-4 text-primary" />
@@ -1097,11 +1100,18 @@ const Dashboard = () => {
         </DialogContent>
       </Dialog>
 
-      <UpgradeDialog 
+      <UpgradeDialog
         open={isUpgradeDialogOpen}
         onOpenChange={setIsUpgradeDialogOpen}
         feature={upgradeFeature}
         trialDaysRemaining={subscription?.trialDaysRemaining}
+      />
+
+      <AttachmentViewer
+        open={isAttachmentViewerOpen}
+        onOpenChange={setIsAttachmentViewerOpen}
+        attachmentUrl={selectedAttachment}
+        getAttachmentUrl={getAttachmentUrl}
       />
     </div>
   );
