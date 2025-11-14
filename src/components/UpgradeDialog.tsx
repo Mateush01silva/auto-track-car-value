@@ -164,7 +164,7 @@ const UpgradeDialog = ({ open, onOpenChange, feature, trialDaysRemaining }: Upgr
 
             <div className="mt-4 p-3 bg-card rounded-lg border border-success/20">
               <p className="text-xs text-center">
-                💰 <strong>Um histórico completo pode aumentar o valor do seu carro em até R$ 3.000!</strong>
+                💰 <strong>Um histórico completo pode valorizar o seu carro em até 20%!</strong>
               </p>
             </div>
           </Card>
