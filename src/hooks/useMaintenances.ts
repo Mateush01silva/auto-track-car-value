@@ -175,14 +175,20 @@ export const useMaintenances = (vehicleId?: string) => {
     }
   };
 
-  const getAttachmentUrl = (path: string | null): string | null => {
+  const getAttachmentUrl = async (path: string | null): Promise<string | null> => {
     if (!path) return null;
-    
-    const { data } = supabase.storage
-      .from('maintenance-attachments')
-      .getPublicUrl(path);
-    
-    return data.publicUrl;
+
+    try {
+      const { data, error } = await supabase.storage
+        .from('maintenance-attachments')
+        .createSignedUrl(path, 60 * 60 * 24); // URL válida por 24h
+
+      if (error) throw error;
+      return data?.signedUrl ?? null;
+    } catch (error) {
+      console.error('Erro ao gerar URL assinada do anexo:', error);
+      return null;
+    }
   };
 
   const deleteAttachment = async (path: string) => {
