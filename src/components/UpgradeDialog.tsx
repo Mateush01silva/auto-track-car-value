@@ -2,6 +2,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Check, X, Sparkles } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface UpgradeDialogProps {
   open: boolean;
@@ -11,9 +13,31 @@ interface UpgradeDialogProps {
 }
 
 const UpgradeDialog = ({ open, onOpenChange, feature, trialDaysRemaining }: UpgradeDialogProps) => {
-  const handleUpgrade = (plan: "monthly" | "yearly") => {
-    // TODO: Integrar com sistema de pagamento
-    console.log("Upgrade to:", plan);
+  const { toast } = useToast();
+
+  const handleUpgrade = async (plan: "monthly" | "yearly") => {
+    try {
+      const priceId = plan === "monthly" 
+        ? "price_1STMpgDxXEVRLmijvkzaB6jI"  // Mensal R$ 19,90
+        : "price_1STMq5DxXEVRLmij1R7OWNHw"; // Anual R$ 199,00
+      
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { priceId }
+      });
+
+      if (error) throw error;
+      
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error: any) {
+      console.error("Erro ao criar checkout:", error);
+      toast({
+        title: "Erro ao processar upgrade",
+        description: error.message || "Tente novamente mais tarde",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
