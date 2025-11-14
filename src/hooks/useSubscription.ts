@@ -41,11 +41,29 @@ export const useSubscription = () => {
       // Fetch profile data
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
-        .select("subscription_plan, subscription_status, trial_ends_at")
+        .select("subscription_plan, subscription_status, trial_ends_at, is_admin")
         .eq("id", user.id)
         .single();
 
       if (profileError) throw profileError;
+
+      // If user is admin, grant all permissions
+      if (profile.is_admin) {
+        setSubscription({
+          plan: "pro_yearly" as SubscriptionPlan,
+          status: "active" as SubscriptionStatus,
+          trialEndsAt: null,
+          trialDaysRemaining: 0,
+          isPro: true,
+          isTrialActive: false,
+          canAddVehicle: true,
+          canAddMaintenance: true,
+          canShareLink: true,
+          canExportExcel: true,
+        });
+        setLoading(false);
+        return;
+      }
 
       // Count vehicles
       const { count: vehiclesCount, error: vehiclesError } = await supabase
