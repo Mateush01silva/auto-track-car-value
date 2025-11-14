@@ -563,8 +563,8 @@ const Dashboard = () => {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => {
-                                      const url = getAttachmentUrl(maintenance.attachment_url);
+                                    onClick={async () => {
+                                      const url = await getAttachmentUrl(maintenance.attachment_url);
                                       if (url) window.open(url, '_blank');
                                     }}
                                   >
