@@ -60,6 +60,39 @@ This project is built with:
 - shadcn-ui
 - Tailwind CSS
 
+## Configuração do Supabase
+
+Este projeto usa Supabase para autenticação. Para garantir que a confirmação de email funcione corretamente, você precisa configurar os redirect URLs no painel do Supabase.
+
+### Configuração de Redirect URLs
+
+1. Acesse o [Painel do Supabase](https://app.supabase.com)
+2. Selecione seu projeto (sqnoxtuzoccjstlzekhc)
+3. Navegue até **Authentication** → **URL Configuration**
+4. Em **Redirect URLs**, adicione as seguintes URLs:
+   - URL de produção (ex: `https://seu-dominio.com/*`)
+   - URL de staging se houver (ex: `https://staging.seu-dominio.com/*`)
+   - `http://localhost:3000/*` (apenas para desenvolvimento local)
+
+### Variáveis de Ambiente
+
+Se você estiver desenvolvendo localmente mas quiser que os emails de confirmação redirecionem para produção, defina a variável `VITE_APP_URL` no seu arquivo `.env`:
+
+```env
+VITE_APP_URL="https://seu-dominio-producao.com"
+```
+
+Se esta variável não estiver definida, o sistema usará `window.location.origin` automaticamente.
+
+### Troubleshooting
+
+**Problema**: Link de confirmação de email aponta para localhost
+
+**Solução**:
+1. Certifique-se de que a URL de produção está configurada nos Redirect URLs do Supabase
+2. Se necessário, defina `VITE_APP_URL` no arquivo `.env` com a URL de produção
+3. Para usuários que já se registraram, será necessário reenviar o email de confirmação ou criar uma nova conta
+
 ## How can I deploy this project?
 
 Simply open [Lovable](https://lovable.dev/projects/f834b5d2-6b05-4fde-a3da-2f6760b4796a) and click on Share -> Publish.
