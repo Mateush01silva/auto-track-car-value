@@ -18,8 +18,8 @@ const UpgradeDialog = ({ open, onOpenChange, feature, trialDaysRemaining }: Upgr
   const handleUpgrade = async (plan: "monthly" | "yearly") => {
     try {
       const priceId = plan === "monthly" 
-        ? "price_1STMpgDxXEVRLmijvkzaB6jI"  // Mensal R$ 19,90
-        : "price_1STMq5DxXEVRLmij1R7OWNHw"; // Anual R$ 199,00
+        ? "prod_TQDr7Ihd4x1VPM"  // Mensal R$ 19,90
+        : "prod_TQDs5KzmYGXHCy"; // Anual R$ 199,00
       
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: { priceId }
