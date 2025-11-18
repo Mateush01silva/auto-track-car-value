@@ -237,18 +237,20 @@ const Report = () => {
             {maintenances.length > 0 && (
               <div className="bg-gradient-to-br from-primary/5 to-success/5 rounded-lg p-6">
                 <h3 className="font-semibold text-lg mb-4">Evolução dos Custos</h3>
-                <div className="h-40 flex items-end gap-2 justify-around">
+                <div className="h-48 flex items-end gap-2 justify-around">
                   {maintenances.slice(0, 10).reverse().map((m, i) => {
                     const maxCost = Math.max(...maintenances.map(x => parseFloat(x.cost.toString())));
-                    const height = (parseFloat(m.cost.toString()) / maxCost) * 100;
+                    const costValue = parseFloat(m.cost.toString());
+                    // Calcular altura com mínimo de 15% para visibilidade
+                    const height = Math.max(15, (costValue / maxCost) * 85 + 15);
                     return (
                       <div key={m.id} className="flex-1 flex flex-col items-center gap-2">
-                        <div 
-                          className="w-full bg-gradient-to-t from-success to-success-hover rounded-t-lg transition-all hover:opacity-80 cursor-pointer"
-                          style={{ height: `${height}%` }}
-                          title={`R$ ${parseFloat(m.cost.toString()).toFixed(2)}`}
+                        <div
+                          className="w-full bg-gradient-to-t from-green-600 to-green-400 rounded-t-lg transition-all hover:scale-105 hover:shadow-lg cursor-pointer border-2 border-green-700"
+                          style={{ height: `${height}%`, minHeight: '30px' }}
+                          title={`R$ ${costValue.toFixed(2)}`}
                         />
-                        <p className="text-xs text-muted-foreground text-center">
+                        <p className="text-xs text-muted-foreground text-center font-medium">
                           {new Date(m.date).toLocaleDateString('pt-BR', { month: 'short' })}
                         </p>
                       </div>
