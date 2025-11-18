@@ -204,10 +204,10 @@ export function MaintenanceFormDialog({
           <div className="space-y-2">
             <Label htmlFor="vehicle">Veículo</Label>
             <Select value={formData.vehicle_id} onValueChange={(value) => handleInputChange("vehicle_id", value)} required>
-              <SelectTrigger>
+              <SelectTrigger className="bg-background">
                 <SelectValue placeholder="Selecione o veículo" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-popover">
                 {vehicles.map((vehicle) => (
                   <SelectItem key={vehicle.id} value={vehicle.id}>
                     {vehicle.brand} {vehicle.model} - {vehicle.plate}
@@ -229,15 +229,15 @@ export function MaintenanceFormDialog({
           </div>
           <div className="space-y-2">
             <Label htmlFor="category">Categoria do serviço</Label>
-            <Select 
-              value={formData.category} 
-              onValueChange={(value) => handleInputChange("category", value)} 
+            <Select
+              value={formData.category}
+              onValueChange={(value) => handleInputChange("category", value)}
               required
             >
-              <SelectTrigger>
+              <SelectTrigger className="bg-background">
                 <SelectValue placeholder="Selecione a categoria" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-popover">
                 {MAINTENANCE_CATEGORIES.map((category) => (
                   <SelectItem key={category.value} value={category.value}>
                     {category.label}
@@ -249,15 +249,15 @@ export function MaintenanceFormDialog({
           {formData.category && (
             <div className="space-y-2">
               <Label htmlFor="subcategory">Tipo de serviço</Label>
-              <Select 
-                value={formData.subcategory} 
-                onValueChange={(value) => handleInputChange("subcategory", value)} 
+              <Select
+                value={formData.subcategory}
+                onValueChange={(value) => handleInputChange("subcategory", value)}
                 required
               >
-                <SelectTrigger>
+                <SelectTrigger className="bg-background">
                   <SelectValue placeholder="Selecione o serviço" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-popover">
                   {getSubcategoriesByCategory(formData.category).map((subcategory) => (
                     <SelectItem key={subcategory.value} value={subcategory.value}>
                       {subcategory.label}
