@@ -1,11 +1,15 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { X, Gauge } from "lucide-react";
+import { X, Gauge, Edit } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
-export const KmUpdateReminder = () => {
+interface KmUpdateReminderProps {
+  onUpdateClick?: () => void;
+}
+
+export const KmUpdateReminder = ({ onUpdateClick }: KmUpdateReminderProps) => {
   const [showReminder, setShowReminder] = useState(false);
   const [daysSinceUpdate, setDaysSinceUpdate] = useState(0);
   const { user } = useAuth();
@@ -103,14 +107,24 @@ export const KmUpdateReminder = () => {
               Faz {daysSinceUpdate} dias desde a última atualização. Manter a quilometragem atualizada
               nos ajuda a fornecer recomendações de manutenção mais precisas para você!
             </p>
-            <p className="text-xs text-blue-600 mt-2">
-              💡 Dica: Registre uma manutenção simples como "Limpeza" ou atualize o KM atual do veículo.
-            </p>
             {isTestMode && (
               <p className="text-xs text-orange-600 mt-2 font-semibold">
                 ⚠️ MODO DE TESTE ATIVO
               </p>
             )}
+            <div className="mt-3">
+              {onUpdateClick && (
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={onUpdateClick}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Atualizar KM
+                </Button>
+              )}
+            </div>
           </div>
 
           <Button

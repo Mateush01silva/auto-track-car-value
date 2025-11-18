@@ -72,7 +72,7 @@ const Dashboard = () => {
 
   // Report filters
   const [selectedVehicleFilter, setSelectedVehicleFilter] = useState<string>("all");
-  const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
+  const [selectedYear, setSelectedYear] = useState<string>("all");
   const [selectedMonth, setSelectedMonth] = useState<string>("all");
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>("");
   const [showQrDialog, setShowQrDialog] = useState(false);
@@ -201,9 +201,9 @@ const Dashboard = () => {
     return maintenances.filter(m => {
       const maintenanceDate = new Date(m.date);
       const matchesVehicle = selectedVehicleFilter === "all" || m.vehicle_id === selectedVehicleFilter;
-      const matchesYear = maintenanceDate.getFullYear().toString() === selectedYear;
+      const matchesYear = selectedYear === "all" || maintenanceDate.getFullYear().toString() === selectedYear;
       const matchesMonth = selectedMonth === "all" || (maintenanceDate.getMonth() + 1).toString() === selectedMonth;
-      
+
       return matchesVehicle && matchesYear && matchesMonth;
     });
   }, [maintenances, selectedVehicleFilter, selectedYear, selectedMonth]);
@@ -382,7 +382,15 @@ const Dashboard = () => {
 
         {/* KM Update Reminder */}
         <div className="mb-6">
-          <KmUpdateReminder />
+          <KmUpdateReminder
+            onUpdateClick={() => {
+              // Pega o primeiro veículo do usuário e abre o diálogo de edição
+              if (vehicles.length > 0) {
+                setEditingVehicle(vehicles[0]);
+                setIsVehicleDialogOpen(true);
+              }
+            }}
+          />
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -623,7 +631,7 @@ const Dashboard = () => {
                 </Button>
                 <Button onClick={handleGenerateQrCode} variant="outline" disabled={vehicles.length === 0}>
                   <QrCodeIcon className="mr-2 h-4 w-4" />
-                  Gerar QR Code
+                  Compartilhar Relatório
                 </Button>
               </div>
             </div>
@@ -661,6 +669,7 @@ const Dashboard = () => {
                         <SelectValue placeholder="Selecione o ano" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="all">Todos os anos</SelectItem>
                         {availableYears.map((year) => (
                           <SelectItem key={year} value={year.toString()}>
                             {year}
