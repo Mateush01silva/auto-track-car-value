@@ -622,14 +622,14 @@ const Dashboard = () => {
 
           {/* Relatórios Tab */}
           <TabsContent value="reports" className="space-y-6 animate-fade-in">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-semibold">Relatórios e Gráficos</h2>
-              <div className="flex gap-2">
-                <Button onClick={handleExportExcel} disabled={filteredMaintenances.length === 0}>
+            <div className="flex flex-col sm:flex-row gap-4 sm:justify-between sm:items-center">
+              <h2 className="text-xl sm:text-2xl font-semibold">Relatórios e Gráficos</h2>
+              <div className="flex gap-2 flex-col sm:flex-row w-full sm:w-auto">
+                <Button onClick={handleExportExcel} disabled={filteredMaintenances.length === 0} className="w-full sm:w-auto">
                   <Download className="mr-2 h-4 w-4" />
                   Exportar Excel
                 </Button>
-                <Button onClick={handleGenerateQrCode} variant="outline" disabled={vehicles.length === 0}>
+                <Button onClick={handleGenerateQrCode} variant="outline" disabled={vehicles.length === 0} className="w-full sm:w-auto">
                   <QrCodeIcon className="mr-2 h-4 w-4" />
                   Compartilhar Relatório
                 </Button>

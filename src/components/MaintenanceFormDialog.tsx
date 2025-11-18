@@ -154,13 +154,13 @@ export function MaintenanceFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {editingMaintenance ? "Editar manutenção" : "Registrar nova manutenção"}
           </DialogTitle>
           <DialogDescription>
-            {editingMaintenance 
+            {editingMaintenance
               ? "Atualize os detalhes da manutenção."
               : "Adicione os detalhes da manutenção realizada no seu veículo."}
           </DialogDescription>
