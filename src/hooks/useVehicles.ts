@@ -62,7 +62,12 @@ export const useVehicles = () => {
 
       if (error) throw error;
 
+      // Atualizar lista localmente primeiro
       setVehicles((prev) => [data as Vehicle, ...prev]);
+
+      // Forçar refetch para garantir sincronização completa
+      setTimeout(() => fetchVehicles(), 100);
+
       toast({
         title: "Veículo adicionado",
         description: "O veículo foi cadastrado com sucesso!",
