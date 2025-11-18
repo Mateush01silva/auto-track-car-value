@@ -631,7 +631,7 @@ const Dashboard = () => {
                 </Button>
                 <Button onClick={handleGenerateQrCode} variant="outline" disabled={vehicles.length === 0}>
                   <QrCodeIcon className="mr-2 h-4 w-4" />
-                  Gerar QR Code
+                  Compartilhar Relatório
                 </Button>
               </div>
             </div>
