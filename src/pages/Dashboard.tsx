@@ -72,7 +72,7 @@ const Dashboard = () => {
 
   // Report filters
   const [selectedVehicleFilter, setSelectedVehicleFilter] = useState<string>("all");
-  const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
+  const [selectedYear, setSelectedYear] = useState<string>("all");
   const [selectedMonth, setSelectedMonth] = useState<string>("all");
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>("");
   const [showQrDialog, setShowQrDialog] = useState(false);
@@ -201,9 +201,9 @@ const Dashboard = () => {
     return maintenances.filter(m => {
       const maintenanceDate = new Date(m.date);
       const matchesVehicle = selectedVehicleFilter === "all" || m.vehicle_id === selectedVehicleFilter;
-      const matchesYear = maintenanceDate.getFullYear().toString() === selectedYear;
+      const matchesYear = selectedYear === "all" || maintenanceDate.getFullYear().toString() === selectedYear;
       const matchesMonth = selectedMonth === "all" || (maintenanceDate.getMonth() + 1).toString() === selectedMonth;
-      
+
       return matchesVehicle && matchesYear && matchesMonth;
     });
   }, [maintenances, selectedVehicleFilter, selectedYear, selectedMonth]);
@@ -661,6 +661,7 @@ const Dashboard = () => {
                         <SelectValue placeholder="Selecione o ano" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="all">Todos os anos</SelectItem>
                         {availableYears.map((year) => (
                           <SelectItem key={year} value={year.toString()}>
                             {year}

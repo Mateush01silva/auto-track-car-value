@@ -36,7 +36,9 @@ export const VehicleFormDialog = ({ open, onOpenChange, vehicle }: VehicleFormDi
     if (vehicle) {
       setSelectedBrand(vehicle.brand);
       setPlate(vehicle.plate);
-      setCurrentKm(vehicle.current_km.toString());
+      // Formata o KM com pontos de milhar
+      const formattedKm = vehicle.current_km.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+      setCurrentKm(formattedKm);
     }
   }, [open, vehicle]);
 
@@ -98,10 +100,10 @@ export const VehicleFormDialog = ({ open, onOpenChange, vehicle }: VehicleFormDi
     setLoading(true);
 
     try {
-      const brandName = brands.find((b) => b.codigo === selectedBrand)?.nome || "";
-      const modelName = models.find((m) => m.codigo.toString() === selectedModel)?.nome || "";
-      const yearValue = years.find((y) => y.codigo === selectedYear)?.nome || "";
-      const yearNumber = parseInt(yearValue.split("-")[0]);
+      // Se estiver editando, use os valores já salvos
+      const brandName = vehicle ? vehicle.brand : (brands.find((b) => b.codigo === selectedBrand)?.nome || "");
+      const modelName = vehicle ? vehicle.model : (models.find((m) => m.codigo.toString() === selectedModel)?.nome || "");
+      const yearNumber = vehicle ? vehicle.year : parseInt(years.find((y) => y.codigo === selectedYear)?.nome.split("-")[0] || "0");
 
       const vehicleData = {
         brand: brandName,
@@ -109,7 +111,7 @@ export const VehicleFormDialog = ({ open, onOpenChange, vehicle }: VehicleFormDi
         version: null,
         year: yearNumber,
         plate: plate.toUpperCase(),
-        current_km: parseInt(currentKm),
+        current_km: parseInt(currentKm.replace(/\D/g, '')),
         status: "up-to-date" as const,
       };
 
@@ -200,23 +202,57 @@ export const VehicleFormDialog = ({ open, onOpenChange, vehicle }: VehicleFormDi
             <Label htmlFor="plate">Placa</Label>
             <Input
               id="plate"
-              placeholder="ABC-1234"
+              placeholder="ABC-1234 ou ABC1D34"
               value={plate}
-              onChange={(e) => setPlate(e.target.value)}
+              onChange={(e) => {
+                let value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+                // Aplicar máscara baseado no formato
+                if (value.length <= 7) {
+                  // Formato antigo: ABC-1234
+                  if (value.length > 3) {
+                    value = value.slice(0, 3) + '-' + value.slice(3, 7);
+                  }
+                } else {
+                  // Formato Mercosul: ABC1D34
+                  value = value.slice(0, 7);
+                }
+
+                setPlate(value);
+              }}
+              maxLength={8}
               required
             />
+            <p className="text-xs text-muted-foreground">
+              Formatos aceitos: ABC-1234 (antigo) ou ABC1D34 (Mercosul)
+            </p>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="km">Quilometragem atual</Label>
             <Input
               id="km"
-              type="number"
-              placeholder="45000"
+              type="text"
+              placeholder="45.000"
               value={currentKm}
-              onChange={(e) => setCurrentKm(e.target.value)}
+              onChange={(e) => {
+                // Remove tudo que não é número
+                const numbers = e.target.value.replace(/\D/g, '');
+
+                // Limita a 999999 (999.999 km)
+                const limited = numbers.slice(0, 6);
+
+                // Formata com pontos de milhar
+                const formatted = limited.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+                setCurrentKm(formatted);
+              }}
+              maxLength={7}
               required
             />
+            <p className="text-xs text-muted-foreground">
+              Sugestão: arredonde para múltiplos de 1.000 (ex: 45.000)
+            </p>
           </div>
 
           <div className="flex gap-3 pt-4">

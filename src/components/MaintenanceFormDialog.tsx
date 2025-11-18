@@ -44,13 +44,16 @@ export function MaintenanceFormDialog({
       // Parse service_type to get category and subcategory
       const [category, subcategory] = editingMaintenance.service_type.split(" - ");
       const categoryItem = MAINTENANCE_CATEGORIES.find(c => c.label === category);
-      
+
+      // Formata o KM com pontos de milhar
+      const formattedKm = editingMaintenance.km.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
       setFormData({
         vehicle_id: editingMaintenance.vehicle_id,
         date: editingMaintenance.date,
         category: categoryItem?.value || "",
         subcategory: subcategory || "",
-        km: editingMaintenance.km.toString(),
+        km: formattedKm,
         cost: editingMaintenance.cost.toString(),
         notes: editingMaintenance.notes || "",
       });
@@ -100,7 +103,7 @@ export function MaintenanceFormDialog({
     }
 
     // Validar quilometragem: não pode ser menor que a última registrada
-    const currentKm = parseInt(formData.km);
+    const currentKm = parseInt(formData.km.replace(/\D/g, ''));
     if (!editingMaintenance) {
       try {
         const { data: lastMaintenance } = await supabase
@@ -134,7 +137,7 @@ export function MaintenanceFormDialog({
           vehicle_id: formData.vehicle_id,
           date: formData.date,
           service_type: serviceType,
-          km: parseInt(formData.km),
+          km: parseInt(formData.km.replace(/\D/g, '')),
           cost: parseFloat(formData.cost),
           notes: formData.notes || null,
         },
@@ -185,6 +188,7 @@ export function MaintenanceFormDialog({
               type="date"
               value={formData.date}
               onChange={(e) => handleInputChange("date", e.target.value)}
+              max={new Date().toISOString().split('T')[0]}
               required
             />
           </div>
@@ -232,12 +236,24 @@ export function MaintenanceFormDialog({
             <Label htmlFor="km">Quilometragem</Label>
             <Input
               id="km"
-              type="number"
-              placeholder="Ex: 45000"
+              type="text"
+              placeholder="Ex: 45.000"
               value={formData.km}
-              onChange={(e) => handleInputChange("km", e.target.value)}
+              onChange={(e) => {
+                // Remove tudo que não é número
+                const numbers = e.target.value.replace(/\D/g, '');
+                // Limita a 999999 (999.999 km)
+                const limited = numbers.slice(0, 6);
+                // Formata com pontos de milhar
+                const formatted = limited.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                handleInputChange("km", formatted);
+              }}
+              maxLength={7}
               required
             />
+            <p className="text-xs text-muted-foreground">
+              Sugestão: arredonde para múltiplos de 1.000
+            </p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="cost">Custo (R$)</Label>
@@ -248,6 +264,7 @@ export function MaintenanceFormDialog({
               placeholder="Ex: 280.00"
               value={formData.cost}
               onChange={(e) => handleInputChange("cost", e.target.value)}
+              min="0"
               required
             />
           </div>
