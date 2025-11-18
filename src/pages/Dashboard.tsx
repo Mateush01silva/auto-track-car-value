@@ -472,8 +472,13 @@ const Dashboard = () => {
                     <CardContent>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div className="space-y-1">
-                          <p className="text-sm text-muted-foreground">Quilometragem</p>
+                          <p className="text-sm text-muted-foreground">KM Atual</p>
                           <p className="text-lg font-semibold">{vehicle.current_km.toLocaleString()} km</p>
+                          <p className="text-xs text-muted-foreground">Cadastro: {vehicle.initial_km?.toLocaleString() || vehicle.current_km.toLocaleString()} km</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">KM Rodados</p>
+                          <p className="text-lg font-semibold">{((vehicle.current_km - (vehicle.initial_km || vehicle.current_km))).toLocaleString()} km</p>
                         </div>
                         <div className="space-y-1">
                           <p className="text-sm text-muted-foreground">Manutenções</p>
@@ -482,10 +487,6 @@ const Dashboard = () => {
                         <div className="space-y-1">
                           <p className="text-sm text-muted-foreground">Gasto total</p>
                           <p className="text-lg font-semibold">R$ {getTotalCostForVehicle(vehicle.id).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-sm text-muted-foreground">Status</p>
-                          <p className="text-lg font-semibold text-success">Ativo</p>
                         </div>
                       </div>
                     </CardContent>

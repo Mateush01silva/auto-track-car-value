@@ -11,7 +11,8 @@ export interface Vehicle {
   version: string | null;
   year: number;
   plate: string;
-  current_km: number;
+  initial_km: number; // KM de cadastro/compra
+  current_km: number; // KM atual (atualizado automaticamente)
   status: "up-to-date" | "due-soon" | "overdue";
   created_at: string;
   updated_at: string;

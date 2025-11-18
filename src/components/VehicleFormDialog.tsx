@@ -105,13 +105,16 @@ export const VehicleFormDialog = ({ open, onOpenChange, vehicle }: VehicleFormDi
       const modelName = vehicle ? vehicle.model : (models.find((m) => m.codigo.toString() === selectedModel)?.nome || "");
       const yearNumber = vehicle ? vehicle.year : parseInt(years.find((y) => y.codigo === selectedYear)?.nome.split("-")[0] || "0");
 
+      const kmValue = parseInt(currentKm.replace(/\D/g, ''));
+
       const vehicleData = {
         brand: brandName,
         model: modelName,
         version: null,
         year: yearNumber,
         plate: plate.toUpperCase(),
-        current_km: parseInt(currentKm.replace(/\D/g, '')),
+        initial_km: vehicle ? vehicle.initial_km : kmValue, // Mantém initial_km em edição
+        current_km: kmValue,
         status: "up-to-date" as const,
       };
 
