@@ -225,7 +225,7 @@ export const VehicleFormDialog = ({ open, onOpenChange, vehicle }: VehicleFormDi
                 {loadingFipe && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 <SelectValue placeholder={loadingFipe ? "Carregando marcas..." : "Selecione a marca"} />
               </SelectTrigger>
-              <SelectContent className="bg-popover">
+              <SelectContent className="bg-popover border border-border shadow-lg">
                 {brands.map((brand, index) => (
                   <SelectItem key={brand.codigo} value={brand.codigo} className={index < POPULAR_BRANDS.length ? "font-medium" : ""}>
                     {brand.nome}
@@ -242,7 +242,7 @@ export const VehicleFormDialog = ({ open, onOpenChange, vehicle }: VehicleFormDi
                 {loadingFipe && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 <SelectValue placeholder={loadingFipe ? "Carregando modelos..." : "Selecione o modelo"} />
               </SelectTrigger>
-              <SelectContent className="bg-popover">
+              <SelectContent className="bg-popover border border-border shadow-lg">
                 {models.map((model) => (
                   <SelectItem key={model.codigo} value={model.codigo.toString()}>
                     {model.nome}
@@ -259,7 +259,7 @@ export const VehicleFormDialog = ({ open, onOpenChange, vehicle }: VehicleFormDi
                 {loadingFipe && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 <SelectValue placeholder={loadingFipe ? "Carregando anos..." : "Selecione o ano"} />
               </SelectTrigger>
-              <SelectContent className="bg-popover">
+              <SelectContent className="bg-popover border border-border shadow-lg">
                 {years.map((year) => (
                   <SelectItem key={year.codigo} value={year.codigo}>
                     {year.nome}

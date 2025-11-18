@@ -207,7 +207,7 @@ export function MaintenanceFormDialog({
               <SelectTrigger className="bg-background">
                 <SelectValue placeholder="Selecione o veículo" />
               </SelectTrigger>
-              <SelectContent className="bg-popover">
+              <SelectContent className="bg-popover border border-border shadow-lg">
                 {vehicles.map((vehicle) => (
                   <SelectItem key={vehicle.id} value={vehicle.id}>
                     {vehicle.brand} {vehicle.model} - {vehicle.plate}
@@ -237,7 +237,7 @@ export function MaintenanceFormDialog({
               <SelectTrigger className="bg-background">
                 <SelectValue placeholder="Selecione a categoria" />
               </SelectTrigger>
-              <SelectContent className="bg-popover">
+              <SelectContent className="bg-popover border border-border shadow-lg">
                 {MAINTENANCE_CATEGORIES.map((category) => (
                   <SelectItem key={category.value} value={category.value}>
                     {category.label}
@@ -257,7 +257,7 @@ export function MaintenanceFormDialog({
                 <SelectTrigger className="bg-background">
                   <SelectValue placeholder="Selecione o serviço" />
                 </SelectTrigger>
-                <SelectContent className="bg-popover">
+                <SelectContent className="bg-popover border border-border shadow-lg">
                   {getSubcategoriesByCategory(formData.category).map((subcategory) => (
                     <SelectItem key={subcategory.value} value={subcategory.value}>
                       {subcategory.label}
