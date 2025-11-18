@@ -15,6 +15,13 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Helper para obter a URL de redirect correta
+const getRedirectUrl = () => {
+  // Usa a variável de ambiente se definida, senão usa window.location.origin
+  const appUrl = import.meta.env.VITE_APP_URL;
+  return appUrl || window.location.origin;
+};
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -46,7 +53,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/dashboard`,
+          redirectTo: `${getRedirectUrl()}/dashboard`,
         },
       });
 
@@ -99,7 +106,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/dashboard`,
+          emailRedirectTo: `${getRedirectUrl()}/dashboard`,
           data: {
             full_name: fullName,
             phone: phone,
