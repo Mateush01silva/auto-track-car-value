@@ -49,8 +49,8 @@ export const MaintenanceAlerts = ({ alerts, onRegisterMaintenance }: Maintenance
     }
   };
 
-  const overdueCount = alerts.filter((a) => a.status === "overdue").length;
-  const dueSoonCount = alerts.filter((a) => a.status === "due-soon").length;
+  const overdueCount = filteredAlerts.filter((a) => a.status === "overdue").length;
+  const dueSoonCount = filteredAlerts.filter((a) => a.status === "due-soon").length;
 
   return (
     <div className="space-y-4">

@@ -52,10 +52,17 @@ const Dashboard = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("vehicles");
-  const { vehicles, loading: loadingVehicles, deleteVehicle } = useVehicles();
+  const { vehicles, loading: loadingVehicles, deleteVehicle, refetch: refetchVehicles } = useVehicles();
   const { maintenances, loading: loadingMaintenances, addMaintenance, updateMaintenance, deleteMaintenance, getAttachmentUrl } = useMaintenances();
   const alerts = useMaintenanceAlerts(vehicles, maintenances);
   const { subscription, loading: loadingSubscription, refetch: refetchSubscription, showUpgradeMessage } = useSubscription();
+
+  // Refetch vehicles when switching to vehicles tab
+  useEffect(() => {
+    if (activeTab === "vehicles") {
+      refetchVehicles();
+    }
+  }, [activeTab]);
   
   const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
   const [isMaintenanceDialogOpen, setIsMaintenanceDialogOpen] = useState(false);
