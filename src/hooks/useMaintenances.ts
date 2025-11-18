@@ -116,6 +116,20 @@ export const useMaintenances = (vehicleId?: string) => {
 
       if (error) throw error;
 
+      // Atualizar current_km do veículo se o KM da manutenção for maior
+      const { data: vehicle } = await supabase
+        .from("vehicles")
+        .select("current_km")
+        .eq("id", maintenanceData.vehicle_id)
+        .single();
+
+      if (vehicle && maintenanceData.km > vehicle.current_km) {
+        await supabase
+          .from("vehicles")
+          .update({ current_km: maintenanceData.km })
+          .eq("id", maintenanceData.vehicle_id);
+      }
+
       setMaintenances((prev) => [data, ...prev]);
       toast({
         title: "Manutenção registrada",

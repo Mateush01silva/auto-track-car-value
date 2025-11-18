@@ -16,6 +16,7 @@ interface MaintenanceFormDialogProps {
   vehicles: any[];
   onSubmit: (data: any, file?: File) => Promise<void>;
   editingMaintenance?: Maintenance | null;
+  prefilledData?: { vehicleId?: string; serviceName?: string } | null;
 }
 
 export function MaintenanceFormDialog({
@@ -24,6 +25,7 @@ export function MaintenanceFormDialog({
   vehicles,
   onSubmit,
   editingMaintenance,
+  prefilledData,
 }: MaintenanceFormDialogProps) {
   const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
@@ -57,6 +59,39 @@ export function MaintenanceFormDialog({
         cost: editingMaintenance.cost.toString(),
         notes: editingMaintenance.notes || "",
       });
+    } else if (prefilledData?.vehicleId && prefilledData?.serviceName) {
+      // Pré-preencher com dados do alerta
+      const vehicle = vehicles.find(v => v.id === prefilledData.vehicleId);
+      const formattedKm = vehicle?.current_km.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') || "";
+      const today = new Date().toISOString().split('T')[0];
+
+      // Mapear serviceName para category/subcategory
+      let foundCategory = "";
+      let foundSubcategory = "";
+
+      for (const cat of MAINTENANCE_CATEGORIES) {
+        const subcategories = getSubcategoriesByCategory(cat.value);
+        const matchingSubcat = subcategories.find(sub =>
+          prefilledData.serviceName.toLowerCase().includes(sub.label.toLowerCase()) ||
+          sub.label.toLowerCase().includes(prefilledData.serviceName.toLowerCase())
+        );
+
+        if (matchingSubcat) {
+          foundCategory = cat.value;
+          foundSubcategory = matchingSubcat.value;
+          break;
+        }
+      }
+
+      setFormData({
+        vehicle_id: prefilledData.vehicleId,
+        date: today,
+        category: foundCategory,
+        subcategory: foundSubcategory,
+        km: formattedKm,
+        cost: "",
+        notes: "",
+      });
     } else {
       setFormData({
         vehicle_id: "",
@@ -69,7 +104,7 @@ export function MaintenanceFormDialog({
       });
     }
     setAttachmentFile(null);
-  }, [editingMaintenance, open]);
+  }, [editingMaintenance, prefilledData, open, vehicles]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => {
@@ -154,13 +189,13 @@ export function MaintenanceFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {editingMaintenance ? "Editar manutenção" : "Registrar nova manutenção"}
           </DialogTitle>
           <DialogDescription>
-            {editingMaintenance 
+            {editingMaintenance
               ? "Atualize os detalhes da manutenção."
               : "Adicione os detalhes da manutenção realizada no seu veículo."}
           </DialogDescription>

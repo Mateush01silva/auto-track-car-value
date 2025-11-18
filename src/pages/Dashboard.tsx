@@ -66,6 +66,7 @@ const Dashboard = () => {
   const [upgradeFeature, setUpgradeFeature] = useState<string>("");
   const [editingVehicle, setEditingVehicle] = useState<any>(null);
   const [editingMaintenance, setEditingMaintenance] = useState<any>(null);
+  const [prefilledData, setPrefilledData] = useState<{ vehicleId?: string; serviceName?: string } | null>(null);
 
   const [profile, setProfile] = useState<any>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
@@ -115,6 +116,7 @@ const Dashboard = () => {
 
   const handleRegisterMaintenanceFromAlert = (vehicleId: string, serviceName: string) => {
     setEditingMaintenance(null);
+    setPrefilledData({ vehicleId, serviceName });
     setIsMaintenanceDialogOpen(true);
     setActiveTab("maintenance");
   };
@@ -148,6 +150,7 @@ const Dashboard = () => {
     setIsMaintenanceDialogOpen(open);
     if (!open) {
       setEditingMaintenance(null);
+      setPrefilledData(null);
     }
   };
 
@@ -472,8 +475,13 @@ const Dashboard = () => {
                     <CardContent>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div className="space-y-1">
-                          <p className="text-sm text-muted-foreground">Quilometragem</p>
+                          <p className="text-sm text-muted-foreground">KM Atual</p>
                           <p className="text-lg font-semibold">{vehicle.current_km.toLocaleString()} km</p>
+                          <p className="text-xs text-muted-foreground">Cadastro: {vehicle.initial_km?.toLocaleString() || vehicle.current_km.toLocaleString()} km</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">KM Rodados</p>
+                          <p className="text-lg font-semibold">{((vehicle.current_km - (vehicle.initial_km || vehicle.current_km))).toLocaleString()} km</p>
                         </div>
                         <div className="space-y-1">
                           <p className="text-sm text-muted-foreground">Manutenções</p>
@@ -482,10 +490,6 @@ const Dashboard = () => {
                         <div className="space-y-1">
                           <p className="text-sm text-muted-foreground">Gasto total</p>
                           <p className="text-lg font-semibold">R$ {getTotalCostForVehicle(vehicle.id).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-sm text-muted-foreground">Status</p>
-                          <p className="text-lg font-semibold text-success">Ativo</p>
                         </div>
                       </div>
                     </CardContent>
@@ -522,6 +526,7 @@ const Dashboard = () => {
               vehicles={vehicles}
               onSubmit={handleMaintenanceSubmit}
               editingMaintenance={editingMaintenance}
+              prefilledData={prefilledData}
             />
 
             {vehicles.length === 0 ? (
@@ -622,14 +627,14 @@ const Dashboard = () => {
 
           {/* Relatórios Tab */}
           <TabsContent value="reports" className="space-y-6 animate-fade-in">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-semibold">Relatórios e Gráficos</h2>
-              <div className="flex gap-2">
-                <Button onClick={handleExportExcel} disabled={filteredMaintenances.length === 0}>
+            <div className="flex flex-col sm:flex-row gap-4 sm:justify-between sm:items-center">
+              <h2 className="text-xl sm:text-2xl font-semibold">Relatórios e Gráficos</h2>
+              <div className="flex gap-2 flex-col sm:flex-row w-full sm:w-auto">
+                <Button onClick={handleExportExcel} disabled={filteredMaintenances.length === 0} className="w-full sm:w-auto">
                   <Download className="mr-2 h-4 w-4" />
                   Exportar Excel
                 </Button>
-                <Button onClick={handleGenerateQrCode} variant="outline" disabled={vehicles.length === 0}>
+                <Button onClick={handleGenerateQrCode} variant="outline" disabled={vehicles.length === 0} className="w-full sm:w-auto">
                   <QrCodeIcon className="mr-2 h-4 w-4" />
                   Compartilhar Relatório
                 </Button>

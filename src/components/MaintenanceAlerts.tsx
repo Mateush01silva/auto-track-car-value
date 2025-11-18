@@ -55,9 +55,9 @@ export const MaintenanceAlerts = ({ alerts, onRegisterMaintenance }: Maintenance
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Alertas de Manutenção</h2>
-          <p className="text-sm text-muted-foreground">
+        <div className="w-full sm:w-auto">
+          <h2 className="text-xl sm:text-2xl font-bold">Alertas de Manutenção</h2>
+          <p className="text-xs sm:text-sm text-muted-foreground">
             {overdueCount > 0 && (
               <span className="text-destructive font-medium">{overdueCount} atrasada(s)</span>
             )}
@@ -71,7 +71,7 @@ export const MaintenanceAlerts = ({ alerts, onRegisterMaintenance }: Maintenance
           </p>
         </div>
 
-        <div className="flex gap-2 w-full sm:w-auto">
+        <div className="flex gap-2 w-full sm:w-auto flex-col sm:flex-row">
           <Select value={filterVehicle} onValueChange={setFilterVehicle}>
             <SelectTrigger className="w-full sm:w-[200px]">
               <SelectValue placeholder="Filtrar por veículo" />
