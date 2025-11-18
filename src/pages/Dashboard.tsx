@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
 import { useVehicles } from "@/hooks/useVehicles";
 import { useMaintenances } from "@/hooks/useMaintenances";
@@ -20,6 +21,8 @@ import { MaintenanceAlerts } from "@/components/MaintenanceAlerts";
 import { ProfileEditDialog } from "@/components/ProfileEditDialog";
 import { AttachmentViewer } from "@/components/AttachmentViewer";
 import { KmUpdateReminder } from "@/components/KmUpdateReminder";
+import { ProfileCompletionReminder } from "@/components/ProfileCompletionReminder";
+import { Onboarding } from "@/components/Onboarding";
 import TrialBanner from "@/components/TrialBanner";
 import UpgradeDialog from "@/components/UpgradeDialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -69,6 +72,7 @@ const Dashboard = () => {
   const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
   const [isUpgradeDialogOpen, setIsUpgradeDialogOpen] = useState(false);
   const [isAttachmentViewerOpen, setIsAttachmentViewerOpen] = useState(false);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [selectedAttachment, setSelectedAttachment] = useState<string | null>(null);
   const [upgradeFeature, setUpgradeFeature] = useState<string>("");
   const [editingVehicle, setEditingVehicle] = useState<any>(null);
@@ -94,6 +98,18 @@ const Dashboard = () => {
   useEffect(() => {
     if (user) {
       loadProfile();
+
+      // Check if user has seen onboarding
+      const hasSeenOnboarding = localStorage.getItem(`onboarding-completed-${user.id}`);
+      // Modo de teste: adicione ?test-onboarding=true na URL para forçar exibição
+      const isTestMode = new URLSearchParams(window.location.search).get('test-onboarding') === 'true';
+
+      if (!hasSeenOnboarding || isTestMode) {
+        // Small delay to let the page load first
+        setTimeout(() => {
+          setIsOnboardingOpen(true);
+        }, 500);
+      }
     }
   }, [user]);
 
@@ -119,6 +135,13 @@ const Dashboard = () => {
   const handleSignOut = async () => {
     await signOut();
     navigate("/login");
+  };
+
+  const handleOnboardingComplete = () => {
+    if (user) {
+      localStorage.setItem(`onboarding-completed-${user.id}`, 'true');
+    }
+    setIsOnboardingOpen(false);
   };
 
   const handleRegisterMaintenanceFromAlert = (vehicleId: string, serviceName: string) => {
@@ -348,28 +371,37 @@ const Dashboard = () => {
             <span className="text-xl font-bold text-primary">WiseDrive</span>
           </Link>
           
-          <div className="flex items-center gap-4">
-            <div className="hidden md:flex items-center gap-3">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={user?.user_metadata?.avatar_url} alt={user?.user_metadata?.full_name || user?.user_metadata?.name} />
-                <AvatarFallback className="bg-primary text-primary-foreground">
-                  {(user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || "U")
-                    .split(" ")
-                    .map((n: string) => n[0])
-                    .join("")
-                    .toUpperCase()
-                    .slice(0, 2)}
-                </AvatarFallback>
-              </Avatar>
-              <span className="text-sm text-muted-foreground">
-                <strong className="text-foreground">{user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email}</strong>
-              </span>
-            </div>
-            <Button variant="ghost" size="sm" onClick={handleSignOut}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Sair
-            </Button>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="flex items-center gap-3 h-auto py-2 px-3">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={user?.user_metadata?.avatar_url} alt={user?.user_metadata?.full_name || user?.user_metadata?.name} />
+                  <AvatarFallback className="bg-primary text-primary-foreground">
+                    {(user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || "U")
+                      .split(" ")
+                      .map((n: string) => n[0])
+                      .join("")
+                      .toUpperCase()
+                      .slice(0, 2)}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="hidden md:block text-sm">
+                  <strong className="text-foreground">{user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email}</strong>
+                </span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem onClick={() => setActiveTab("profile")} className="cursor-pointer">
+                <User className="mr-2 h-4 w-4" />
+                Ver Perfil
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-danger focus:text-danger">
+                <LogOut className="mr-2 h-4 w-4" />
+                Sair
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 
@@ -403,6 +435,16 @@ const Dashboard = () => {
           />
         </div>
 
+        {/* Profile Completion Reminder */}
+        <div className="mb-6">
+          <ProfileCompletionReminder
+            onCompleteClick={() => {
+              setActiveTab("profile");
+              setIsProfileDialogOpen(true);
+            }}
+          />
+        </div>
+
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="flex flex-wrap gap-1 h-auto p-1 bg-muted rounded-md">
             <TabsTrigger value="vehicles" className="flex-1 min-w-[80px] text-xs sm:text-sm">Veículos</TabsTrigger>
@@ -417,7 +459,6 @@ const Dashboard = () => {
               )}
             </TabsTrigger>
             <TabsTrigger value="reports" className="flex-1 min-w-[80px] text-xs sm:text-sm">Relatórios</TabsTrigger>
-            <TabsTrigger value="profile" className="flex-1 min-w-[80px] text-xs sm:text-sm">Perfil</TabsTrigger>
           </TabsList>
 
           {/* Veículos Tab */}
@@ -1046,6 +1087,68 @@ const Dashboard = () => {
                     </div>
                   </div>
                 )}
+
+                {/* Assinatura */}
+                {subscription && !subscription.isTrialActive && subscription.subscribed && (
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Assinatura</h3>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-muted/30">
+                        <div className="space-y-1">
+                          <Label className="text-muted-foreground">Plano Atual</Label>
+                          <p className="text-foreground font-semibold">
+                            {subscription.plan === 'pro_monthly' && 'Pro - Mensal'}
+                            {subscription.plan === 'pro_yearly' && 'Pro - Anual'}
+                          </p>
+                          {subscription.subscriptionEnd && (
+                            <p className="text-xs text-muted-foreground">
+                              Próxima cobrança: {new Date(subscription.subscriptionEnd).toLocaleDateString('pt-BR')}
+                            </p>
+                          )}
+                        </div>
+                        <Button
+                          variant="outline"
+                          onClick={async () => {
+                            try {
+                              const { data: { session } } = await supabase.auth.getSession();
+                              if (!session) throw new Error("Não autenticado");
+
+                              const response = await fetch(
+                                `${supabase.supabaseUrl}/functions/v1/create-portal-session`,
+                                {
+                                  method: "POST",
+                                  headers: {
+                                    Authorization: `Bearer ${session.access_token}`,
+                                    "Content-Type": "application/json",
+                                  },
+                                  body: JSON.stringify({
+                                    returnUrl: window.location.origin + "/dashboard"
+                                  }),
+                                }
+                              );
+
+                              const data = await response.json();
+                              if (data.error) throw new Error(data.error);
+
+                              window.location.href = data.url;
+                            } catch (error: any) {
+                              toast({
+                                title: "Erro",
+                                description: error.message || "Erro ao abrir portal de assinatura",
+                                variant: "destructive",
+                              });
+                            }
+                          }}
+                        >
+                          Gerenciar Assinatura
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Você pode cancelar sua assinatura a qualquer momento. Garantia de reembolso de 7 dias.
+                      </p>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -1070,6 +1173,11 @@ const Dashboard = () => {
         open={isProfileDialogOpen}
         onOpenChange={setIsProfileDialogOpen}
         onProfileUpdated={loadProfile}
+      />
+
+      <Onboarding
+        open={isOnboardingOpen}
+        onComplete={handleOnboardingComplete}
       />
 
       {/* QR Code Dialog */}
