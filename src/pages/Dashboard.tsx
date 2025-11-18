@@ -19,6 +19,7 @@ import { MaintenanceFormDialog } from "@/components/MaintenanceFormDialog";
 import { MaintenanceAlerts } from "@/components/MaintenanceAlerts";
 import { ProfileEditDialog } from "@/components/ProfileEditDialog";
 import { AttachmentViewer } from "@/components/AttachmentViewer";
+import { KmUpdateReminder } from "@/components/KmUpdateReminder";
 import TrialBanner from "@/components/TrialBanner";
 import UpgradeDialog from "@/components/UpgradeDialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -371,13 +372,18 @@ const Dashboard = () => {
         {/* Trial Banner */}
         {subscription && subscription.isTrialActive && (
           <div className="mb-6">
-            <TrialBanner 
+            <TrialBanner
               daysRemaining={subscription.trialDaysRemaining}
               maintenancesCount={maintenances.length}
               vehiclesCount={vehicles.length}
             />
           </div>
         )}
+
+        {/* KM Update Reminder */}
+        <div className="mb-6">
+          <KmUpdateReminder />
+        </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="flex flex-wrap gap-1 h-auto p-1 bg-muted rounded-md">
