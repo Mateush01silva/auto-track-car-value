@@ -10,10 +10,20 @@ export const KmUpdateReminder = () => {
   const [daysSinceUpdate, setDaysSinceUpdate] = useState(0);
   const { user } = useAuth();
 
+  // Modo de teste: adicione ?test-km-banner=true na URL para forçar exibição
+  const isTestMode = new URLSearchParams(window.location.search).get('test-km-banner') === 'true';
+
   useEffect(() => {
     if (!user) return;
 
     const checkLastUpdate = async () => {
+      // Em modo de teste, sempre mostra
+      if (isTestMode) {
+        setDaysSinceUpdate(14);
+        setShowReminder(true);
+        return;
+      }
+
       // Verificar se o usuário dispensou o banner recentemente
       const lastDismissed = localStorage.getItem(`km-reminder-dismissed-${user.id}`);
       if (lastDismissed) {
@@ -66,7 +76,7 @@ export const KmUpdateReminder = () => {
     };
 
     checkLastUpdate();
-  }, [user]);
+  }, [user, isTestMode]);
 
   const handleDismiss = () => {
     if (user) {
@@ -96,6 +106,11 @@ export const KmUpdateReminder = () => {
             <p className="text-xs text-blue-600 mt-2">
               💡 Dica: Registre uma manutenção simples como "Limpeza" ou atualize o KM atual do veículo.
             </p>
+            {isTestMode && (
+              <p className="text-xs text-orange-600 mt-2 font-semibold">
+                ⚠️ MODO DE TESTE ATIVO
+              </p>
+            )}
           </div>
 
           <Button
