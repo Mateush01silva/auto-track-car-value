@@ -154,7 +154,8 @@ export const VehicleFormDialog = ({ open, onOpenChange, vehicle }: VehicleFormDi
             <Label htmlFor="brand">Marca</Label>
             <Select value={selectedBrand} onValueChange={handleBrandChange} disabled={loadingFipe || !!vehicle}>
               <SelectTrigger>
-                <SelectValue placeholder={loadingFipe ? "Carregando..." : "Selecione a marca"} />
+                {loadingFipe && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <SelectValue placeholder={loadingFipe ? "Carregando marcas..." : "Selecione a marca"} />
               </SelectTrigger>
               <SelectContent>
                 {brands.map((brand) => (
@@ -170,7 +171,8 @@ export const VehicleFormDialog = ({ open, onOpenChange, vehicle }: VehicleFormDi
             <Label htmlFor="model">Modelo</Label>
             <Select value={selectedModel} onValueChange={handleModelChange} disabled={!selectedBrand || loadingFipe || !!vehicle}>
               <SelectTrigger>
-                <SelectValue placeholder={loadingFipe ? "Carregando..." : "Selecione o modelo"} />
+                {loadingFipe && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <SelectValue placeholder={loadingFipe ? "Carregando modelos..." : "Selecione o modelo"} />
               </SelectTrigger>
               <SelectContent>
                 {models.map((model) => (
@@ -186,7 +188,8 @@ export const VehicleFormDialog = ({ open, onOpenChange, vehicle }: VehicleFormDi
             <Label htmlFor="year">Ano</Label>
             <Select value={selectedYear} onValueChange={setSelectedYear} disabled={!selectedModel || loadingFipe || !!vehicle}>
               <SelectTrigger>
-                <SelectValue placeholder={loadingFipe ? "Carregando..." : "Selecione o ano"} />
+                {loadingFipe && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <SelectValue placeholder={loadingFipe ? "Carregando anos..." : "Selecione o ano"} />
               </SelectTrigger>
               <SelectContent>
                 {years.map((year) => (

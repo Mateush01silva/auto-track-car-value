@@ -382,7 +382,15 @@ const Dashboard = () => {
 
         {/* KM Update Reminder */}
         <div className="mb-6">
-          <KmUpdateReminder />
+          <KmUpdateReminder
+            onUpdateClick={() => {
+              // Pega o primeiro veículo do usuário e abre o diálogo de edição
+              if (vehicles.length > 0) {
+                setEditingVehicle(vehicles[0]);
+                setIsVehicleDialogOpen(true);
+              }
+            }}
+          />
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
