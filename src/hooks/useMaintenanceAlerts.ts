@@ -41,7 +41,8 @@ export const useMaintenanceAlerts = (
         )[0];
 
         const currentKm = vehicle.current_km;
-        const lastMaintenanceKm = lastMaintenance?.km || 0;
+        const initialKm = vehicle.initial_km || vehicle.current_km; // Fallback para veículos antigos
+        const lastMaintenanceKm = lastMaintenance?.km || initialKm; // Se nunca fez, usa initial_km
         const lastMaintenanceDate = lastMaintenance ? new Date(lastMaintenance.date) : null;
         const now = new Date();
 
@@ -57,10 +58,10 @@ export const useMaintenanceAlerts = (
 
           if (kmRemaining <= 0) {
             status = "overdue";
-            message = `${recommendation.item} atrasada — excedeu ${Math.abs(kmRemaining)} km`;
+            message = `${recommendation.item} atrasada — excedeu ${Math.abs(kmRemaining).toLocaleString()} km`;
           } else if (kmRemaining <= KM_THRESHOLD && status === "ok") {
             status = "due-soon";
-            message = `${recommendation.item} próxima — faltam ${kmRemaining} km`;
+            message = `${recommendation.item} próxima — faltam ${kmRemaining.toLocaleString()} km`;
           }
         }
 

@@ -66,6 +66,7 @@ const Dashboard = () => {
   const [upgradeFeature, setUpgradeFeature] = useState<string>("");
   const [editingVehicle, setEditingVehicle] = useState<any>(null);
   const [editingMaintenance, setEditingMaintenance] = useState<any>(null);
+  const [prefilledData, setPrefilledData] = useState<{ vehicleId?: string; serviceName?: string } | null>(null);
 
   const [profile, setProfile] = useState<any>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
@@ -115,6 +116,7 @@ const Dashboard = () => {
 
   const handleRegisterMaintenanceFromAlert = (vehicleId: string, serviceName: string) => {
     setEditingMaintenance(null);
+    setPrefilledData({ vehicleId, serviceName });
     setIsMaintenanceDialogOpen(true);
     setActiveTab("maintenance");
   };
@@ -148,6 +150,7 @@ const Dashboard = () => {
     setIsMaintenanceDialogOpen(open);
     if (!open) {
       setEditingMaintenance(null);
+      setPrefilledData(null);
     }
   };
 
@@ -523,6 +526,7 @@ const Dashboard = () => {
               vehicles={vehicles}
               onSubmit={handleMaintenanceSubmit}
               editingMaintenance={editingMaintenance}
+              prefilledData={prefilledData}
             />
 
             {vehicles.length === 0 ? (
