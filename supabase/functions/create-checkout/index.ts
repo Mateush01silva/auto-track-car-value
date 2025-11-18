@@ -41,8 +41,8 @@ serve(async (req) => {
     }
     logStep("Price ID received", { priceId });
 
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { 
-      apiVersion: "2025-08-27.basil" 
+    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+      apiVersion: "2024-11-20.acacia"
     });
 
     // Check if customer already exists
