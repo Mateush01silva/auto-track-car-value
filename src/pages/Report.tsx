@@ -237,19 +237,33 @@ const Report = () => {
             {maintenances.length > 0 && (
               <div className="bg-gradient-to-br from-primary/5 to-success/5 rounded-lg p-6">
                 <h3 className="font-semibold text-lg mb-4">Evolução dos Custos</h3>
-                <div className="h-48 flex items-end gap-2 justify-around">
+                <div className="h-56 flex items-end gap-3 justify-around px-2">
                   {maintenances.slice(0, 10).reverse().map((m, i) => {
                     const maxCost = Math.max(...maintenances.map(x => parseFloat(x.cost.toString())));
+                    const minCost = Math.min(...maintenances.map(x => parseFloat(x.cost.toString())));
                     const costValue = parseFloat(m.cost.toString());
-                    // Calcular altura proporcional com mínimo de 20% para visibilidade
+
+                    // Usar escala logarítmica para amplificar diferenças visuais
+                    // Mapeia valores entre minCost e maxCost para altura entre 25% e 100%
+                    let height;
+                    if (maxCost === minCost) {
+                      // Todos os valores iguais
+                      height = 100;
+                    } else {
+                      // Normalizar entre 0 e 1
+                      const normalized = (costValue - minCost) / (maxCost - minCost);
+                      // Escalar para 25% a 100% com curva não-linear para amplificar diferenças
+                      height = 25 + (Math.pow(normalized, 0.7) * 75);
+                    }
+
                     const proportionalHeight = (costValue / maxCost) * 100;
-                    const height = Math.max(20, proportionalHeight);
+
                     return (
                       <div key={m.id} className="flex-1 flex flex-col items-center gap-2">
                         <div
-                          className="w-full bg-gradient-to-t from-green-600 to-green-400 rounded-t-lg transition-all hover:scale-105 hover:shadow-lg cursor-pointer border-2 border-green-700"
-                          style={{ height: `${height}%`, minHeight: '30px' }}
-                          title={`R$ ${costValue.toFixed(2)} (${proportionalHeight.toFixed(0)}% do máximo)`}
+                          className="w-full bg-gradient-to-t from-green-600 to-green-400 rounded-t-lg transition-all hover:scale-110 hover:shadow-xl cursor-pointer border-2 border-green-700"
+                          style={{ height: `${height}%`, minWidth: '20px' }}
+                          title={`R$ ${costValue.toFixed(2)} - ${proportionalHeight.toFixed(0)}% do máximo`}
                         />
                         <p className="text-xs text-muted-foreground text-center font-medium">
                           {new Date(m.date).toLocaleDateString('pt-BR', { month: 'short' })}
