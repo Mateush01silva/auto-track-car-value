@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { MAINTENANCE_CATEGORIES, getSubcategoriesByCategory, getFullServiceLabel } from "@/constants/maintenanceCategories";
 import type { Maintenance } from "@/hooks/useMaintenances";
+import { supabase } from "@/integrations/supabase/client";
 
 interface MaintenanceFormDialogProps {
   open: boolean;
@@ -79,7 +80,7 @@ export function MaintenanceFormDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.vehicle_id) {
       toast({
         title: "Erro",
@@ -98,10 +99,36 @@ export function MaintenanceFormDialog({
       return;
     }
 
+    // Validar quilometragem: não pode ser menor que a última registrada
+    const currentKm = parseInt(formData.km);
+    if (!editingMaintenance) {
+      try {
+        const { data: lastMaintenance } = await supabase
+          .from("maintenances")
+          .select("km, date")
+          .eq("vehicle_id", formData.vehicle_id)
+          .order("date", { ascending: false })
+          .limit(1)
+          .single();
+
+        if (lastMaintenance && currentKm < lastMaintenance.km) {
+          toast({
+            title: "Quilometragem inválida",
+            description: `A quilometragem não pode ser menor que a última registrada (${lastMaintenance.km.toLocaleString()} km em ${new Date(lastMaintenance.date).toLocaleDateString('pt-BR')})`,
+            variant: "destructive",
+          });
+          return;
+        }
+      } catch (error) {
+        // Sem manutenções anteriores, pode continuar
+        console.log("Nenhuma manutenção anterior encontrada");
+      }
+    }
+
     setSubmitting(true);
     try {
       const serviceType = getFullServiceLabel(formData.category, formData.subcategory);
-      
+
       await onSubmit(
         {
           vehicle_id: formData.vehicle_id,

@@ -241,14 +241,15 @@ const Report = () => {
                   {maintenances.slice(0, 10).reverse().map((m, i) => {
                     const maxCost = Math.max(...maintenances.map(x => parseFloat(x.cost.toString())));
                     const costValue = parseFloat(m.cost.toString());
-                    // Calcular altura com mínimo de 15% para visibilidade
-                    const height = Math.max(15, (costValue / maxCost) * 85 + 15);
+                    // Calcular altura proporcional com mínimo de 20% para visibilidade
+                    const proportionalHeight = (costValue / maxCost) * 100;
+                    const height = Math.max(20, proportionalHeight);
                     return (
                       <div key={m.id} className="flex-1 flex flex-col items-center gap-2">
                         <div
                           className="w-full bg-gradient-to-t from-green-600 to-green-400 rounded-t-lg transition-all hover:scale-105 hover:shadow-lg cursor-pointer border-2 border-green-700"
                           style={{ height: `${height}%`, minHeight: '30px' }}
-                          title={`R$ ${costValue.toFixed(2)}`}
+                          title={`R$ ${costValue.toFixed(2)} (${proportionalHeight.toFixed(0)}% do máximo)`}
                         />
                         <p className="text-xs text-muted-foreground text-center font-medium">
                           {new Date(m.date).toLocaleDateString('pt-BR', { month: 'short' })}
