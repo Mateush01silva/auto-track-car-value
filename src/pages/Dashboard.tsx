@@ -61,6 +61,20 @@ const Dashboard = () => {
   const alerts = useMaintenanceAlerts(vehicles, maintenances);
   const { subscription, loading: loadingSubscription, refetch: refetchSubscription, showUpgradeMessage } = useSubscription();
 
+  // DEBUG: Log subscription state (remove after testing)
+  useEffect(() => {
+    if (subscription) {
+      console.log('🔍 SUBSCRIPTION DEBUG:', {
+        plan: subscription.plan,
+        status: subscription.status,
+        isPro: subscription.isPro,
+        isTrialActive: subscription.isTrialActive,
+        subscribed: subscription.subscribed,
+        subscriptionEnd: subscription.subscriptionEnd,
+      });
+    }
+  }, [subscription]);
+
   // Refetch vehicles when switching to vehicles tab
   useEffect(() => {
     if (activeTab === "vehicles") {
