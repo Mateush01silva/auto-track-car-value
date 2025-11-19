@@ -930,10 +930,9 @@ const Dashboard = () => {
               />
             ) : null}
 
-            {filteredMaintenances.length > 0 && (
+            {/* Maintenance History Table */}
+            {filteredMaintenances.length > 0 ? (
               <>
-
-                {/* Maintenance History Table */}
                 <Card>
                   <CardHeader>
                     <CardTitle>Histórico de Manutenções</CardTitle>
