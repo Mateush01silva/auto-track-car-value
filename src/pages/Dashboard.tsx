@@ -61,6 +61,20 @@ const Dashboard = () => {
   const alerts = useMaintenanceAlerts(vehicles, maintenances);
   const { subscription, loading: loadingSubscription, refetch: refetchSubscription, showUpgradeMessage } = useSubscription();
 
+  // DEBUG: Log subscription state (remove after testing)
+  useEffect(() => {
+    if (subscription) {
+      console.log('🔍 SUBSCRIPTION DEBUG:', {
+        plan: subscription.plan,
+        status: subscription.status,
+        isPro: subscription.isPro,
+        isTrialActive: subscription.isTrialActive,
+        subscribed: subscription.subscribed,
+        subscriptionEnd: subscription.subscriptionEnd,
+      });
+    }
+  }, [subscription]);
+
   // Refetch vehicles when switching to vehicles tab
   useEffect(() => {
     if (activeTab === "vehicles") {
@@ -827,8 +841,8 @@ const Dashboard = () => {
               </Card>
             </div>
 
-            {/* Charts */}
-            {filteredMaintenances.length > 0 ? (
+            {/* Charts - PRO ONLY */}
+            {subscription?.isPro && filteredMaintenances.length > 0 ? (
               <>
                 {/* Monthly Cost Chart */}
                 <Card>
@@ -842,14 +856,14 @@ const Dashboard = () => {
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="month" />
                         <YAxis />
-                        <Tooltip 
+                        <Tooltip
                           formatter={(value: any) => [`R$ ${parseFloat(value).toFixed(2)}`, 'Custo']}
                         />
                         <Legend />
-                        <Line 
-                          type="monotone" 
-                          dataKey="cost" 
-                          stroke="hsl(var(--success))" 
+                        <Line
+                          type="monotone"
+                          dataKey="cost"
+                          stroke="hsl(var(--success))"
                           strokeWidth={2}
                           name="Custo Total"
                         />
@@ -906,8 +920,19 @@ const Dashboard = () => {
                     </CardContent>
                   </Card>
                 </div>
+              </>
+            ) : !subscription?.isPro && filteredMaintenances.length > 0 ? (
+              <UpgradeCTA
+                subscription={subscription}
+                onUpgrade={() => setIsUpgradeDialogOpen(true)}
+                variant="card"
+                context="reports"
+              />
+            ) : null}
 
-                {/* Maintenance History Table */}
+            {/* Maintenance History Table */}
+            {filteredMaintenances.length > 0 ? (
+              <>
                 <Card>
                   <CardHeader>
                     <CardTitle>Histórico de Manutenções</CardTitle>
@@ -1126,7 +1151,7 @@ const Dashboard = () => {
                 )}
 
                 {/* Assinatura */}
-                {subscription && !subscription.isTrialActive && subscription.subscribed && (
+                {subscription && subscription.isPro && (
                   <div className="space-y-3">
                     <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Assinatura</h3>
                     <div className="space-y-4">
