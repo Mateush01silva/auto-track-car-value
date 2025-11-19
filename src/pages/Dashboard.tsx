@@ -827,8 +827,8 @@ const Dashboard = () => {
               </Card>
             </div>
 
-            {/* Charts */}
-            {filteredMaintenances.length > 0 ? (
+            {/* Charts - PRO ONLY */}
+            {subscription?.isPro && filteredMaintenances.length > 0 ? (
               <>
                 {/* Monthly Cost Chart */}
                 <Card>
@@ -842,14 +842,14 @@ const Dashboard = () => {
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="month" />
                         <YAxis />
-                        <Tooltip 
+                        <Tooltip
                           formatter={(value: any) => [`R$ ${parseFloat(value).toFixed(2)}`, 'Custo']}
                         />
                         <Legend />
-                        <Line 
-                          type="monotone" 
-                          dataKey="cost" 
-                          stroke="hsl(var(--success))" 
+                        <Line
+                          type="monotone"
+                          dataKey="cost"
+                          stroke="hsl(var(--success))"
                           strokeWidth={2}
                           name="Custo Total"
                         />
@@ -906,6 +906,18 @@ const Dashboard = () => {
                     </CardContent>
                   </Card>
                 </div>
+              </>
+            ) : !subscription?.isPro && filteredMaintenances.length > 0 ? (
+              <UpgradeCTA
+                subscription={subscription}
+                onUpgrade={() => setIsUpgradeDialogOpen(true)}
+                variant="card"
+                context="reports"
+              />
+            ) : null}
+
+            {filteredMaintenances.length > 0 && (
+              <>
 
                 {/* Maintenance History Table */}
                 <Card>
