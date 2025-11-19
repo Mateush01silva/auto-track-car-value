@@ -15,6 +15,14 @@ const logStep = (step: string, details?: any) => {
   console.log(`[STRIPE-WEBHOOK] ${step}${detailsStr}`);
 };
 
+// Log environment check on startup
+console.log("[STRIPE-WEBHOOK] Environment check:", {
+  hasSupabaseUrl: !!supabaseUrl,
+  hasServiceKey: !!supabaseServiceKey,
+  serviceKeyPrefix: supabaseServiceKey?.substring(0, 10),
+  hasWebhookSecret: !!webhookSecret,
+});
+
 serve(async (req) => {
   const signature = req.headers.get("stripe-signature");
 
@@ -61,15 +69,35 @@ serve(async (req) => {
 
           logStep("Finding user by email", { email: userEmail });
 
-          // Get user by email
-          const { data: authData } = await supabase.auth.admin.listUsers();
-          const user = authData.users.find(u => u.email === userEmail);
+          // Get user ID by querying auth.users table directly via RPC or profiles
+          // First, try to find existing profile by stripe_customer_id
+          let { data: existingProfile } = await supabase
+            .from("profiles")
+            .select("id")
+            .eq("stripe_customer_id", customerId)
+            .single();
 
-          if (!user) {
-            throw new Error(`User not found for email: ${userEmail}`);
+          // If not found by customer_id, we need to find the user by email
+          // We'll update the profile using the customer email from Stripe
+          if (!existingProfile) {
+            // Query profiles joined with auth.users to find by email
+            const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
+
+            if (authError) {
+              logStep("ERROR listing users", authError);
+              throw new Error(`Failed to list users: ${authError.message}`);
+            }
+
+            const user = authData.users.find(u => u.email === userEmail);
+
+            if (!user) {
+              throw new Error(`User not found for email: ${userEmail}`);
+            }
+
+            existingProfile = { id: user.id };
           }
 
-          logStep("Updating user profile", { userId: user.id, plan });
+          logStep("Updating user profile", { userId: existingProfile.id, plan });
 
           // Update user profile with subscription info
           const { error: updateError } = await supabase
@@ -83,14 +111,14 @@ serve(async (req) => {
               subscription_started_at: new Date().toISOString(),
               trial_end: null, // End trial when subscription starts
             })
-            .eq("id", user.id);
+            .eq("id", existingProfile.id);
 
           if (updateError) {
             logStep("ERROR updating profile", updateError);
             throw updateError;
           }
 
-          logStep("SUCCESS - User upgraded to Pro", { userId: user.id, plan });
+          logStep("SUCCESS - User upgraded to Pro", { userId: existingProfile.id, plan });
         }
         break;
       }
