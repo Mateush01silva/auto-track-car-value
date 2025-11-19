@@ -1138,7 +1138,7 @@ const Dashboard = () => {
                 )}
 
                 {/* Assinatura */}
-                {subscription && !subscription.isTrialActive && subscription.subscribed && (
+                {subscription && subscription.isPro && (
                   <div className="space-y-3">
                     <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Assinatura</h3>
                     <div className="space-y-4">
