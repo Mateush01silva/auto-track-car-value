@@ -4,15 +4,17 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
 export type SubscriptionPlan = "free_trial" | "pro_monthly" | "pro_yearly";
-export type SubscriptionStatus = "active" | "expired" | "cancelled";
+export type SubscriptionStatus = "active" | "expired" | "cancelled" | "canceled" | "past_due";
 
 export interface SubscriptionData {
   plan: SubscriptionPlan;
   status: SubscriptionStatus;
   trialEndsAt: string | null;
+  subscriptionEnd: string | null;
   trialDaysRemaining: number;
   isPro: boolean;
   isTrialActive: boolean;
+  subscribed: boolean; // Paid subscriber (not trial)
   canAddVehicle: boolean;
   canAddMaintenance: boolean;
   canShareLink: boolean;
@@ -41,7 +43,7 @@ export const useSubscription = () => {
       // Fetch profile data
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
-        .select("subscription_plan, subscription_status, trial_ends_at, is_admin")
+        .select("subscription_plan, subscription_status, trial_end, subscription_end, is_admin")
         .eq("id", user.id)
         .single();
 
@@ -53,9 +55,11 @@ export const useSubscription = () => {
           plan: "pro_yearly" as SubscriptionPlan,
           status: "active" as SubscriptionStatus,
           trialEndsAt: null,
+          subscriptionEnd: null,
           trialDaysRemaining: 0,
           isPro: true,
           isTrialActive: false,
+          subscribed: true,
           canAddVehicle: true,
           canAddMaintenance: true,
           canShareLink: true,
@@ -87,15 +91,17 @@ export const useSubscription = () => {
       if (maintenancesError) throw maintenancesError;
 
       // Calculate trial days remaining
-      const trialEndsAt = profile.trial_ends_at ? new Date(profile.trial_ends_at) : null;
+      const trialEndsAt = profile.trial_end ? new Date(profile.trial_end) : null;
       const now = new Date();
-      const trialDaysRemaining = trialEndsAt 
+      const trialDaysRemaining = trialEndsAt
         ? Math.max(0, Math.ceil((trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
         : 0;
 
-      const isPro = profile.subscription_plan === "pro_monthly" || profile.subscription_plan === "pro_yearly";
-      const isTrialActive = profile.subscription_plan === "free_trial" 
-        && profile.subscription_status === "active" 
+      const isPro = (profile.subscription_plan === "pro_monthly" || profile.subscription_plan === "pro_yearly")
+        && profile.subscription_status === "active"
+        && (!profile.subscription_end || new Date(profile.subscription_end) > now);
+      const isTrialActive = profile.subscription_plan === "free_trial"
+        && profile.subscription_status === "active"
         && trialDaysRemaining > 0;
 
       // Define limits
@@ -107,10 +113,12 @@ export const useSubscription = () => {
       setSubscription({
         plan: profile.subscription_plan as SubscriptionPlan,
         status: profile.subscription_status as SubscriptionStatus,
-        trialEndsAt: profile.trial_ends_at,
+        trialEndsAt: profile.trial_end,
+        subscriptionEnd: profile.subscription_end,
         trialDaysRemaining,
         isPro,
         isTrialActive,
+        subscribed: isPro && !isTrialActive,
         canAddVehicle,
         canAddMaintenance,
         canShareLink,

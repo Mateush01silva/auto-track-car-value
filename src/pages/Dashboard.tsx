@@ -23,6 +23,7 @@ import { AttachmentViewer } from "@/components/AttachmentViewer";
 import { KmUpdateReminder } from "@/components/KmUpdateReminder";
 import { ProfileCompletionReminder } from "@/components/ProfileCompletionReminder";
 import { Onboarding } from "@/components/Onboarding";
+import { UpgradeCTA } from "@/components/UpgradeCTA";
 import TrialBanner from "@/components/TrialBanner";
 import UpgradeDialog from "@/components/UpgradeDialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -199,6 +200,8 @@ const Dashboard = () => {
     setIsVehicleDialogOpen(open);
     if (!open) {
       setEditingVehicle(null);
+      // Refetch vehicles to update the display
+      refetchVehicles();
     }
   };
 
@@ -445,6 +448,18 @@ const Dashboard = () => {
           />
         </div>
 
+        {/* Upgrade CTA Banner for trial users who are near limits */}
+        {subscription && subscription.isTrialActive && (vehicles.length >= 1 || maintenances.length >= 2) && (
+          <div className="mb-6">
+            <UpgradeCTA
+              subscription={subscription}
+              onUpgrade={() => setIsUpgradeDialogOpen(true)}
+              variant="banner"
+              context="general"
+            />
+          </div>
+        )}
+
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="flex flex-wrap gap-1 h-auto p-1 bg-muted rounded-md">
             <TabsTrigger value="vehicles" className="flex-1 min-w-[80px] text-xs sm:text-sm">Veículos</TabsTrigger>
@@ -543,6 +558,18 @@ const Dashboard = () => {
                     </CardContent>
                   </Card>
                 ))}
+
+                {/* CTA for users with 1 vehicle on trial */}
+                {subscription && subscription.isTrialActive && vehicles.length === 1 && (
+                  <div className="mt-6">
+                    <UpgradeCTA
+                      subscription={subscription}
+                      onUpgrade={() => setIsUpgradeDialogOpen(true)}
+                      variant="compact"
+                      context="vehicles"
+                    />
+                  </div>
+                )}
               </div>
             )}
           </TabsContent>
@@ -757,6 +784,16 @@ const Dashboard = () => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Upgrade CTA for trial users in reports */}
+            {subscription && subscription.isTrialActive && (
+              <UpgradeCTA
+                subscription={subscription}
+                onUpgrade={() => setIsUpgradeDialogOpen(true)}
+                variant="card"
+                context="reports"
+              />
+            )}
 
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
