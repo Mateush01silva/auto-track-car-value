@@ -31,7 +31,16 @@ export function AttachmentViewer({
 
     setLoading(true);
     try {
-      const url = await getAttachmentUrl(attachmentUrl);
+      let url: string | null;
+
+      // If it's already a full URL (public URL), use it directly
+      if (attachmentUrl.startsWith('http://') || attachmentUrl.startsWith('https://')) {
+        url = attachmentUrl;
+      } else {
+        // Otherwise, get a signed URL for the file path
+        url = await getAttachmentUrl(attachmentUrl);
+      }
+
       setSignedUrl(url);
 
       // Detecta o tipo de arquivo pela extensão
