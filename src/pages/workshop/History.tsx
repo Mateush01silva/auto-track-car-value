@@ -50,6 +50,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { WorkshopBottomNav } from "@/components/workshop/BottomNav";
 
 interface Workshop {
   id: string;
@@ -866,6 +867,9 @@ const WorkshopHistory = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Bottom Navigation - Mobile */}
+      <WorkshopBottomNav />
     </div>
   );
 };

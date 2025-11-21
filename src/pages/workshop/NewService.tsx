@@ -26,6 +26,7 @@ import {
   Gauge,
   Wrench as WrenchIcon
 } from "lucide-react";
+import { WorkshopBottomNav } from "@/components/workshop/BottomNav";
 
 interface Workshop {
   id: string;
@@ -604,7 +605,7 @@ const NewService = () => {
 
               <Button
                 onClick={handleContinueWithNewVehicle}
-                className="w-full bg-green-600 hover:bg-green-700"
+                className="w-full bg-green-600 hover:bg-green-700 h-12"
                 size="lg"
                 disabled={!selectedBrand || !selectedModel || !selectedYear}
               >
@@ -613,7 +614,13 @@ const NewService = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* Spacer for bottom nav on mobile */}
+        <div className="h-20 md:hidden" />
       </main>
+
+      {/* Bottom Navigation - Mobile */}
+      <WorkshopBottomNav />
     </div>
   );
 };
