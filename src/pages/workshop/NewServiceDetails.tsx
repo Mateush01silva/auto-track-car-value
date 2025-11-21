@@ -44,6 +44,7 @@ import {
   ExternalLink,
   ClipboardList
 } from "lucide-react";
+import { UpgradeLimitModal } from "@/components/workshop/UpgradeLimitModal";
 
 interface Workshop {
   id: string;
@@ -143,6 +144,9 @@ const NewServiceDetails = () => {
     publicLink: string;
   } | null>(null);
 
+  // Upgrade modal state
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
   // Load data from localStorage and fetch workshop
   useEffect(() => {
     const loadData = async () => {
@@ -188,6 +192,22 @@ const NewServiceDetails = () => {
         }
 
         setWorkshop(data);
+
+        // Show soft incentive toasts based on usage
+        const percentUsed = Math.round((data.current_month_vehicles / data.monthly_vehicle_limit) * 100);
+
+        if (percentUsed >= 90 && percentUsed < 100) {
+          toast({
+            title: "Limite Quase Atingido!",
+            description: `Você usou ${data.current_month_vehicles} de ${data.monthly_vehicle_limit} veículos este mês. Considere fazer upgrade para não ficar sem atendimentos.`,
+            variant: "destructive",
+          });
+        } else if (percentUsed >= 70 && percentUsed < 90) {
+          toast({
+            title: "Atenção ao seu limite",
+            description: `Você usou ${data.current_month_vehicles} de ${data.monthly_vehicle_limit} veículos este mês. Considere upgrade para não ficar sem atendimentos.`,
+          });
+        }
       }
 
       setLoading(false);
@@ -288,11 +308,7 @@ const NewServiceDetails = () => {
 
     // Check monthly limit
     if (workshop.current_month_vehicles >= workshop.monthly_vehicle_limit) {
-      toast({
-        title: "Limite mensal atingido",
-        description: `Voce atingiu o limite de ${workshop.monthly_vehicle_limit} veiculos. Faca upgrade do plano.`,
-        variant: "destructive",
-      });
+      setShowUpgradeModal(true);
       return;
     }
 
@@ -846,6 +862,21 @@ const NewServiceDetails = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Upgrade Limit Modal */}
+      {workshop && (
+        <UpgradeLimitModal
+          open={showUpgradeModal}
+          onOpenChange={setShowUpgradeModal}
+          currentPlan={workshop.plan}
+          currentCount={workshop.current_month_vehicles}
+          limit={workshop.monthly_vehicle_limit}
+          onUpgrade={() => {
+            setShowUpgradeModal(false);
+            navigate('/workshop/plans');
+          }}
+        />
+      )}
     </div>
   );
 };
