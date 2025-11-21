@@ -277,6 +277,15 @@ const NewServiceDetails = () => {
     }).format(value);
   };
 
+  // Get local date in YYYY-MM-DD format
+  const getLocalDate = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   // Generate public token
   const generatePublicToken = () => {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -378,7 +387,7 @@ const NewServiceDetails = () => {
           service_type: serviceItems.length === 1 ? serviceItems[0].name : 'Servicos Diversos',
           notes: `${servicesDescription}\n\n${notes}`.trim(),
           cost: total,
-          date: new Date().toISOString().split('T')[0],
+          date: getLocalDate(),
           km: vehicleData.km || 0,
           created_by_workshop_id: workshop.id,
           is_public: true,
@@ -423,7 +432,7 @@ const NewServiceDetails = () => {
       try {
         const receiptBlob = await generateReceipt({
           workshopName: workshop.name,
-          date: new Date().toISOString().split('T')[0],
+          date: getLocalDate(),
           vehiclePlate: vehicleData.plate,
           vehicleBrand: vehicleData.brand,
           vehicleModel: vehicleData.model,
@@ -435,7 +444,7 @@ const NewServiceDetails = () => {
           notes: notes || undefined,
         });
 
-        const fileName = generateReceiptFileName(vehicleData.plate, new Date().toISOString().split('T')[0]);
+        const fileName = generateReceiptFileName(vehicleData.plate, getLocalDate());
         const filePath = `receipts/${workshop.id}/${fileName}`;
 
         // Upload to Supabase Storage
@@ -701,15 +710,15 @@ const NewServiceDetails = () => {
               </p>
             ) : (
               serviceItems.map((item) => (
-                <div key={item.id} className="space-y-2">
-                  <div className="flex gap-2 items-start">
+                <div key={item.id} className="space-y-2 p-3 border rounded-lg bg-gray-50">
+                  <div className="flex gap-2 items-center">
                     <div className="flex-1">
                       <Select
                         value=""
                         onValueChange={(value) => updateServiceItem(item.id, 'name', value)}
                       >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Selecione ou digite abaixo" />
+                        <SelectTrigger className="w-full bg-white">
+                          <SelectValue placeholder="Selecione um serviço comum..." />
                         </SelectTrigger>
                         <SelectContent className="max-h-[300px]">
                           {MAINTENANCE_CATEGORIES.map((category) => (
@@ -725,18 +734,6 @@ const NewServiceDetails = () => {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="w-32">
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">R$</span>
-                        <Input
-                          type="number"
-                          placeholder="0,00"
-                          value={item.price || ''}
-                          onChange={(e) => updateServiceItem(item.id, 'price', parseFloat(e.target.value) || 0)}
-                          className="pl-9"
-                        />
-                      </div>
-                    </div>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -746,11 +743,28 @@ const NewServiceDetails = () => {
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
-                  <Input
-                    placeholder="Ou digite o nome do serviço/peça"
-                    value={item.name}
-                    onChange={(e) => updateServiceItem(item.id, 'name', e.target.value)}
-                  />
+                  <div className="flex gap-2 items-center">
+                    <div className="flex-1">
+                      <Input
+                        placeholder="Ou digite o nome do serviço/peça"
+                        value={item.name}
+                        onChange={(e) => updateServiceItem(item.id, 'name', e.target.value)}
+                        className="bg-white"
+                      />
+                    </div>
+                    <div className="w-32">
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">R$</span>
+                        <Input
+                          type="number"
+                          placeholder="0,00"
+                          value={item.price || ''}
+                          onChange={(e) => updateServiceItem(item.id, 'price', parseFloat(e.target.value) || 0)}
+                          className="pl-9 bg-white"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               ))
             )}

@@ -39,15 +39,15 @@ const Header = () => {
                 <ChevronDown className="h-4 w-4 ml-1" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem asChild>
-                <Link to="/login?type=user" className="flex items-center gap-2 w-full">
+            <DropdownMenuContent align="end" className="w-48 bg-white border shadow-lg">
+              <DropdownMenuItem asChild className="cursor-pointer hover:bg-gray-100">
+                <Link to="/login?type=user" className="flex items-center gap-2 w-full text-gray-900">
                   <User className="h-4 w-4 text-primary" />
                   <span>Sou Proprietário</span>
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/login?type=workshop" className="flex items-center gap-2 w-full">
+              <DropdownMenuItem asChild className="cursor-pointer hover:bg-gray-100">
+                <Link to="/login?type=workshop" className="flex items-center gap-2 w-full text-gray-900">
                   <Wrench className="h-4 w-4 text-green-600" />
                   <span>Sou Oficina</span>
                 </Link>
