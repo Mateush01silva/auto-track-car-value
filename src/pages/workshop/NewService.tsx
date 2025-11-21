@@ -305,7 +305,7 @@ const NewService = () => {
       isNew: false,
     }));
 
-    navigate('/workshop/new-service/details');
+    navigate('/workshop/new-service/client');
   };
 
   // Continue with new vehicle
@@ -334,7 +334,7 @@ const NewService = () => {
       isNew: true,
     }));
 
-    navigate('/workshop/new-service/details');
+    navigate('/workshop/new-service/client');
   };
 
   const formatDate = (dateString: string) => {
