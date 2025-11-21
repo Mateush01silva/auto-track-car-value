@@ -21,7 +21,13 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { sendMaintenanceEmail, formatServicesForEmail, formatVehicleInfo } from "@/lib/notifications";
+import { sendMaintenanceEmail, sendMaintenanceWhatsApp, formatServicesForEmail, formatVehicleInfo } from "@/lib/notifications";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   ArrowLeft,
   Car,
@@ -408,18 +414,30 @@ const NewServiceDetails = () => {
   };
 
   // Send WhatsApp
-  const sendWhatsApp = () => {
-    if (!clientData || !savedData) return;
+  const handleSendWhatsApp = async () => {
+    if (!clientData || !savedData || !vehicleData || !workshop) return;
 
-    const message = encodeURIComponent(
-      `Ola ${clientData.name}!\n\n` +
-      `Seu atendimento na ${workshop?.name} foi registrado.\n\n` +
-      `Veiculo: ${vehicleData?.plate} - ${vehicleData?.brand} ${vehicleData?.model}\n` +
-      `Total: ${formatCurrency(calculateTotal())}\n\n` +
-      `Acesse o historico completo:\n${savedData.publicLink}`
-    );
+    await sendMaintenanceWhatsApp({
+      clientName: clientData.name,
+      clientPhone: clientData.phone,
+      workshopName: workshop.name,
+      vehicleInfo: formatVehicleInfo(
+        vehicleData.brand,
+        vehicleData.model,
+        vehicleData.year,
+        vehicleData.plate
+      ),
+      servicesSummary: formatServicesForEmail(
+        serviceItems.map(s => ({ name: s.name, price: s.price }))
+      ),
+      total: calculateTotal(),
+      publicLink: savedData.publicLink
+    });
 
-    window.open(`https://wa.me/55${clientData.phone}?text=${message}`, '_blank');
+    toast({
+      title: "WhatsApp aberto!",
+      description: "Confira a mensagem e envie ao cliente.",
+    });
   };
 
   // Send Email via SendGrid
@@ -738,14 +756,26 @@ const NewServiceDetails = () => {
             {/* Actions */}
             <div className="space-y-2">
               {clientData?.sendWhatsApp && (
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={sendWhatsApp}
-                >
-                  <MessageCircle className="h-4 w-4 mr-2 text-green-600" />
-                  Enviar WhatsApp
-                </Button>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-between"
+                        onClick={handleSendWhatsApp}
+                      >
+                        <span className="flex items-center">
+                          <MessageCircle className="h-4 w-4 mr-2 text-green-600" />
+                          Enviar WhatsApp
+                        </span>
+                        <Badge variant="secondary" className="text-xs">Manual</Badge>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Por enquanto, voce precisara enviar manualmente via WhatsApp Web</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
 
               {clientData?.sendEmail && clientData?.email && (

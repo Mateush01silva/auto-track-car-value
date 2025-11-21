@@ -208,3 +208,53 @@ export function formatVehicleInfo(brand: string, model: string, year: number, pl
     : plate;
   return `${brand} ${model} ${year} (${formattedPlate})`;
 }
+
+// WhatsApp notification (placeholder - opens WhatsApp Web for manual sending)
+interface SendMaintenanceWhatsAppParams {
+  clientName: string;
+  clientPhone: string;
+  workshopName: string;
+  vehicleInfo: string;
+  servicesSummary: string;
+  total: number;
+  publicLink: string;
+}
+
+export async function sendMaintenanceWhatsApp({
+  clientName,
+  clientPhone,
+  workshopName,
+  vehicleInfo,
+  servicesSummary,
+  total,
+  publicLink
+}: SendMaintenanceWhatsAppParams) {
+  // TODO: Implementar integração com WhatsApp Business API
+  // Por ora, apenas gerar link para envio manual
+
+  const formattedTotal = new Intl.NumberFormat('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(total);
+
+  const message = encodeURIComponent(
+    `🔧 *${workshopName}*\n\n` +
+    `Olá ${clientName}! 👋\n\n` +
+    `Seu ${vehicleInfo} foi atendido com sucesso.\n\n` +
+    `📋 Serviços: ${servicesSummary}\n` +
+    `💰 Total: R$ ${formattedTotal}\n\n` +
+    `🔗 Veja seu histórico completo:\n${publicLink}\n\n` +
+    `🎁 Baixe o app WiseDrive e ganhe 3 meses grátis!`
+  );
+
+  // Remove non-digits from phone and ensure country code
+  const cleanPhone = clientPhone.replace(/\D/g, '');
+  const phoneWithCountry = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
+
+  const whatsappUrl = `https://wa.me/${phoneWithCountry}?text=${message}`;
+
+  // Por ora, abrir WhatsApp Web
+  window.open(whatsappUrl, '_blank');
+
+  return { success: true, method: 'manual' };
+}
