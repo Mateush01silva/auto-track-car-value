@@ -273,13 +273,9 @@ const WorkshopDashboard = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem onClick={() => navigate("/workshop/profile")}>
+                <DropdownMenuItem onClick={() => navigate("/workshop/settings")}>
                   <User className="h-4 w-4 mr-2" />
                   Perfil da Oficina
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/workshop/settings")}>
-                  <Settings className="h-4 w-4 mr-2" />
-                  Configuracoes
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
