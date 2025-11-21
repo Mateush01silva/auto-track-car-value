@@ -15,6 +15,11 @@ export interface Maintenance {
   attachment_url: string | null;
   created_at: string;
   updated_at: string;
+  created_by_workshop_id: string | null;
+  workshop?: {
+    id: string;
+    name: string;
+  } | null;
 }
 
 export const useMaintenances = (vehicleId?: string) => {
@@ -25,11 +30,17 @@ export const useMaintenances = (vehicleId?: string) => {
 
   const fetchMaintenances = async () => {
     if (!user) return;
-    
+
     try {
       let query = supabase
         .from("maintenances")
-        .select("*")
+        .select(`
+          *,
+          workshop:workshops!maintenances_created_by_workshop_id_fkey (
+            id,
+            name
+          )
+        `)
         .eq("user_id", user.id)
         .order("date", { ascending: false });
 
