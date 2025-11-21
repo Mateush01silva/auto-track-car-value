@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,14 +7,21 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Car } from "lucide-react";
+import { Car, ArrowLeft, Wrench } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { BRAZILIAN_STATES, MUNICIPALITIES_BY_STATE } from "@/constants/brazilLocations";
+import { useToast } from "@/hooks/use-toast";
 
 const Login = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { signInWithGoogle, signInWithEmail, signUpWithEmail, user } = useAuth();
-  
+  const { toast } = useToast();
+
+  const userType = searchParams.get("type") || "user";
+  const isWorkshop = userType === "workshop";
+
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
@@ -25,61 +32,188 @@ const Login = () => {
   const [signupMunicipality, setSignupMunicipality] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  // Workshop-specific fields
+  const [workshopName, setWorkshopName] = useState("");
+  const [workshopCnpj, setWorkshopCnpj] = useState("");
+  const [workshopPhone, setWorkshopPhone] = useState("");
+
   useEffect(() => {
-    if (user) {
-      navigate("/dashboard", { replace: true });
-    }
-  }, [user, navigate]);
+    const checkUserAndRedirect = async () => {
+      if (user) {
+        if (isWorkshop) {
+          // Check if user has a workshop
+          const { data: workshop } = await supabase
+            .from('workshops')
+            .select('id')
+            .eq('owner_id', user.id)
+            .single();
+
+          if (workshop) {
+            navigate("/workshop/dashboard", { replace: true });
+          } else {
+            // User logged in but doesn't have a workshop yet
+            // They might need to create one
+            navigate("/workshop/dashboard", { replace: true });
+          }
+        } else {
+          navigate("/dashboard", { replace: true });
+        }
+      }
+    };
+
+    checkUserAndRedirect();
+  }, [user, navigate, isWorkshop]);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     const { error } = await signInWithEmail(loginEmail, loginPassword);
     setIsLoading(false);
+
     if (!error) {
-      navigate("/dashboard", { replace: true });
+      if (isWorkshop) {
+        // Check if user has a workshop
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (currentUser) {
+          const { data: workshop } = await supabase
+            .from('workshops')
+            .select('id')
+            .eq('owner_id', currentUser.id)
+            .single();
+
+          if (workshop) {
+            navigate("/workshop/dashboard", { replace: true });
+          } else {
+            toast({
+              title: "Oficina nao encontrada",
+              description: "Nenhuma oficina associada a esta conta. Crie uma nova conta de oficina.",
+              variant: "destructive",
+            });
+          }
+        }
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
     }
   };
 
   const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    const { error } = await signUpWithEmail(signupEmail, signupPassword, signupName, signupPhone, signupState, signupMunicipality);
-    setIsLoading(false);
-    if (!error) {
-      // Auto-login after signup since email is auto-confirmed
-      await signInWithEmail(signupEmail, signupPassword);
+
+    if (isWorkshop && !workshopName.trim()) {
+      toast({
+        title: "Nome da oficina obrigatorio",
+        description: "Por favor, informe o nome da sua oficina.",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return;
     }
+
+    const { error } = await signUpWithEmail(signupEmail, signupPassword, signupName, signupPhone, signupState, signupMunicipality);
+
+    if (!error) {
+      // Auto-login after signup
+      const { error: loginError } = await signInWithEmail(signupEmail, signupPassword);
+
+      if (!loginError) {
+        // Get the newly logged in user
+        const { data: { user: newUser } } = await supabase.auth.getUser();
+
+        if (isWorkshop && newUser) {
+          // Create workshop for the user
+          const { error: workshopError } = await supabase
+            .from('workshops')
+            .insert({
+              owner_id: newUser.id,
+              name: workshopName.trim(),
+              cnpj: workshopCnpj.trim() || null,
+              phone: workshopPhone.trim() || null,
+              email: signupEmail,
+              city: signupMunicipality || null,
+              state: signupState || null,
+            });
+
+          if (workshopError) {
+            console.error('Error creating workshop:', workshopError);
+            toast({
+              title: "Erro ao criar oficina",
+              description: "Conta criada, mas houve um erro ao criar a oficina. Entre em contato com o suporte.",
+              variant: "destructive",
+            });
+          } else {
+            toast({
+              title: "Oficina criada com sucesso!",
+              description: "Bem-vindo ao WiseDrive para Oficinas.",
+            });
+            navigate("/workshop/dashboard", { replace: true });
+          }
+        } else {
+          navigate("/dashboard", { replace: true });
+        }
+      }
+    }
+
+    setIsLoading(false);
+  };
+
+  const handleGoogleSignIn = async () => {
+    // Store the user type in localStorage before OAuth redirect
+    localStorage.setItem('wisedrive_signup_type', userType);
+    await signInWithGoogle();
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary via-primary to-primary-hover flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,rgba(39,174,96,0.15),transparent_70%)]" />
-      
+
       <Card className="w-full max-w-md relative z-10 shadow-2xl animate-scale-in">
         <CardHeader className="space-y-4">
-          <Link to="/" className="flex items-center gap-2 mx-auto group">
-            <div className="bg-primary rounded-lg p-2 group-hover:shadow-glow-primary transition-all duration-300">
-              <Car className="h-6 w-6 text-primary-foreground" />
+          {/* Back button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="absolute top-4 left-4 text-muted-foreground hover:text-foreground"
+            onClick={() => navigate("/")}
+          >
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            Voltar
+          </Button>
+
+          <Link to="/" className="flex items-center gap-2 mx-auto group pt-4">
+            <div className={`rounded-lg p-2 group-hover:shadow-glow-primary transition-all duration-300 ${isWorkshop ? 'bg-green-600' : 'bg-primary'}`}>
+              {isWorkshop ? (
+                <Wrench className="h-6 w-6 text-white" />
+              ) : (
+                <Car className="h-6 w-6 text-primary-foreground" />
+              )}
             </div>
-            <span className="text-2xl font-bold text-primary">WiseDrive</span>
+            <span className={`text-2xl font-bold ${isWorkshop ? 'text-green-600' : 'text-primary'}`}>
+              WiseDrive
+            </span>
           </Link>
-          
+
           <div className="text-center">
-            <CardTitle className="text-2xl">Bem-vindo de volta</CardTitle>
+            <CardTitle className="text-2xl">
+              {isWorkshop ? "Login - Oficina" : "Bem-vindo de volta"}
+            </CardTitle>
             <CardDescription>
-              Entre com sua conta Google para continuar
+              {isWorkshop
+                ? "Acesse o painel da sua oficina"
+                : "Entre com sua conta para continuar"
+              }
             </CardDescription>
           </div>
         </CardHeader>
-        
+
         <CardContent className="space-y-6">
           <Tabs defaultValue="login" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login">Entrar</TabsTrigger>
               <TabsTrigger value="signup">Criar Conta</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="login" className="space-y-4">
               <form onSubmit={handleEmailLogin} className="space-y-4">
                 <div className="space-y-2">
@@ -98,17 +232,21 @@ const Login = () => {
                   <Input
                     id="login-password"
                     type="password"
-                    placeholder="••••••••"
+                    placeholder="********"
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
                     required
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <Button
+                  type="submit"
+                  className={`w-full ${isWorkshop ? 'bg-green-600 hover:bg-green-700' : ''}`}
+                  disabled={isLoading}
+                >
                   {isLoading ? "Entrando..." : "Entrar"}
                 </Button>
               </form>
-              
+
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <Separator />
@@ -117,10 +255,10 @@ const Login = () => {
                   <span className="bg-card px-2 text-muted-foreground">Ou continue com</span>
                 </div>
               </div>
-              
-              <Button 
-                onClick={signInWithGoogle}
-                variant="outline" 
+
+              <Button
+                onClick={handleGoogleSignIn}
+                variant="outline"
                 className="w-full"
                 disabled={isLoading}
               >
@@ -145,7 +283,7 @@ const Login = () => {
                 Google
               </Button>
             </TabsContent>
-            
+
             <TabsContent value="signup" className="space-y-4">
               <form onSubmit={handleEmailSignup} className="space-y-4">
                 <div className="space-y-2">
@@ -174,24 +312,69 @@ const Login = () => {
                   <Input
                     id="signup-password"
                     type="password"
-                    placeholder="••••••••"
+                    placeholder="********"
                     value={signupPassword}
                     onChange={(e) => setSignupPassword(e.target.value)}
                     required
                     minLength={6}
                   />
-                  <p className="text-xs text-muted-foreground">Mínimo de 6 caracteres</p>
+                  <p className="text-xs text-muted-foreground">Minimo de 6 caracteres</p>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-phone">Telefone (opcional)</Label>
-                  <Input
-                    id="signup-phone"
-                    type="tel"
-                    placeholder="(11) 98765-4321"
-                    value={signupPhone}
-                    onChange={(e) => setSignupPhone(e.target.value)}
-                  />
-                </div>
+
+                {/* Workshop-specific fields */}
+                {isWorkshop && (
+                  <>
+                    <Separator className="my-4" />
+                    <p className="text-sm font-medium text-green-600">Dados da Oficina</p>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="workshop-name">Nome da Oficina *</Label>
+                      <Input
+                        id="workshop-name"
+                        type="text"
+                        placeholder="Auto Mecanica Silva"
+                        value={workshopName}
+                        onChange={(e) => setWorkshopName(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="workshop-cnpj">CNPJ (opcional)</Label>
+                      <Input
+                        id="workshop-cnpj"
+                        type="text"
+                        placeholder="00.000.000/0000-00"
+                        value={workshopCnpj}
+                        onChange={(e) => setWorkshopCnpj(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="workshop-phone">Telefone da Oficina (opcional)</Label>
+                      <Input
+                        id="workshop-phone"
+                        type="tel"
+                        placeholder="(11) 3456-7890"
+                        value={workshopPhone}
+                        onChange={(e) => setWorkshopPhone(e.target.value)}
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* Personal phone field - only for regular users */}
+                {!isWorkshop && (
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-phone">Telefone (opcional)</Label>
+                    <Input
+                      id="signup-phone"
+                      type="tel"
+                      placeholder="(11) 98765-4321"
+                      value={signupPhone}
+                      onChange={(e) => setSignupPhone(e.target.value)}
+                    />
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="signup-state">Estado</Label>
@@ -212,9 +395,9 @@ const Login = () => {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signup-municipality">Município</Label>
-                    <Select 
-                      value={signupMunicipality} 
+                    <Label htmlFor="signup-municipality">Municipio</Label>
+                    <Select
+                      value={signupMunicipality}
                       onValueChange={setSignupMunicipality}
                       disabled={!signupState}
                     >
@@ -231,11 +414,15 @@ const Login = () => {
                     </Select>
                   </div>
                 </div>
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <Button
+                  type="submit"
+                  className={`w-full ${isWorkshop ? 'bg-green-600 hover:bg-green-700' : ''}`}
+                  disabled={isLoading}
+                >
                   {isLoading ? "Criando conta..." : "Criar Conta"}
                 </Button>
               </form>
-              
+
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <Separator />
@@ -244,10 +431,10 @@ const Login = () => {
                   <span className="bg-card px-2 text-muted-foreground">Ou continue com</span>
                 </div>
               </div>
-              
-              <Button 
-                onClick={signInWithGoogle}
-                variant="outline" 
+
+              <Button
+                onClick={handleGoogleSignIn}
+                variant="outline"
                 className="w-full"
                 disabled={isLoading}
               >
@@ -273,12 +460,22 @@ const Login = () => {
               </Button>
             </TabsContent>
           </Tabs>
-          
+
           <div className="mt-6 p-4 bg-surface rounded-lg">
             <p className="text-xs text-center text-muted-foreground">
-              🚀 <strong>MVP em fase de testes</strong>
-              <br />
-              Esta é uma demonstração do WiseDrive. Os dados são simulados.
+              {isWorkshop ? (
+                <>
+                  <strong>Teste gratuito por 30 dias</strong>
+                  <br />
+                  Apos o periodo de teste, escolha o plano ideal para sua oficina.
+                </>
+              ) : (
+                <>
+                  <strong>MVP em fase de testes</strong>
+                  <br />
+                  Esta e uma demonstracao do WiseDrive. Os dados sao simulados.
+                </>
+              )}
             </p>
           </div>
         </CardContent>

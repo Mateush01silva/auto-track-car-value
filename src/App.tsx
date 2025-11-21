@@ -5,11 +5,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+import UserTypeSelection from "./pages/UserTypeSelection";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Report from "./pages/Report";
 import NotFound from "./pages/NotFound";
+import WorkshopDashboard from "./pages/workshop/Dashboard";
 
 const queryClient = new QueryClient();
 
@@ -21,11 +23,17 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Index />} />
+            <Route path="/" element={<UserTypeSelection />} />
+            <Route path="/home" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/workshop/dashboard" element={
+              <ProtectedRoute>
+                <WorkshopDashboard />
               </ProtectedRoute>
             } />
             <Route path="/report/:vehicleId" element={<Report />} />
