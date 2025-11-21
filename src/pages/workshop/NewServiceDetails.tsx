@@ -375,7 +375,7 @@ const NewServiceDetails = () => {
       }
 
       // Generate public link
-      const publicLink = `${window.location.origin}/report/${vehicleId}?token=${publicToken}`;
+      const publicLink = `${window.location.origin}/share/${publicToken}`;
 
       // Set saved data and show success modal
       setSavedData({
