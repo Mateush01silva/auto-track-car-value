@@ -279,12 +279,12 @@ const PublicVehicleHistory = () => {
           <div className="bg-red-100 rounded-full p-4 w-20 h-20 mx-auto mb-4 flex items-center justify-center">
             <AlertCircle className="h-10 w-10 text-red-600" />
           </div>
-          <h1 className="text-2xl font-bold mb-2">Link Invalido ou Expirado</h1>
+          <h1 className="text-2xl font-bold mb-2">Link Inválido ou Expirado</h1>
           <p className="text-gray-600 mb-6">
-            Este link nao existe ou nao esta mais disponivel.
+            Este link não existe ou não está mais disponível.
           </p>
           <Button onClick={() => navigate('/')}>
-            Ir para Pagina Inicial
+            Ir para Página Inicial
           </Button>
         </div>
       </div>
@@ -308,7 +308,7 @@ const PublicVehicleHistory = () => {
           <div className="bg-green-100 rounded-full p-4 w-20 h-20 mx-auto mb-4 flex items-center justify-center">
             <Car className="h-10 w-10 text-green-600" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Historico do Veiculo</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Histórico do Veículo</h1>
           <p className="text-4xl font-mono font-bold text-green-600 mb-2">
             {formatPlate(vehicle?.plate || '')}
           </p>
@@ -329,7 +329,7 @@ const PublicVehicleHistory = () => {
                   <Wrench className="h-5 w-5 text-green-600 mr-1" />
                   <span className="text-2xl font-bold">{stats.total}</span>
                 </div>
-                <p className="text-xs text-gray-500">Manutencoes</p>
+                <p className="text-xs text-gray-500">Manutenções</p>
               </div>
               <div className="text-center">
                 <div className="flex items-center justify-center mb-1">
@@ -338,7 +338,7 @@ const PublicVehicleHistory = () => {
                     {stats.lastDate ? formatDate(stats.lastDate).full : '-'}
                   </span>
                 </div>
-                <p className="text-xs text-gray-500">Ultima</p>
+                <p className="text-xs text-gray-500">Última</p>
               </div>
               <div className="text-center">
                 <div className="flex items-center justify-center mb-1">
@@ -352,7 +352,7 @@ const PublicVehicleHistory = () => {
                   <Gauge className="h-5 w-5 text-purple-600 mr-1" />
                   <span className="text-lg font-bold">{stats.avgKm > 0 ? formatKm(stats.avgKm) : '-'}</span>
                 </div>
-                <p className="text-xs text-gray-500">Media km/manut.</p>
+                <p className="text-xs text-gray-500">Média km/manut.</p>
               </div>
             </div>
           </CardContent>
@@ -362,13 +362,13 @@ const PublicVehicleHistory = () => {
         <div className="mb-8">
           <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
             <FileText className="h-5 w-5" />
-            Historico de Manutencoes
+            Histórico de Manutenções
           </h2>
 
           {maintenances.length === 0 ? (
             <Card>
               <CardContent className="py-8 text-center text-gray-500">
-                Nenhuma manutencao registrada ainda.
+                Nenhuma manutenção registrada ainda.
               </CardContent>
             </Card>
           ) : (
@@ -404,7 +404,7 @@ const PublicVehicleHistory = () => {
                               <>
                                 <User className="h-4 w-4 text-blue-600" />
                                 <span className="text-sm font-medium text-blue-700">
-                                  Manutencao Propria
+                                  Manutenção Própria
                                 </span>
                               </>
                             )}
@@ -511,32 +511,32 @@ const PublicVehicleHistory = () => {
               <div className="flex justify-center mb-4">
                 <Badge className="bg-yellow-500 text-white text-sm px-3 py-1">
                   <Gift className="h-4 w-4 mr-1" />
-                  3 MESES GRATIS
+                  3 MESES GRÁTIS
                 </Badge>
               </div>
 
               <h3 className="text-xl font-bold mb-4">
                 {vehicle?.user_id
-                  ? "E seu veiculo? Entre no WiseDrive!"
-                  : "Quer Gerenciar Seu Veiculo?"}
+                  ? "É seu veículo? Entre no WiseDrive!"
+                  : "Quer Gerenciar Seu Veículo?"}
               </h3>
 
               <div className="text-left max-w-xs mx-auto mb-6 space-y-2">
                 <div className="flex items-center gap-2 text-sm">
                   <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <span>Alertas automaticos de manutencao</span>
+                  <span>Alertas automáticos de manutenção</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <span>Historico vitalicio em um so lugar</span>
+                  <span>Histórico vitalício em um só lugar</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <span>Relatorios profissionais</span>
+                  <span>Relatórios profissionais</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <span>Valorizacao na revenda</span>
+                  <span>Valorização na revenda</span>
                 </div>
               </div>
 
@@ -545,11 +545,11 @@ const PublicVehicleHistory = () => {
                 className="w-full sm:w-auto bg-green-600 hover:bg-green-700 mb-3"
                 onClick={() => navigate(`/login?type=user&ref=share&token=${token}`)}
               >
-                {vehicle?.user_id ? "Fazer Login" : "Criar Conta Gratis"}
+                {vehicle?.user_id ? "Fazer Login" : "Criar Conta Grátis"}
               </Button>
 
               <p className="text-xs text-gray-500">
-                Baixe o app e tenha tudo na palma da mao
+                Baixe o app e tenha tudo na palma da mão
               </p>
             </div>
           </CardContent>
@@ -563,7 +563,7 @@ const PublicVehicleHistory = () => {
             <Link to="/terms" className="hover:text-gray-700">Termos</Link>
             <Link to="/privacy" className="hover:text-gray-700">Privacidade</Link>
           </div>
-          <p>&copy; {new Date().getFullYear()} WiseDrive - Transparencia que valoriza seu carro</p>
+          <p>&copy; {new Date().getFullYear()} WiseDrive - Transparência que valoriza seu carro</p>
         </footer>
       </main>
 

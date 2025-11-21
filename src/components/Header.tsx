@@ -1,6 +1,12 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Car } from "lucide-react";
+import { Car, ChevronDown, User, Wrench } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Header = () => {
   return (
@@ -12,7 +18,7 @@ const Header = () => {
           </div>
           <span className="text-xl font-bold text-primary">WiseDrive</span>
         </Link>
-        
+
         <nav className="hidden md:flex items-center gap-6">
           <a href="#funcionalidades" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
             Funcionalidades
@@ -20,15 +26,35 @@ const Header = () => {
           <a href="#como-funciona" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
             Como funciona
           </a>
+          <a href="#oficinas" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+            Para Oficinas
+          </a>
         </nav>
-        
+
         <div className="flex items-center gap-3">
-          <Link to="/login">
-            <Button variant="ghost" size="sm">
-              Entrar
-            </Button>
-          </Link>
-          <Link to="/login">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm">
+                Entrar
+                <ChevronDown className="h-4 w-4 ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link to="/login?type=user" className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  Sou Proprietário
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/login?type=workshop" className="flex items-center gap-2">
+                  <Wrench className="h-4 w-4" />
+                  Sou Oficina
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Link to="/select-type">
             <Button variant="success" size="sm">
               Criar conta
             </Button>
