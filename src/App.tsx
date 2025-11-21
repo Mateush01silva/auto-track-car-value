@@ -17,6 +17,7 @@ import WorkshopNewServiceClient from "./pages/workshop/NewServiceClient";
 import WorkshopNewServiceDetails from "./pages/workshop/NewServiceDetails";
 import WorkshopSettings from "./pages/workshop/Settings";
 import WorkshopTemplates from "./pages/workshop/Templates";
+import WorkshopHistory from "./pages/workshop/History";
 import PublicVehicleHistory from "./pages/PublicVehicleHistory";
 
 const queryClient = new QueryClient();
@@ -65,6 +66,11 @@ const App = () => (
             <Route path="/workshop/templates" element={
               <ProtectedRoute>
                 <WorkshopTemplates />
+              </ProtectedRoute>
+            } />
+            <Route path="/workshop/history" element={
+              <ProtectedRoute>
+                <WorkshopHistory />
               </ProtectedRoute>
             } />
             <Route path="/report/:vehicleId" element={<Report />} />
