@@ -68,7 +68,6 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
     const { error } = await signInWithEmail(loginEmail, loginPassword);
-    setIsLoading(false);
 
     if (!error) {
       if (isWorkshop) {
@@ -82,18 +81,26 @@ const Login = () => {
             .single();
 
           if (workshop) {
+            setIsLoading(false);
             navigate("/workshop/dashboard", { replace: true });
           } else {
+            // User doesn't have a workshop - show message to use signup tab
+            setIsLoading(false);
             toast({
               title: "Oficina nao encontrada",
-              description: "Nenhuma oficina associada a esta conta. Crie uma nova conta de oficina.",
+              description: "Sua conta nao possui oficina. Use a aba 'Criar Conta' para adicionar uma oficina.",
               variant: "destructive",
             });
           }
+        } else {
+          setIsLoading(false);
         }
       } else {
+        setIsLoading(false);
         navigate("/dashboard", { replace: true });
       }
+    } else {
+      setIsLoading(false);
     }
   };
 
@@ -112,6 +119,72 @@ const Login = () => {
     }
 
     const { error } = await signUpWithEmail(signupEmail, signupPassword, signupName, signupPhone, signupState, signupMunicipality);
+
+    // Handle "User already registered" error for workshop signup
+    if (error && isWorkshop && error.message?.includes('already registered')) {
+      // Try to log in the existing user
+      const { error: loginError } = await signInWithEmail(signupEmail, signupPassword);
+
+      if (loginError) {
+        toast({
+          title: "Email ja cadastrado",
+          description: "Este email ja possui uma conta. Use a aba 'Entrar' para fazer login e adicionar sua oficina.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // User logged in successfully, now check if they already have a workshop
+      const { data: { user: existingUser } } = await supabase.auth.getUser();
+
+      if (existingUser) {
+        // Check if workshop already exists
+        const { data: existingWorkshop } = await supabase
+          .from('workshops')
+          .select('id')
+          .eq('owner_id', existingUser.id)
+          .single();
+
+        if (existingWorkshop) {
+          toast({
+            title: "Oficina ja cadastrada",
+            description: "Voce ja possui uma oficina cadastrada. Redirecionando...",
+          });
+          navigate("/workshop/dashboard", { replace: true });
+        } else {
+          // Create workshop for existing user
+          const { error: workshopError } = await supabase
+            .from('workshops')
+            .insert({
+              owner_id: existingUser.id,
+              name: workshopName.trim(),
+              cnpj: workshopCnpj.trim() || null,
+              phone: workshopPhone.trim() || null,
+              email: signupEmail,
+              city: signupMunicipality || null,
+              state: signupState || null,
+            });
+
+          if (workshopError) {
+            console.error('Error creating workshop:', workshopError);
+            toast({
+              title: "Erro ao criar oficina",
+              description: "Houve um erro ao criar a oficina. Tente novamente.",
+              variant: "destructive",
+            });
+          } else {
+            toast({
+              title: "Oficina criada com sucesso!",
+              description: "Sua oficina foi adicionada a sua conta existente.",
+            });
+            navigate("/workshop/dashboard", { replace: true });
+          }
+        }
+      }
+      setIsLoading(false);
+      return;
+    }
 
     if (!error) {
       // Auto-login after signup
