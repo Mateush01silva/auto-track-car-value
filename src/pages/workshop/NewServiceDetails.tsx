@@ -21,6 +21,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { sendMaintenanceEmail, formatServicesForEmail, formatVehicleInfo } from "@/lib/notifications";
 import {
   ArrowLeft,
   Car,
@@ -121,6 +122,7 @@ const NewServiceDetails = () => {
   const [clientData, setClientData] = useState<ClientData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   // Form state
   const [serviceItems, setServiceItems] = useState<ServiceItem[]>([]);
@@ -420,12 +422,43 @@ const NewServiceDetails = () => {
     window.open(`https://wa.me/55${clientData.phone}?text=${message}`, '_blank');
   };
 
-  // Send Email (placeholder - would need backend)
-  const sendEmail = () => {
-    toast({
-      title: "Em desenvolvimento",
-      description: "Envio de email sera implementado em breve.",
-    });
+  // Send Email via SendGrid
+  const sendEmail = async () => {
+    if (!clientData || !savedData || !vehicleData || !workshop) return;
+
+    setSendingEmail(true);
+    try {
+      await sendMaintenanceEmail({
+        clientName: clientData.name,
+        clientEmail: clientData.email!,
+        workshopName: workshop.name,
+        vehicleInfo: formatVehicleInfo(
+          vehicleData.brand,
+          vehicleData.model,
+          vehicleData.year,
+          vehicleData.plate
+        ),
+        servicesSummary: formatServicesForEmail(
+          serviceItems.map(s => ({ name: s.name, price: s.price }))
+        ),
+        total: calculateTotal(),
+        publicLink: savedData.publicLink
+      });
+
+      toast({
+        title: "Email enviado!",
+        description: `Email enviado para ${clientData.email}`,
+      });
+    } catch (error: any) {
+      console.error('Error sending email:', error);
+      toast({
+        title: "Erro ao enviar email",
+        description: error.message || "Nao foi possivel enviar o email. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setSendingEmail(false);
+    }
   };
 
   if (loading) {
@@ -720,9 +753,19 @@ const NewServiceDetails = () => {
                   variant="outline"
                   className="w-full justify-start"
                   onClick={sendEmail}
+                  disabled={sendingEmail}
                 >
-                  <Mail className="h-4 w-4 mr-2 text-blue-600" />
-                  Enviar Email
+                  {sendingEmail ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Enviando...
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="h-4 w-4 mr-2 text-blue-600" />
+                      Enviar Email
+                    </>
+                  )}
                 </Button>
               )}
 
