@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { FileText, Upload, QrCode, ArrowRight } from "lucide-react";
+import { FileText, Upload, QrCode, ArrowRight, Wrench, Users, Bell, Shield, CheckCircle } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BenefitCard from "@/components/BenefitCard";
@@ -147,7 +147,106 @@ const Index = () => {
           </div>
         </div>
       </section>
-      
+
+      {/* Workshop Section */}
+      <section id="oficinas" className="py-20 md:py-28 bg-surface">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            {/* Left Content */}
+            <div className="space-y-8 animate-fade-in-up">
+              <div className="inline-flex items-center gap-2 bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm font-medium">
+                <Wrench className="h-4 w-4" />
+                Para Oficinas Mecânicas
+              </div>
+              <h2 className="text-4xl md:text-5xl font-bold text-foreground leading-tight">
+                Fidelize seus clientes e <span className="text-green-600">aumente o faturamento</span>
+              </h2>
+              <p className="text-xl text-muted-foreground">
+                Cadastre serviços realizados e mantenha seus clientes sempre voltando.
+                O histórico vai direto para o app do cliente!
+              </p>
+
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="bg-green-100 rounded-full p-2 mt-1">
+                    <Users className="h-4 w-4 text-green-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold">CRM Inteligente</h4>
+                    <p className="text-muted-foreground text-sm">Gerencie todos os seus clientes e histórico de atendimentos</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="bg-green-100 rounded-full p-2 mt-1">
+                    <Bell className="h-4 w-4 text-green-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold">Lembretes Automáticos</h4>
+                    <p className="text-muted-foreground text-sm">Notifique clientes sobre revisões e traga-os de volta</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="bg-green-100 rounded-full p-2 mt-1">
+                    <Shield className="h-4 w-4 text-green-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold">Credibilidade Digital</h4>
+                    <p className="text-muted-foreground text-sm">Seu nome aparece no histórico do veículo como oficina de confiança</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                <Link to="/login?type=workshop">
+                  <Button size="lg" className="w-full sm:w-auto bg-green-600 hover:bg-green-700">
+                    Cadastrar minha oficina
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+
+            {/* Right Content - Features Card */}
+            <div className="animate-fade-in" style={{ animationDelay: '200ms' }}>
+              <div className="bg-white rounded-2xl shadow-xl p-8 border">
+                <div className="text-center mb-6">
+                  <div className="inline-flex items-center justify-center bg-green-600 rounded-full p-4 mb-4">
+                    <Wrench className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold">WiseDrive para Oficinas</h3>
+                  <p className="text-muted-foreground">Comece grátis, cresça com a gente</p>
+                </div>
+
+                <div className="space-y-4 mb-6">
+                  <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                    <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+                    <span className="text-sm">150 veículos/mês no plano gratuito</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                    <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+                    <span className="text-sm">Link compartilhável do histórico</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                    <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+                    <span className="text-sm">Templates de serviços reutilizáveis</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                    <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+                    <span className="text-sm">Envio automático por WhatsApp</span>
+                  </div>
+                </div>
+
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground mb-2">Plano Starter</p>
+                  <p className="text-3xl font-bold text-green-600">Grátis</p>
+                  <p className="text-xs text-muted-foreground">para sempre</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Impact Section */}
       <section className="py-20 md:py-28 bg-gradient-to-br from-primary to-primary-hover text-primary-foreground">
         <div className="container mx-auto px-4">
