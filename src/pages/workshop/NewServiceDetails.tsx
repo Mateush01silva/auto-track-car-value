@@ -329,6 +329,20 @@ const NewServiceDetails = () => {
       const servicesDescription = serviceItems.map(item => `${item.name}: ${formatCurrency(item.price)}`).join('\n');
       const total = calculateTotal();
 
+      // Build metadata for pending user (if not already a WiseDrive user)
+      const metadata: Record<string, string> = {};
+      if (!clientData.userId) {
+        if (clientData.email) {
+          metadata.pending_user_email = clientData.email;
+        }
+        if (clientData.phone) {
+          metadata.pending_user_phone = clientData.phone;
+        }
+        if (clientData.name) {
+          metadata.pending_user_name = clientData.name;
+        }
+      }
+
       const { data: maintenance, error: maintenanceError } = await supabase
         .from('maintenances')
         .insert({
@@ -342,6 +356,7 @@ const NewServiceDetails = () => {
           created_by_workshop_id: workshop.id,
           is_public: true,
           public_token: publicToken,
+          metadata: Object.keys(metadata).length > 0 ? metadata : {},
         })
         .select('id')
         .single();
