@@ -22,6 +22,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { sendMaintenanceEmail, sendMaintenanceWhatsApp, formatServicesForEmail, formatVehicleInfo } from "@/lib/notifications";
+import { generateReceipt, generateReceiptFileName } from "@/lib/receiptGenerator";
 import {
   Tooltip,
   TooltipContent,
@@ -407,6 +408,58 @@ const NewServiceDetails = () => {
 
       // Generate public link
       const publicLink = `${window.location.origin}/share/${publicToken}`;
+
+      // E. Generate and upload PDF receipt
+      try {
+        const receiptBlob = await generateReceipt({
+          workshopName: workshop.name,
+          date: new Date().toISOString().split('T')[0],
+          vehiclePlate: vehicleData.plate,
+          vehicleBrand: vehicleData.brand,
+          vehicleModel: vehicleData.model,
+          vehicleYear: vehicleData.year,
+          clientName: clientData.name,
+          services: serviceItems.map(s => ({ name: s.name, price: s.price })),
+          total,
+          publicLink,
+          notes: notes || undefined,
+        });
+
+        const fileName = generateReceiptFileName(vehicleData.plate, new Date().toISOString().split('T')[0]);
+        const filePath = `receipts/${workshop.id}/${fileName}`;
+
+        // Upload to Supabase Storage
+        const { error: uploadError } = await supabase.storage
+          .from('attachments')
+          .upload(filePath, receiptBlob, {
+            contentType: 'application/pdf',
+            upsert: true,
+          });
+
+        if (uploadError) {
+          console.error('Error uploading receipt:', uploadError);
+        } else {
+          // Get public URL
+          const { data: urlData } = supabase.storage
+            .from('attachments')
+            .getPublicUrl(filePath);
+
+          // Update maintenance with attachment
+          const { error: attachmentError } = await supabase
+            .from('maintenances')
+            .update({
+              attachments: [urlData.publicUrl],
+            })
+            .eq('id', maintenance.id);
+
+          if (attachmentError) {
+            console.error('Error updating maintenance with attachment:', attachmentError);
+          }
+        }
+      } catch (receiptError) {
+        console.error('Error generating receipt:', receiptError);
+        // Don't fail the whole operation if receipt generation fails
+      }
 
       // Set saved data and show success modal
       setSavedData({
