@@ -42,6 +42,7 @@ import {
   Loader2,
   ExternalLink,
 } from "lucide-react";
+import { WorkshopBottomNav } from "@/components/workshop/BottomNav";
 
 interface Workshop {
   id: string;
@@ -721,6 +722,9 @@ const WorkshopClients = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Bottom Navigation - Mobile */}
+      <WorkshopBottomNav />
     </div>
   );
 };

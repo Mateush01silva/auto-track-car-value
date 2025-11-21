@@ -33,8 +33,10 @@ import {
   ChevronDown,
   Eye,
   Send,
-  FileText
+  FileText,
+  MoreVertical
 } from "lucide-react";
+import { WorkshopBottomNav } from "@/components/workshop/BottomNav";
 
 interface Workshop {
   id: string;
@@ -398,61 +400,125 @@ const WorkshopDashboard = () => {
                 </Button>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Placa</TableHead>
-                      <TableHead>Veiculo</TableHead>
-                      <TableHead>Cliente</TableHead>
-                      <TableHead>Data</TableHead>
-                      <TableHead>Valor</TableHead>
-                      <TableHead className="text-right">Acoes</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {recentMaintenances.map((maintenance) => (
-                      <TableRow key={maintenance.id}>
-                        <TableCell className="font-medium">
-                          {maintenance.vehicle.plate}
-                        </TableCell>
-                        <TableCell>
-                          {maintenance.vehicle.brand} {maintenance.vehicle.model}
-                        </TableCell>
-                        <TableCell>
-                          {maintenance.profile?.full_name || (
-                            <span className="text-gray-400">Nao cadastrado</span>
-                          )}
-                        </TableCell>
-                        <TableCell>{formatDate(maintenance.date)}</TableCell>
-                        <TableCell>{formatCurrency(maintenance.cost)}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => navigate(`/workshop/service/${maintenance.id}`)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {/* TODO: Implement resend link */}}
-                            >
-                              <Send className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
+              <>
+                {/* Desktop Table */}
+                <div className="hidden md:block overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Placa</TableHead>
+                        <TableHead>Veiculo</TableHead>
+                        <TableHead>Cliente</TableHead>
+                        <TableHead>Data</TableHead>
+                        <TableHead>Valor</TableHead>
+                        <TableHead className="text-right">Acoes</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                    </TableHeader>
+                    <TableBody>
+                      {recentMaintenances.map((maintenance) => (
+                        <TableRow key={maintenance.id}>
+                          <TableCell className="font-medium">
+                            {maintenance.vehicle.plate}
+                          </TableCell>
+                          <TableCell>
+                            {maintenance.vehicle.brand} {maintenance.vehicle.model}
+                          </TableCell>
+                          <TableCell>
+                            {maintenance.profile?.full_name || (
+                              <span className="text-gray-400">Nao cadastrado</span>
+                            )}
+                          </TableCell>
+                          <TableCell>{formatDate(maintenance.date)}</TableCell>
+                          <TableCell>{formatCurrency(maintenance.cost)}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => navigate(`/workshop/service/${maintenance.id}`)}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {/* TODO: Implement resend link */}}
+                              >
+                                <Send className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Mobile Cards */}
+                <div className="md:hidden space-y-3">
+                  {recentMaintenances.map((maintenance) => (
+                    <div
+                      key={maintenance.id}
+                      className="p-4 border rounded-lg bg-white hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <p className="font-bold text-lg">{maintenance.vehicle.plate}</p>
+                          <p className="text-sm text-gray-600">
+                            {maintenance.vehicle.brand} {maintenance.vehicle.model}
+                          </p>
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => navigate(`/workshop/service/${maintenance.id}`)}>
+                              <Eye className="h-4 w-4 mr-2" />
+                              Ver detalhes
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => {/* TODO: Implement resend link */}}>
+                              <Send className="h-4 w-4 mr-2" />
+                              Reenviar link
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-gray-500">
+                          {maintenance.profile?.full_name || 'Cliente não cadastrado'}
+                        </span>
+                        <span className="text-gray-500">{formatDate(maintenance.date)}</span>
+                      </div>
+                      <div className="mt-2 pt-2 border-t">
+                        <span className="font-semibold text-green-600">
+                          {formatCurrency(maintenance.cost)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
+
+        {/* Spacer for bottom nav on mobile */}
+        <div className="h-20 md:hidden" />
       </main>
+
+      {/* Floating Action Button - Mobile */}
+      <Button
+        className="md:hidden fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg bg-green-600 hover:bg-green-700 z-40"
+        onClick={() => navigate("/workshop/new-service")}
+      >
+        <Plus className="h-6 w-6" />
+      </Button>
+
+      {/* Bottom Navigation - Mobile */}
+      <WorkshopBottomNav />
     </div>
   );
 };
