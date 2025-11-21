@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/contexts/AuthContext";
 import { useVehicles } from "@/hooks/useVehicles";
 import { useMaintenances } from "@/hooks/useMaintenances";
@@ -32,11 +33,11 @@ import { MAINTENANCE_CATEGORIES, getSubcategoriesByCategory, getFullServiceLabel
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import * as XLSX from 'xlsx';
 import QRCode from 'qrcode';
-import { 
-  Car, 
-  Plus, 
-  FileText, 
-  User, 
+import {
+  Car,
+  Plus,
+  FileText,
+  User,
   Wrench,
   DollarSign,
   LogOut,
@@ -48,7 +49,9 @@ import {
   Loader2,
   Share2,
   Filter,
-  Bell
+  Bell,
+  Building2,
+  Star
 } from "lucide-react";
 
 const Dashboard = () => {
@@ -298,6 +301,30 @@ const Dashboard = () => {
   const availableYears = useMemo(() => {
     const years = new Set(maintenances.map(m => new Date(m.date).getFullYear()));
     return Array.from(years).sort((a, b) => b - a);
+  }, [maintenances]);
+
+  // Calculate trusted workshops stats (top 3 by number of services)
+  const trustedWorkshops = useMemo(() => {
+    const workshopStats: { [key: string]: { name: string; count: number; totalCost: number } } = {};
+
+    maintenances.forEach(m => {
+      if (m.created_by_workshop_id && m.workshop) {
+        const workshopId = m.workshop.id;
+        if (!workshopStats[workshopId]) {
+          workshopStats[workshopId] = {
+            name: m.workshop.name,
+            count: 0,
+            totalCost: 0
+          };
+        }
+        workshopStats[workshopId].count += 1;
+        workshopStats[workshopId].totalCost += parseFloat(m.cost.toString());
+      }
+    });
+
+    return Object.values(workshopStats)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 3);
   }, [maintenances]);
 
   // Export to Excel
@@ -671,17 +698,30 @@ const Dashboard = () => {
                               <td className="p-4">{maintenance.km.toLocaleString()} km</td>
                               <td className="p-4 font-semibold text-success">R$ {parseFloat(maintenance.cost.toString()).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                               <td className="p-4">
-                                {maintenance.created_by_workshop_id && maintenance.workshop ? (
-                                  <Badge variant="secondary" className="text-xs">
-                                    <Wrench className="h-3 w-3 mr-1" />
-                                    {maintenance.workshop.name}
-                                  </Badge>
-                                ) : (
-                                  <Badge variant="outline" className="text-xs">
-                                    <User className="h-3 w-3 mr-1" />
-                                    Você
-                                  </Badge>
-                                )}
+                                <TooltipProvider>
+                                  <UITooltip>
+                                    <TooltipTrigger asChild>
+                                      {maintenance.created_by_workshop_id && maintenance.workshop ? (
+                                        <Badge variant="secondary" className="text-xs cursor-help bg-primary/10 text-primary hover:bg-primary/20">
+                                          <Building2 className="h-3 w-3 mr-1" />
+                                          {maintenance.workshop.name}
+                                        </Badge>
+                                      ) : (
+                                        <Badge variant="outline" className="text-xs cursor-help">
+                                          <User className="h-3 w-3 mr-1" />
+                                          Você
+                                        </Badge>
+                                      )}
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      {maintenance.created_by_workshop_id && maintenance.workshop ? (
+                                        <p>Registrado por {maintenance.workshop.name} em {new Date(maintenance.created_at).toLocaleDateString('pt-BR')}</p>
+                                      ) : (
+                                        <p>Registrado por você em {new Date(maintenance.created_at).toLocaleDateString('pt-BR')}</p>
+                                      )}
+                                    </TooltipContent>
+                                  </UITooltip>
+                                </TooltipProvider>
                               </td>
                               <td className="p-4 text-center">
                                 {maintenance.attachment_url ? (
@@ -855,6 +895,48 @@ const Dashboard = () => {
               </Card>
             </div>
 
+            {/* Trusted Workshops Card */}
+            {trustedWorkshops.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Star className="h-5 w-5 text-warning" />
+                    Oficinas de Confiança
+                  </CardTitle>
+                  <CardDescription>Oficinas que mais realizaram serviços para você</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {trustedWorkshops.map((workshop, index) => (
+                      <div key={workshop.name} className="flex items-center justify-between p-3 rounded-lg bg-surface hover:bg-surface/80 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                            index === 0 ? 'bg-warning/20 text-warning' :
+                            index === 1 ? 'bg-muted text-muted-foreground' :
+                            'bg-orange-100 text-orange-600'
+                          }`}>
+                            {index + 1}
+                          </div>
+                          <div>
+                            <p className="font-medium">{workshop.name}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {workshop.count} {workshop.count === 1 ? 'serviço' : 'serviços'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold text-success">
+                            R$ {workshop.totalCost.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </p>
+                          <p className="text-xs text-muted-foreground">total gasto</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Charts - PRO ONLY */}
             {subscription?.isPro && filteredMaintenances.length > 0 ? (
               <>
@@ -980,17 +1062,30 @@ const Dashboard = () => {
                                   R$ {parseFloat(maintenance.cost.toString()).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </td>
                                 <td className="p-4">
-                                  {maintenance.created_by_workshop_id && maintenance.workshop ? (
-                                    <Badge variant="secondary" className="text-xs">
-                                      <Wrench className="h-3 w-3 mr-1" />
-                                      {maintenance.workshop.name}
-                                    </Badge>
-                                  ) : (
-                                    <Badge variant="outline" className="text-xs">
-                                      <User className="h-3 w-3 mr-1" />
-                                      Você
-                                    </Badge>
-                                  )}
+                                  <TooltipProvider>
+                                    <UITooltip>
+                                      <TooltipTrigger asChild>
+                                        {maintenance.created_by_workshop_id && maintenance.workshop ? (
+                                          <Badge variant="secondary" className="text-xs cursor-help bg-primary/10 text-primary hover:bg-primary/20">
+                                            <Building2 className="h-3 w-3 mr-1" />
+                                            {maintenance.workshop.name}
+                                          </Badge>
+                                        ) : (
+                                          <Badge variant="outline" className="text-xs cursor-help">
+                                            <User className="h-3 w-3 mr-1" />
+                                            Você
+                                          </Badge>
+                                        )}
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        {maintenance.created_by_workshop_id && maintenance.workshop ? (
+                                          <p>Registrado por {maintenance.workshop.name} em {new Date(maintenance.created_at).toLocaleDateString('pt-BR')}</p>
+                                        ) : (
+                                          <p>Registrado por você em {new Date(maintenance.created_at).toLocaleDateString('pt-BR')}</p>
+                                        )}
+                                      </TooltipContent>
+                                    </UITooltip>
+                                  </TooltipProvider>
                                 </td>
                               </tr>
                             );
