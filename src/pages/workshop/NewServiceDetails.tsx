@@ -23,6 +23,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { sendMaintenanceEmail, sendMaintenanceWhatsApp, formatServicesForEmail, formatVehicleInfo } from "@/lib/notifications";
 import { generateReceipt, generateReceiptFileName } from "@/lib/receiptGenerator";
+import { MAINTENANCE_CATEGORIES } from "@/constants/maintenanceCategories";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  SelectGroup,
+  SelectLabel,
+} from "@/components/ui/select";
 import {
   Tooltip,
   TooltipContent,
@@ -448,7 +458,7 @@ const NewServiceDetails = () => {
           const { error: attachmentError } = await supabase
             .from('maintenances')
             .update({
-              attachments: [urlData.publicUrl],
+              attachment_url: urlData.publicUrl,
             })
             .eq('id', maintenance.id);
 
@@ -691,34 +701,56 @@ const NewServiceDetails = () => {
               </p>
             ) : (
               serviceItems.map((item) => (
-                <div key={item.id} className="flex gap-2 items-start">
-                  <div className="flex-1">
-                    <Input
-                      placeholder="Nome do servico/peca"
-                      value={item.name}
-                      onChange={(e) => updateServiceItem(item.id, 'name', e.target.value)}
-                    />
-                  </div>
-                  <div className="w-32">
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">R$</span>
-                      <Input
-                        type="number"
-                        placeholder="0,00"
-                        value={item.price || ''}
-                        onChange={(e) => updateServiceItem(item.id, 'price', parseFloat(e.target.value) || 0)}
-                        className="pl-9"
-                      />
+                <div key={item.id} className="space-y-2">
+                  <div className="flex gap-2 items-start">
+                    <div className="flex-1">
+                      <Select
+                        value=""
+                        onValueChange={(value) => updateServiceItem(item.id, 'name', value)}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Selecione ou digite abaixo" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-[300px]">
+                          {MAINTENANCE_CATEGORIES.map((category) => (
+                            <SelectGroup key={category.value}>
+                              <SelectLabel className="font-semibold text-primary">{category.label}</SelectLabel>
+                              {category.subcategories.map((sub) => (
+                                <SelectItem key={sub.value} value={sub.label}>
+                                  {sub.label}
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
+                    <div className="w-32">
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">R$</span>
+                        <Input
+                          type="number"
+                          placeholder="0,00"
+                          value={item.price || ''}
+                          onChange={(e) => updateServiceItem(item.id, 'price', parseFloat(e.target.value) || 0)}
+                          className="pl-9"
+                        />
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeServiceItem(item.id)}
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeServiceItem(item.id)}
-                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+                  <Input
+                    placeholder="Ou digite o nome do serviço/peça"
+                    value={item.name}
+                    onChange={(e) => updateServiceItem(item.id, 'name', e.target.value)}
+                  />
                 </div>
               ))
             )}
