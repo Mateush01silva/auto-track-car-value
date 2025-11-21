@@ -15,6 +15,7 @@ import WorkshopDashboard from "./pages/workshop/Dashboard";
 import WorkshopNewService from "./pages/workshop/NewService";
 import WorkshopNewServiceClient from "./pages/workshop/NewServiceClient";
 import WorkshopNewServiceDetails from "./pages/workshop/NewServiceDetails";
+import PublicVehicleHistory from "./pages/PublicVehicleHistory";
 
 const queryClient = new QueryClient();
 
@@ -56,6 +57,7 @@ const App = () => (
             } />
             <Route path="/report/:vehicleId" element={<Report />} />
             <Route path="/report" element={<Report />} />
+            <Route path="/share/:token" element={<PublicVehicleHistory />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
