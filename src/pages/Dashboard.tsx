@@ -653,6 +653,7 @@ const Dashboard = () => {
                           <th className="text-left p-4 font-semibold">Tipo de serviço</th>
                           <th className="text-left p-4 font-semibold">KM</th>
                           <th className="text-left p-4 font-semibold">Custo</th>
+                          <th className="text-left p-4 font-semibold">Origem</th>
                           <th className="text-center p-4 font-semibold">Comprovante</th>
                           <th className="text-center p-4 font-semibold">Ações</th>
                         </tr>
@@ -669,6 +670,19 @@ const Dashboard = () => {
                               <td className="p-4">{maintenance.service_type}</td>
                               <td className="p-4">{maintenance.km.toLocaleString()} km</td>
                               <td className="p-4 font-semibold text-success">R$ {parseFloat(maintenance.cost.toString()).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                              <td className="p-4">
+                                {maintenance.created_by_workshop_id && maintenance.workshop ? (
+                                  <Badge variant="secondary" className="text-xs">
+                                    <Wrench className="h-3 w-3 mr-1" />
+                                    {maintenance.workshop.name}
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="text-xs">
+                                    <User className="h-3 w-3 mr-1" />
+                                    Você
+                                  </Badge>
+                                )}
+                              </td>
                               <td className="p-4 text-center">
                                 {maintenance.attachment_url ? (
                                   <Button
@@ -948,6 +962,7 @@ const Dashboard = () => {
                             <th className="text-left p-4 font-semibold">Tipo de Serviço</th>
                             <th className="text-left p-4 font-semibold">KM</th>
                             <th className="text-left p-4 font-semibold">Custo</th>
+                            <th className="text-left p-4 font-semibold">Origem</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -963,6 +978,19 @@ const Dashboard = () => {
                                 <td className="p-4">{maintenance.km.toLocaleString()} km</td>
                                 <td className="p-4 font-semibold text-success">
                                   R$ {parseFloat(maintenance.cost.toString()).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </td>
+                                <td className="p-4">
+                                  {maintenance.created_by_workshop_id && maintenance.workshop ? (
+                                    <Badge variant="secondary" className="text-xs">
+                                      <Wrench className="h-3 w-3 mr-1" />
+                                      {maintenance.workshop.name}
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="text-xs">
+                                      <User className="h-3 w-3 mr-1" />
+                                      Você
+                                    </Badge>
+                                  )}
                                 </td>
                               </tr>
                             );
