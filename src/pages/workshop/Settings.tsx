@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -95,9 +95,13 @@ const BRAZILIAN_STATES = [
 
 const WorkshopSettings = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Get default tab from URL query parameter
+  const defaultTab = searchParams.get('tab') || 'profile';
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -425,7 +429,7 @@ const WorkshopSettings = () => {
       </header>
 
       <main className="container mx-auto px-4 py-6 max-w-4xl">
-        <Tabs defaultValue="profile" className="space-y-6">
+        <Tabs defaultValue={defaultTab} className="space-y-6">
           <TabsList className="grid grid-cols-4 w-full">
             <TabsTrigger value="profile" className="text-xs sm:text-sm">
               <Building2 className="h-4 w-4 mr-1 sm:mr-2" />

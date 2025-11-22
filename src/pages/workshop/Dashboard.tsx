@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/table";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import {
   Wrench,
   LogOut,
@@ -56,6 +57,7 @@ interface RecentMaintenance {
   date: string;
   service_type: string;
   cost: number;
+  public_token: string | null;
   vehicle: {
     plate: string;
     brand: string;
@@ -69,11 +71,43 @@ interface RecentMaintenance {
 const WorkshopDashboard = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { toast } = useToast();
   const [workshop, setWorkshop] = useState<Workshop | null>(null);
   const [recentMaintenances, setRecentMaintenances] = useState<RecentMaintenance[]>([]);
   const [todayCount, setTodayCount] = useState(0);
   const [monthCount, setMonthCount] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  // Open public link in new tab
+  const handleViewDetails = (publicToken: string | null) => {
+    if (publicToken) {
+      window.open(`${window.location.origin}/share/${publicToken}`, '_blank');
+    } else {
+      toast({
+        title: "Link não disponível",
+        description: "Este atendimento não possui link público.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Copy public link to clipboard
+  const handleCopyLink = (publicToken: string | null) => {
+    if (publicToken) {
+      const link = `${window.location.origin}/share/${publicToken}`;
+      navigator.clipboard.writeText(link);
+      toast({
+        title: "Link copiado!",
+        description: "O link foi copiado para a área de transferência.",
+      });
+    } else {
+      toast({
+        title: "Link não disponível",
+        description: "Este atendimento não possui link público.",
+        variant: "destructive",
+      });
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -143,6 +177,7 @@ const WorkshopDashboard = () => {
               date,
               service_type,
               cost,
+              public_token,
               vehicles (
                 plate,
                 brand,
@@ -162,6 +197,7 @@ const WorkshopDashboard = () => {
               date: m.date,
               service_type: m.service_type,
               cost: m.cost,
+              public_token: m.public_token,
               vehicle: {
                 plate: m.vehicles?.plate || 'N/A',
                 brand: m.vehicles?.brand || '',
@@ -325,7 +361,10 @@ const WorkshopDashboard = () => {
           </Card>
 
           {/* Plan Card */}
-          <Card>
+          <Card
+            className="cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => navigate('/workshop/settings?tab=plan')}
+          >
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-gray-500">Plano Atual</CardTitle>
               <CreditCard className="h-4 w-4 text-purple-500" />
@@ -431,14 +470,16 @@ const WorkshopDashboard = () => {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => navigate(`/workshop/service/${maintenance.id}`)}
+                                onClick={() => handleViewDetails(maintenance.public_token)}
+                                title="Ver histórico público"
                               >
                                 <Eye className="h-4 w-4" />
                               </Button>
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => {/* TODO: Implement resend link */}}
+                                onClick={() => handleCopyLink(maintenance.public_token)}
+                                title="Copiar link"
                               >
                                 <Send className="h-4 w-4" />
                               </Button>
@@ -471,13 +512,13 @@ const WorkshopDashboard = () => {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => navigate(`/workshop/service/${maintenance.id}`)}>
+                            <DropdownMenuItem onClick={() => handleViewDetails(maintenance.public_token)}>
                               <Eye className="h-4 w-4 mr-2" />
-                              Ver detalhes
+                              Ver histórico
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => {/* TODO: Implement resend link */}}>
+                            <DropdownMenuItem onClick={() => handleCopyLink(maintenance.public_token)}>
                               <Send className="h-4 w-4 mr-2" />
-                              Reenviar link
+                              Copiar link
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
