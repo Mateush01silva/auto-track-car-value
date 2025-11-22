@@ -141,6 +141,7 @@ const NewServiceDetails = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);
+  const [customTemplates, setCustomTemplates] = useState<Template[]>([]);
 
   // Form state
   const [serviceItems, setServiceItems] = useState<ServiceItem[]>([]);
@@ -203,6 +204,26 @@ const NewServiceDetails = () => {
         }
 
         setWorkshop(data);
+
+        // Load custom templates
+        const { data: templatesData } = await supabase
+          .from('workshop_service_templates')
+          .select('*')
+          .eq('workshop_id', data.id)
+          .eq('is_active', true)
+          .order('created_at', { ascending: false });
+
+        if (templatesData) {
+          const parsedTemplates = templatesData.map(t => ({
+            name: t.name,
+            items: (typeof t.items === 'string' ? JSON.parse(t.items) : t.items || []).map((item: any) => ({
+              name: item.name,
+              price: item.price || 0
+            })),
+            total: t.total_price || 0
+          }));
+          setCustomTemplates(parsedTemplates);
+        }
 
         // Show soft incentive toasts based on usage
         const percentUsed = Math.round((data.current_month_vehicles / data.monthly_vehicle_limit) * 100);
@@ -674,15 +695,31 @@ const NewServiceDetails = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <ClipboardList className="h-5 w-5" />
-              Templates Rapidos
+              Templates Rápidos
             </CardTitle>
-            <CardDescription>Clique para adicionar servicos pre-definidos</CardDescription>
+            <CardDescription>Clique para adicionar serviços pré-definidos</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 gap-2">
+              {/* Custom templates first */}
+              {customTemplates.map((template, index) => (
+                <Button
+                  key={`custom-${index}`}
+                  variant="outline"
+                  className="justify-between h-auto py-3 border-green-200 bg-green-50 hover:bg-green-100"
+                  onClick={() => applyTemplate(template)}
+                >
+                  <span className="flex items-center gap-2">
+                    {template.name}
+                    <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">Meu</Badge>
+                  </span>
+                  <Badge variant="secondary">{formatCurrency(template.total)}</Badge>
+                </Button>
+              ))}
+              {/* Default templates */}
               {DEFAULT_TEMPLATES.map((template, index) => (
                 <Button
-                  key={index}
+                  key={`default-${index}`}
                   variant="outline"
                   className="justify-between h-auto py-3"
                   onClick={() => applyTemplate(template)}
