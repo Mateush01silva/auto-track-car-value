@@ -655,7 +655,7 @@ const NewServiceDetails = () => {
               <CardContent className="pt-0 border-t">
                 <div className="grid grid-cols-2 gap-4 mt-3">
                   <div>
-                    <p className="text-xs text-gray-500">Veiculo</p>
+                    <p className="text-xs text-gray-500">Veículo</p>
                     <p className="text-sm">{vehicleData?.brand} {vehicleData?.model} {vehicleData?.year}</p>
                   </div>
                   <div>
@@ -866,7 +866,7 @@ const NewServiceDetails = () => {
             {/* Summary */}
             <div className="bg-gray-50 rounded-lg p-4 space-y-2">
               <div className="flex justify-between">
-                <span className="text-sm text-gray-500">Veiculo</span>
+                <span className="text-sm text-gray-500">Veículo</span>
                 <span className="text-sm font-medium">
                   {vehicleData?.plate} - {vehicleData?.model}
                 </span>

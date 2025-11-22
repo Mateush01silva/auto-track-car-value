@@ -366,7 +366,7 @@ const WorkshopHistory = () => {
 
     // Simple CSV export for now
     try {
-      const headers = ['Data', 'Placa', 'Veiculo', 'Servico', 'Valor', 'KM'];
+      const headers = ['Data', 'Placa', 'Veículo', 'Serviço', 'Valor', 'KM'];
       const rows = maintenances.map(m => [
         formatDate(m.date),
         formatPlate(m.vehicle.plate),
@@ -546,7 +546,7 @@ const WorkshopHistory = () => {
                 <Car className="h-5 w-5 text-purple-600" />
                 <div>
                   <p className="text-2xl font-bold">{stats.uniqueVehicles}</p>
-                  <p className="text-xs text-gray-500">Veiculos Unicos</p>
+                  <p className="text-xs text-gray-500">Veículos Unicos</p>
                 </div>
               </div>
             </CardContent>
@@ -610,8 +610,8 @@ const WorkshopHistory = () => {
                           </div>
                         </TableHead>
                         <TableHead>Placa</TableHead>
-                        <TableHead>Veiculo</TableHead>
-                        <TableHead>Servico</TableHead>
+                        <TableHead>Veículo</TableHead>
+                        <TableHead>Serviço</TableHead>
                         <TableHead
                           className="cursor-pointer hover:bg-gray-50"
                           onClick={() => handleSort('cost')}

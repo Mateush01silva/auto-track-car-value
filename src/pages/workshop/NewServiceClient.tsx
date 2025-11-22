@@ -65,8 +65,8 @@ const NewServiceClient = () => {
     const storedVehicle = localStorage.getItem('workshop_new_service_vehicle');
     if (!storedVehicle) {
       toast({
-        title: "Veiculo nao encontrado",
-        description: "Por favor, comece pela busca do veiculo.",
+        title: "Veículo não encontrado",
+        description: "Por favor, comece pela busca do veículo.",
         variant: "destructive",
       });
       navigate('/workshop/new-service');

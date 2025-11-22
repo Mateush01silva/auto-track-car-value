@@ -373,7 +373,7 @@ const NewService = () => {
             </Button>
             <div>
               <h1 className="text-xl font-bold">Novo Atendimento</h1>
-              <p className="text-sm text-gray-500">Etapa 1 de 3 - Identificar Veiculo</p>
+              <p className="text-sm text-gray-500">Etapa 1 de 3 - Identificar Veículo</p>
             </div>
           </div>
         </div>
@@ -402,7 +402,7 @@ const NewService = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Search className="h-5 w-5" />
-              Buscar Veiculo por Placa
+              Buscar Veículo por Placa
             </CardTitle>
             <CardDescription>
               Digite a placa do veiculo para verificar se ja esta cadastrado
@@ -444,7 +444,7 @@ const NewService = () => {
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-green-700">
                   <CheckCircle className="h-5 w-5" />
-                  Veiculo Encontrado
+                  Veículo Encontrado
                 </CardTitle>
                 {vehicleFound.user_id && (
                   <Badge variant="secondary" className="bg-blue-100 text-blue-700">
@@ -512,7 +512,7 @@ const NewService = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <AlertCircle className="h-5 w-5 text-yellow-500" />
-                Veiculo Nao Encontrado
+                Veículo Nao Encontrado
               </CardTitle>
               <CardDescription>
                 Cadastre o veiculo manualmente usando a tabela FIPE

@@ -403,11 +403,11 @@ const WorkshopDashboard = () => {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Placa</TableHead>
-                        <TableHead>Veiculo</TableHead>
+                        <TableHead>Veículo</TableHead>
                         <TableHead>Cliente</TableHead>
                         <TableHead>Data</TableHead>
                         <TableHead>Valor</TableHead>
-                        <TableHead className="text-right">Acoes</TableHead>
+                        <TableHead className="text-right">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
