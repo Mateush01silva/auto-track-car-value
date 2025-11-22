@@ -56,6 +56,7 @@ interface Workshop {
   plan: string;
   phone: string | null;
   email: string | null;
+  notification_copy_email: string | null;
 }
 
 interface ClientData {
@@ -104,7 +105,7 @@ const WorkshopClients = () => {
 
       const { data, error } = await supabase
         .from('workshops')
-        .select('id, name, plan, phone, email')
+        .select('id, name, plan, phone, email, notification_copy_email')
         .eq('owner_id', user.id)
         .single();
 
@@ -479,7 +480,8 @@ const WorkshopClients = () => {
               </p>
             </div>
           `,
-          from_name: workshop.name
+          from_name: workshop.name,
+          bcc: workshop.notification_copy_email || undefined
         }
       });
 
