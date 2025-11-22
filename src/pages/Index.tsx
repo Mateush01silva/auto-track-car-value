@@ -239,7 +239,7 @@ const Index = () => {
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground mb-2">Plano Starter</p>
                   <p className="text-3xl font-bold text-green-600">Grátis</p>
-                  <p className="text-xs text-muted-foreground">para sempre</p>
+                  <p className="text-xs text-muted-foreground">até 150 veículos/mês</p>
                 </div>
               </div>
             </div>

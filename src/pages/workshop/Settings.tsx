@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -95,9 +95,13 @@ const BRAZILIAN_STATES = [
 
 const WorkshopSettings = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Get default tab from URL query parameter
+  const defaultTab = searchParams.get('tab') || 'profile';
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -417,7 +421,7 @@ const WorkshopSettings = () => {
               Voltar
             </Button>
             <div>
-              <h1 className="text-xl font-bold">Configuracoes</h1>
+              <h1 className="text-xl font-bold">Configurações</h1>
               <p className="text-sm text-gray-500">{workshop?.name}</p>
             </div>
           </div>
@@ -425,7 +429,7 @@ const WorkshopSettings = () => {
       </header>
 
       <main className="container mx-auto px-4 py-6 max-w-4xl">
-        <Tabs defaultValue="profile" className="space-y-6">
+        <Tabs defaultValue={defaultTab} className="space-y-6">
           <TabsList className="grid grid-cols-4 w-full">
             <TabsTrigger value="profile" className="text-xs sm:text-sm">
               <Building2 className="h-4 w-4 mr-1 sm:mr-2" />
@@ -437,11 +441,11 @@ const WorkshopSettings = () => {
             </TabsTrigger>
             <TabsTrigger value="notifications" className="text-xs sm:text-sm">
               <Bell className="h-4 w-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">Notificacoes</span>
+              <span className="hidden sm:inline">Notificações</span>
             </TabsTrigger>
             <TabsTrigger value="integrations" className="text-xs sm:text-sm">
               <Puzzle className="h-4 w-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">Integracoes</span>
+              <span className="hidden sm:inline">Integrações</span>
             </TabsTrigger>
           </TabsList>
 
@@ -678,11 +682,11 @@ const WorkshopSettings = () => {
                       </li>
                       <li className="flex items-center gap-2 text-sm">
                         <CheckCircle className="h-4 w-4 text-green-600" />
-                        Notificacoes por Email
+                        Notificações por Email
                       </li>
                       <li className="flex items-center gap-2 text-sm">
                         <CheckCircle className="h-4 w-4 text-green-600" />
-                        Notificacoes por WhatsApp (manual)
+                        Notificações por WhatsApp (manual)
                       </li>
                       <li className="flex items-center gap-2 text-sm">
                         <CheckCircle className="h-4 w-4 text-green-600" />
@@ -748,7 +752,7 @@ const WorkshopSettings = () => {
           <TabsContent value="notifications">
             <Card>
               <CardHeader>
-                <CardTitle>Configuracoes de Notificacao</CardTitle>
+                <CardTitle>Configurações de Notificação</CardTitle>
                 <CardDescription>
                   Defina como deseja notificar seus clientes por padrao
                 </CardDescription>
@@ -816,7 +820,7 @@ const WorkshopSettings = () => {
                     onClick={() => setShowPreviewModal(true)}
                   >
                     <Mail className="h-4 w-4 mr-2" />
-                    Ver Preview da Notificacao
+                    Ver Preview da Notificação
                   </Button>
                 </div>
 
@@ -826,13 +830,13 @@ const WorkshopSettings = () => {
                     className="bg-green-600 hover:bg-green-700"
                     onClick={() => {
                       toast({
-                        title: "Configuracoes salvas!",
+                        title: "Configurações salvas!",
                         description: "As preferencias de notificacao foram atualizadas.",
                       });
                     }}
                   >
                     <Save className="h-4 w-4 mr-2" />
-                    Salvar Preferencias
+                    Salvar Preferências
                   </Button>
                 </div>
               </CardContent>
@@ -843,7 +847,7 @@ const WorkshopSettings = () => {
           <TabsContent value="integrations">
             <Card>
               <CardHeader>
-                <CardTitle>Integracoes</CardTitle>
+                <CardTitle>Integrações</CardTitle>
                 <CardDescription>
                   Conecte o WiseDrive com outros sistemas
                 </CardDescription>
