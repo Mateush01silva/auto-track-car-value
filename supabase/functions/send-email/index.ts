@@ -44,7 +44,7 @@ serve(async (req) => {
       body: JSON.stringify({
         personalizations: [personalization],
         from: {
-          email: 'noreply@wisedrive.app',
+          email: 'silva.mateush01@gmail.com',
           name: from_name || 'WiseDrive'
         },
         content: [{
@@ -57,7 +57,7 @@ serve(async (req) => {
     if (!res.ok) {
       const errorText = await res.text()
       console.error('SendGrid error:', errorText)
-      throw new Error(`SendGrid error: ${res.status}`)
+      throw new Error(`SendGrid error: ${res.status} - ${errorText}`)
     }
 
     return new Response(
