@@ -54,6 +54,8 @@ interface Workshop {
   id: string;
   name: string;
   plan: string;
+  phone: string | null;
+  email: string | null;
 }
 
 interface ClientData {
@@ -102,7 +104,7 @@ const WorkshopClients = () => {
 
       const { data, error } = await supabase
         .from('workshops')
-        .select('id, name, plan')
+        .select('id, name, plan, phone, email')
         .eq('owner_id', user.id)
         .single();
 
