@@ -18,10 +18,21 @@ serve(async (req) => {
       throw new Error('SENDGRID_API_KEY not configured')
     }
 
-    const { to, subject, html, from_name } = await req.json()
+    const { to, subject, html, from_name, bcc } = await req.json()
 
     if (!to || !subject || !html) {
       throw new Error('Missing required fields: to, subject, html')
+    }
+
+    // Build personalizations with optional BCC
+    const personalization: any = {
+      to: [{ email: to }],
+      subject: subject,
+    }
+
+    // Add BCC if provided
+    if (bcc) {
+      personalization.bcc = [{ email: bcc }]
     }
 
     const res = await fetch('https://api.sendgrid.com/v3/mail/send', {
@@ -31,10 +42,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        personalizations: [{
-          to: [{ email: to }],
-          subject: subject,
-        }],
+        personalizations: [personalization],
         from: {
           email: 'noreply@wisedrive.app',
           name: from_name || 'WiseDrive'

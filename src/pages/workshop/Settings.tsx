@@ -159,6 +159,11 @@ const WorkshopSettings = () => {
         city: data.city || "",
         state: data.state || "",
       });
+      // Load notification settings
+      setNotificationSettings(prev => ({
+        ...prev,
+        copyEmail: data.notification_copy_email || "",
+      }));
       setLoading(false);
     };
 
@@ -828,11 +833,31 @@ const WorkshopSettings = () => {
                 <div className="pt-4">
                   <Button
                     className="bg-green-600 hover:bg-green-700"
-                    onClick={() => {
-                      toast({
-                        title: "Configurações salvas!",
-                        description: "As preferencias de notificacao foram atualizadas.",
-                      });
+                    onClick={async () => {
+                      if (!workshop) return;
+
+                      try {
+                        const { error } = await supabase
+                          .from('workshops')
+                          .update({
+                            notification_copy_email: notificationSettings.copyEmail || null,
+                          })
+                          .eq('id', workshop.id);
+
+                        if (error) throw error;
+
+                        toast({
+                          title: "Configurações salvas!",
+                          description: "As preferências de notificação foram atualizadas.",
+                        });
+                      } catch (error) {
+                        console.error('Error saving notification settings:', error);
+                        toast({
+                          title: "Erro ao salvar",
+                          description: "Não foi possível salvar as preferências.",
+                          variant: "destructive",
+                        });
+                      }
                     }}
                   >
                     <Save className="h-4 w-4 mr-2" />

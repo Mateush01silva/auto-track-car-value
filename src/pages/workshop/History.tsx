@@ -65,7 +65,6 @@ interface MaintenanceRecord {
   cost: number;
   km: number;
   notes: string | null;
-  attachments: string[] | null;
   public_token: string | null;
   vehicle: {
     id: string;
@@ -177,7 +176,6 @@ const WorkshopHistory = () => {
               cost,
               km,
               notes,
-              attachments,
               public_token,
               vehicles (
                 id,
