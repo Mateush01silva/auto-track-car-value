@@ -574,7 +574,7 @@ const NewServiceDetails = () => {
       console.error('Error sending email:', error);
       toast({
         title: "Erro ao enviar email",
-        description: error.message || "Nao foi possivel enviar o email. Tente novamente.",
+        description: error.message || "Não foi possível enviar o e-mail. Tente novamente.",
         variant: "destructive",
       });
     } finally {

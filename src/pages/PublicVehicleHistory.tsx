@@ -152,13 +152,14 @@ const PublicVehicleHistory = () => {
     }).format(value);
   };
 
-  // Format date
+  // Format date - using split to avoid timezone issues
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString + 'T00:00:00');
+    const [year, month, day] = dateString.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
     return {
-      day: date.getDate().toString().padStart(2, '0'),
+      day: day.toString().padStart(2, '0'),
       month: date.toLocaleDateString('pt-BR', { month: 'short' }).toUpperCase().replace('.', ''),
-      year: date.getFullYear(),
+      year: year,
       full: date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
     };
   };

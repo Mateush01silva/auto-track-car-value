@@ -240,7 +240,7 @@ const WorkshopTemplates = () => {
       console.error('Error duplicating template:', error);
       toast({
         title: "Erro ao duplicar",
-        description: error.message || "Nao foi possivel duplicar o template.",
+        description: error.message || "Não foi possível duplicar o template.",
         variant: "destructive",
       });
     }
@@ -263,14 +263,14 @@ const WorkshopTemplates = () => {
       toast({
         title: template.is_active ? "Template desativado" : "Template ativado",
         description: template.is_active
-          ? "O template nao aparecera mais nas opcoes."
-          : "O template agora esta disponivel para uso.",
+          ? "O template não aparecerá mais nas opções."
+          : "O template agora está disponível para uso.",
       });
     } catch (error: any) {
       console.error('Error toggling template:', error);
       toast({
         title: "Erro ao atualizar",
-        description: error.message || "Nao foi possivel atualizar o template.",
+        description: error.message || "Não foi possível atualizar o template.",
         variant: "destructive",
       });
     }
@@ -299,14 +299,14 @@ const WorkshopTemplates = () => {
       setTemplateToDelete(null);
 
       toast({
-        title: "Template excluido",
-        description: "O template foi excluido permanentemente.",
+        title: "Template excluído",
+        description: "O template foi excluído permanentemente.",
       });
     } catch (error: any) {
       console.error('Error deleting template:', error);
       toast({
         title: "Erro ao excluir",
-        description: error.message || "Nao foi possivel excluir o template.",
+        description: error.message || "Não foi possível excluir o template.",
         variant: "destructive",
       });
     }
@@ -413,7 +413,7 @@ const WorkshopTemplates = () => {
       console.error('Error saving template:', error);
       toast({
         title: "Erro ao salvar",
-        description: error.message || "Nao foi possivel salvar o template.",
+        description: error.message || "Não foi possível salvar o template.",
         variant: "destructive",
       });
     } finally {

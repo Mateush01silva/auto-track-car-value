@@ -142,7 +142,7 @@ const WorkshopSettings = () => {
         console.error('Error fetching workshop:', error);
         toast({
           title: "Erro ao carregar dados",
-          description: "Nao foi possivel carregar os dados da oficina.",
+          description: "Não foi possível carregar os dados da oficina.",
           variant: "destructive",
         });
         navigate('/workshop/dashboard');
@@ -275,7 +275,7 @@ const WorkshopSettings = () => {
       console.error('Error uploading logo:', error);
       toast({
         title: "Erro ao enviar logo",
-        description: error.message || "Nao foi possivel enviar o logo. Tente novamente.",
+        description: error.message || "Não foi possível enviar o logo. Tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -342,14 +342,14 @@ const WorkshopSettings = () => {
       }
 
       toast({
-        title: "Alteracoes salvas!",
+        title: "Alterações salvas!",
         description: "Os dados da oficina foram atualizados.",
       });
     } catch (error: any) {
       console.error('Error saving profile:', error);
       toast({
         title: "Erro ao salvar",
-        description: error.message || "Nao foi possivel salvar as alteracoes.",
+        description: error.message || "Não foi possível salvar as alterações.",
         variant: "destructive",
       });
     } finally {

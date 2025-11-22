@@ -35,7 +35,9 @@ import {
   Eye,
   Send,
   FileText,
-  MoreVertical
+  MoreVertical,
+  History,
+  Users
 } from "lucide-react";
 import { WorkshopBottomNav } from "@/components/workshop/BottomNav";
 
@@ -293,11 +295,36 @@ const WorkshopDashboard = () => {
               <span className="text-xl font-bold text-green-600">WiseDrive</span>
             </div>
 
-            {/* Workshop Name */}
-            <div className="hidden md:block text-center">
-              <h1 className="text-lg font-semibold text-gray-900">{workshop.name}</h1>
-              <p className="text-xs text-gray-500">Painel da Oficina</p>
-            </div>
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/workshop/history")}
+                className="flex items-center gap-2"
+              >
+                <History className="h-4 w-4" />
+                Histórico
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/workshop/clients")}
+                className="flex items-center gap-2"
+              >
+                <Users className="h-4 w-4" />
+                Clientes
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/workshop/templates")}
+                className="flex items-center gap-2"
+              >
+                <FileText className="h-4 w-4" />
+                Templates
+              </Button>
+            </nav>
 
             {/* Menu Dropdown */}
             <DropdownMenu>

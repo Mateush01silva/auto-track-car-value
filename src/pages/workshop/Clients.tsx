@@ -238,7 +238,7 @@ const WorkshopClients = () => {
         console.error('Error loading clients:', error);
         toast({
           title: "Erro ao carregar clientes",
-          description: "Nao foi possivel carregar a lista de clientes.",
+          description: "Não foi possível carregar a lista de clientes.",
           variant: "destructive",
         });
       } finally {
@@ -275,9 +275,10 @@ const WorkshopClients = () => {
     }).format(value);
   };
 
-  // Format date
+  // Format date - using split to avoid timezone issues
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString + 'T00:00:00');
+    const [year, month, day] = dateString.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
     return date.toLocaleDateString('pt-BR');
   };
 
@@ -301,10 +302,12 @@ const WorkshopClients = () => {
     return plate.substring(0, 2).toUpperCase();
   };
 
-  // Calculate days since last visit
+  // Calculate days since last visit - using split to avoid timezone issues
   const getDaysSinceVisit = (lastVisit: string) => {
-    const last = new Date(lastVisit + 'T00:00:00');
+    const [year, month, day] = lastVisit.split('-').map(Number);
+    const last = new Date(year, month - 1, day);
     const now = new Date();
+    now.setHours(0, 0, 0, 0);
     const diff = now.getTime() - last.getTime();
     return Math.floor(diff / (1000 * 60 * 60 * 24));
   };
