@@ -161,47 +161,50 @@ const WorkshopHistory = () => {
           return;
         }
 
-        // Build query
-        let query = supabase
-          .from('maintenances')
-          .select(`
-            id,
-            date,
-            service_type,
-            cost,
-            km,
-            notes,
-            attachments,
-            public_token,
-            vehicles (
+        // Build base query conditions
+        const buildQuery = (isCount = false) => {
+          let query = supabase
+            .from('maintenances')
+            .select(isCount ? 'id' : `
               id,
-              plate,
-              brand,
-              model,
-              year
-            )
-          `, { count: 'exact' })
-          .in('id', maintenanceIds);
+              date,
+              service_type,
+              cost,
+              km,
+              notes,
+              attachments,
+              public_token,
+              vehicles (
+                id,
+                plate,
+                brand,
+                model,
+                year
+              )
+            `, isCount ? { count: 'exact', head: true } : { count: 'exact' })
+            .in('id', maintenanceIds);
 
-        // Apply filters
-        if (startDate) {
-          query = query.gte('date', startDate);
-        }
-        if (endDate) {
-          query = query.lte('date', endDate);
-        }
+          // Apply filters
+          if (startDate) {
+            query = query.gte('date', startDate);
+          }
+          if (endDate) {
+            query = query.lte('date', endDate);
+          }
 
-        // Apply sorting
-        query = query.order(sortField, { ascending: sortOrder === 'asc' });
+          // Apply sorting
+          query = query.order(sortField, { ascending: sortOrder === 'asc' });
 
-        // Get total count first (for stats)
-        const { count: totalFiltered } = await query;
+          return query;
+        };
 
-        // Apply pagination
+        // Get total count
+        const { count: totalFiltered } = await buildQuery(true);
+
+        // Get paginated data
         const offset = (currentPage - 1) * ITEMS_PER_PAGE;
-        query = query.range(offset, offset + ITEMS_PER_PAGE - 1);
-
-        const { data, error } = await query;
+        const { data, error } = await buildQuery()
+          .range(offset, offset + ITEMS_PER_PAGE - 1);
 
         if (error) {
           console.error('Error fetching maintenances:', error);

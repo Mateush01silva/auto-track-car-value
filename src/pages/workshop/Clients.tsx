@@ -14,6 +14,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -146,6 +152,7 @@ const WorkshopClients = () => {
             km,
             notes,
             public_token,
+            metadata,
             vehicles (
               id,
               plate,
@@ -172,16 +179,11 @@ const WorkshopClients = () => {
 
           const plate = vehicle.plate;
 
-          // Try to extract client name from notes (first line often has client info)
-          let clientName = null;
-          let clientPhone = null;
-          let clientEmail = null;
-
-          // Parse notes for client info (simple heuristic)
-          if (m.notes) {
-            const lines = m.notes.split('\n');
-            // Look for patterns like "Cliente: Nome" or just use first meaningful line
-          }
+          // Extract client info from metadata
+          const metadata = m.metadata as Record<string, string> | null;
+          let clientName = metadata?.pending_user_name || null;
+          let clientPhone = metadata?.pending_user_phone || null;
+          let clientEmail = metadata?.pending_user_email || null;
 
           if (clientsMap.has(plate)) {
             const existing = clientsMap.get(plate)!;
@@ -200,6 +202,10 @@ const WorkshopClients = () => {
               existing.lastVisit = m.date;
               existing.lastKm = m.km;
             }
+            // Update client info if we have newer data
+            if (!existing.clientName && clientName) existing.clientName = clientName;
+            if (!existing.clientPhone && clientPhone) existing.clientPhone = clientPhone;
+            if (!existing.clientEmail && clientEmail) existing.clientEmail = clientEmail;
           } else {
             clientsMap.set(plate, {
               plate,
@@ -370,8 +376,8 @@ const WorkshopClients = () => {
     setShowModal(false);
   };
 
-  // Send reminder
-  const handleSendReminder = (client: ClientData) => {
+  // Send reminder via WhatsApp
+  const handleSendReminderWhatsApp = (client: ClientData) => {
     if (!workshop) return;
 
     const daysSince = getDaysSinceVisit(client.lastVisit);
@@ -397,6 +403,59 @@ const WorkshopClients = () => {
       toast({
         title: "Telefone não disponível",
         description: "Este cliente não tem telefone cadastrado.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Send reminder via Email
+  const handleSendReminderEmail = async (client: ClientData) => {
+    if (!workshop || !client.clientEmail) {
+      toast({
+        title: "E-mail não disponível",
+        description: "Este cliente não tem e-mail cadastrado.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const daysSince = getDaysSinceVisit(client.lastVisit);
+
+      const { error } = await supabase.functions.invoke('send-email', {
+        body: {
+          to: client.clientEmail,
+          subject: `[${workshop.name}] Hora de agendar sua revisão!`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #16a34a;">🔧 ${workshop.name}</h2>
+              <p>Olá${client.clientName ? ` ${client.clientName}` : ''}!</p>
+              <p>Já se passaram <strong>${daysSince} dias</strong> desde a última manutenção do seu <strong>${client.brand} ${client.model}</strong> (${formatPlate(client.plate)}).</p>
+              <p>Que tal agendar uma revisão preventiva? Manter seu veículo em dia evita problemas maiores no futuro!</p>
+              <p>Entre em contato conosco para agendar:</p>
+              <p>📞 ${workshop.phone || 'Telefone não informado'}<br/>
+              📧 ${workshop.email || 'E-mail não informado'}</p>
+              <hr style="margin: 20px 0; border: none; border-top: 1px solid #e5e7eb;" />
+              <p style="color: #6b7280; font-size: 12px;">
+                🎁 Clientes WiseDrive têm benefícios exclusivos!
+              </p>
+            </div>
+          `,
+          from_name: workshop.name
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "E-mail enviado!",
+        description: `Lembrete enviado para ${client.clientEmail}`,
+      });
+    } catch (error) {
+      console.error('Error sending reminder email:', error);
+      toast({
+        title: "Erro ao enviar e-mail",
+        description: "Não foi possível enviar o lembrete por e-mail.",
         variant: "destructive",
       });
     }
@@ -698,13 +757,36 @@ const WorkshopClients = () => {
                   </Button>
 
                   {isProfessional && (
-                    <Button
-                      variant="outline"
-                      onClick={() => handleSendReminder(selectedClient)}
-                    >
-                      <MessageCircle className="h-4 w-4 mr-2" />
-                      Enviar Lembrete
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline">
+                          <MessageCircle className="h-4 w-4 mr-2" />
+                          Enviar Lembrete
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem
+                          onClick={() => handleSendReminderWhatsApp(selectedClient)}
+                          disabled={!selectedClient.clientPhone}
+                        >
+                          <Phone className="h-4 w-4 mr-2" />
+                          WhatsApp
+                          {!selectedClient.clientPhone && (
+                            <span className="text-xs text-gray-400 ml-2">(sem telefone)</span>
+                          )}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleSendReminderEmail(selectedClient)}
+                          disabled={!selectedClient.clientEmail}
+                        >
+                          <Mail className="h-4 w-4 mr-2" />
+                          E-mail
+                          {!selectedClient.clientEmail && (
+                            <span className="text-xs text-gray-400 ml-2">(sem e-mail)</span>
+                          )}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   )}
 
                   {selectedClient.maintenances[0]?.public_token && (
