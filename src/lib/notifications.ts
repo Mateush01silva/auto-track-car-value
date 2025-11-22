@@ -165,7 +165,7 @@ export async function sendMaintenanceEmail({
           </div>
 
           <div class="promo">
-            <strong>Novidade!</strong> Baixe o app WiseDrive e tenha todo o historico de manutencao do seu veiculo na palma da mao. Gratis!
+            <strong>Dica!</strong> Instale o WiseDrive como app no seu celular: abra o link acima no navegador, toque no menu (3 pontos) e selecione "Adicionar a tela inicial". Pronto!
           </div>
         </div>
 
@@ -244,7 +244,7 @@ export async function sendMaintenanceWhatsApp({
     `📋 Serviços: ${servicesSummary}\n` +
     `💰 Total: R$ ${formattedTotal}\n\n` +
     `🔗 Veja seu histórico completo:\n${publicLink}\n\n` +
-    `🎁 Baixe o app WiseDrive e ganhe 3 meses grátis!`
+    `📱 Dica: Instale como app! Abra o link, toque no menu (⋮) e "Adicionar à tela inicial"`
   );
 
   // Remove non-digits from phone and ensure country code
