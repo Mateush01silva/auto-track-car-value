@@ -170,6 +170,34 @@ const WorkshopClients = () => {
           throw error;
         }
 
+        // Collect unique user_ids to fetch profile data
+        const userIds = new Set<string>();
+        for (const m of maintenancesData || []) {
+          const vehicle = m.vehicles as any;
+          if (vehicle?.user_id) {
+            userIds.add(vehicle.user_id);
+          }
+        }
+
+        // Fetch profiles for users
+        let profilesMap = new Map<string, { full_name: string | null; phone: string | null; email: string | null }>();
+        if (userIds.size > 0) {
+          const { data: profilesData } = await supabase
+            .from('profiles')
+            .select('id, full_name, phone, email')
+            .in('id', Array.from(userIds));
+
+          if (profilesData) {
+            for (const profile of profilesData) {
+              profilesMap.set(profile.id, {
+                full_name: profile.full_name,
+                phone: profile.phone,
+                email: profile.email,
+              });
+            }
+          }
+        }
+
         // Group by vehicle plate
         const clientsMap = new Map<string, ClientData>();
 
@@ -179,11 +207,19 @@ const WorkshopClients = () => {
 
           const plate = vehicle.plate;
 
-          // Extract client info from metadata
+          // Extract client info from metadata (for non-registered users)
           const metadata = m.metadata as Record<string, string> | null;
           let clientName = metadata?.pending_user_name || null;
           let clientPhone = metadata?.pending_user_phone || null;
           let clientEmail = metadata?.pending_user_email || null;
+
+          // If user is registered, get data from profiles
+          if (vehicle.user_id && profilesMap.has(vehicle.user_id)) {
+            const profile = profilesMap.get(vehicle.user_id)!;
+            clientName = profile.full_name || clientName;
+            clientPhone = profile.phone || clientPhone;
+            clientEmail = profile.email || clientEmail;
+          }
 
           if (clientsMap.has(plate)) {
             const existing = clientsMap.get(plate)!;

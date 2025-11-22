@@ -199,7 +199,12 @@ const WorkshopHistory = () => {
         };
 
         // Get total count
-        const { count: totalFiltered } = await buildQuery(true);
+        const { count: totalFiltered, error: countError } = await buildQuery(true);
+
+        if (countError) {
+          console.error('Error fetching count:', countError);
+          throw countError;
+        }
 
         // Get paginated data
         const offset = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -212,7 +217,8 @@ const WorkshopHistory = () => {
         }
 
         // Filter by plate if specified (client-side for ILIKE behavior)
-        let filteredData = data || [];
+        // Also filter out records without vehicles
+        let filteredData = (data || []).filter(m => m.vehicles != null);
         if (plateSearch) {
           const searchLower = plateSearch.toLowerCase().replace(/[^a-z0-9]/g, '');
           filteredData = filteredData.filter(m =>
