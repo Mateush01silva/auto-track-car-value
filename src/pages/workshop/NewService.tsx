@@ -178,16 +178,25 @@ const NewService = () => {
     setShowManualForm(false);
 
     try {
-      // Search for vehicle by plate
-      const { data: vehicle, error } = await supabase
+      // Normalize plate: remove dash and uppercase
+      const normalizedPlate = plate.replace('-', '').toUpperCase();
+
+      // Also create version with dash for old format (ABC-1234)
+      const plateWithDash = normalizedPlate.length === 7
+        ? `${normalizedPlate.slice(0, 3)}-${normalizedPlate.slice(3)}`
+        : normalizedPlate;
+
+      // Search for vehicle by plate (try both formats)
+      const { data: vehicles, error } = await supabase
         .from('vehicles')
         .select('*')
-        .eq('plate', plate.replace('-', '').toUpperCase())
-        .single();
+        .or(`plate.eq.${normalizedPlate},plate.eq.${plateWithDash}`);
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         throw error;
       }
+
+      const vehicle = vehicles && vehicles.length > 0 ? vehicles[0] : null;
 
       if (vehicle) {
         setVehicleFound(vehicle);
