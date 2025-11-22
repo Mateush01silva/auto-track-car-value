@@ -44,7 +44,7 @@ serve(async (req) => {
       body: JSON.stringify({
         personalizations: [personalization],
         from: {
-          email: 'noreply@wisedrive.app',
+          email: 'silva.mateush01@gmail.com',
           name: from_name || 'WiseDrive'
         },
         content: [{
