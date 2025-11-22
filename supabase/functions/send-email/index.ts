@@ -57,7 +57,7 @@ serve(async (req) => {
     if (!res.ok) {
       const errorText = await res.text()
       console.error('SendGrid error:', errorText)
-      throw new Error(`SendGrid error: ${res.status}`)
+      throw new Error(`SendGrid error: ${res.status} - ${errorText}`)
     }
 
     return new Response(
