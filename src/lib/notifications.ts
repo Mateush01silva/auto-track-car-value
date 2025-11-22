@@ -8,6 +8,7 @@ interface SendMaintenanceEmailParams {
   servicesSummary: string; // "Troca de oleo, Filtros"
   total: number;
   publicLink: string;
+  bcc?: string; // Email para cópia
 }
 
 export async function sendMaintenanceEmail({
@@ -17,7 +18,8 @@ export async function sendMaintenanceEmail({
   vehicleInfo,
   servicesSummary,
   total,
-  publicLink
+  publicLink,
+  bcc
 }: SendMaintenanceEmailParams) {
   const formattedTotal = new Intl.NumberFormat('pt-BR', {
     minimumFractionDigits: 2,
@@ -184,7 +186,8 @@ export async function sendMaintenanceEmail({
       to: clientEmail,
       subject: `[${workshopName}] Seu veiculo foi atendido`,
       html,
-      from_name: workshopName
+      from_name: workshopName,
+      bcc: bcc || undefined
     }
   });
 

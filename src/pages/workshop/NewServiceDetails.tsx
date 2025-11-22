@@ -63,6 +63,7 @@ interface Workshop {
   plan: string;
   monthly_vehicle_limit: number;
   current_month_vehicles: number;
+  notification_copy_email: string | null;
 }
 
 interface VehicleData {
@@ -193,7 +194,7 @@ const NewServiceDetails = () => {
       if (user) {
         const { data, error } = await supabase
           .from('workshops')
-          .select('id, name, plan, monthly_vehicle_limit, current_month_vehicles')
+          .select('id, name, plan, monthly_vehicle_limit, current_month_vehicles, notification_copy_email')
           .eq('owner_id', user.id)
           .single();
 
@@ -584,7 +585,8 @@ const NewServiceDetails = () => {
           serviceItems.map(s => ({ name: s.name, price: s.price }))
         ),
         total: calculateTotal(),
-        publicLink: savedData.publicLink
+        publicLink: savedData.publicLink,
+        bcc: workshop.notification_copy_email || undefined
       });
 
       toast({
