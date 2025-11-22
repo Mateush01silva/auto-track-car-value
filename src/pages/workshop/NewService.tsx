@@ -240,7 +240,7 @@ const NewService = () => {
       console.error('Error loading brands:', error);
       toast({
         title: "Erro ao carregar marcas",
-        description: "Nao foi possivel carregar as marcas. Tente novamente.",
+        description: "Não foi possível carregar as marcas. Tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -267,7 +267,7 @@ const NewService = () => {
       console.error('Error loading models:', error);
       toast({
         title: "Erro ao carregar modelos",
-        description: "Nao foi possivel carregar os modelos. Tente novamente.",
+        description: "Não foi possível carregar os modelos. Tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -292,7 +292,7 @@ const NewService = () => {
       console.error('Error loading years:', error);
       toast({
         title: "Erro ao carregar anos",
-        description: "Nao foi possivel carregar os anos. Tente novamente.",
+        description: "Não foi possível carregar os anos. Tente novamente.",
         variant: "destructive",
       });
     } finally {

@@ -257,7 +257,7 @@ const WorkshopHistory = () => {
         console.error('Error loading maintenances:', error);
         toast({
           title: "Erro ao carregar dados",
-          description: "Nao foi possivel carregar o historico.",
+          description: "Não foi possível carregar o histórico.",
           variant: "destructive",
         });
       } finally {
@@ -266,7 +266,7 @@ const WorkshopHistory = () => {
     };
 
     loadMaintenances();
-  }, [workshop, startDate, endDate, currentPage, sortField, sortOrder, toast]);
+  }, [workshop, startDate, endDate, plateSearch, currentPage, sortField, sortOrder, toast]);
 
   // Update URL params
   useEffect(() => {
@@ -290,9 +290,10 @@ const WorkshopHistory = () => {
     }).format(value);
   };
 
-  // Format date
+  // Format date - using split to avoid timezone issues
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString + 'T00:00:00');
+    const [year, month, day] = dateString.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
     return date.toLocaleDateString('pt-BR');
   };
 
@@ -399,7 +400,7 @@ const WorkshopHistory = () => {
       console.error('Error exporting:', error);
       toast({
         title: "Erro ao exportar",
-        description: "Nao foi possivel gerar o arquivo.",
+        description: "Não foi possível gerar o arquivo.",
         variant: "destructive",
       });
     }
