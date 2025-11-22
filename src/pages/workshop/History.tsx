@@ -146,10 +146,15 @@ const WorkshopHistory = () => {
 
       try {
         // Get maintenance IDs from workshop_maintenances
-        const { data: workshopMaintenances } = await supabase
+        const { data: workshopMaintenances, error: wmError } = await supabase
           .from('workshop_maintenances')
           .select('maintenance_id')
           .eq('workshop_id', workshop.id);
+
+        if (wmError) {
+          console.error('Error fetching workshop_maintenances:', wmError);
+          throw wmError;
+        }
 
         const maintenanceIds = workshopMaintenances?.map(wm => wm.maintenance_id) || [];
 
@@ -246,7 +251,12 @@ const WorkshopHistory = () => {
           if (startDate) statsQuery = statsQuery.gte('date', startDate);
           if (endDate) statsQuery = statsQuery.lte('date', endDate);
 
-          const { data: statsData } = await statsQuery;
+          const { data: statsData, error: statsError } = await statsQuery;
+
+          if (statsError) {
+            console.error('Error fetching stats:', statsError);
+            // Don't throw, just log - stats are not critical
+          }
 
           if (statsData) {
             const totalValue = statsData.reduce((sum, m) => sum + (m.cost || 0), 0);
@@ -262,11 +272,11 @@ const WorkshopHistory = () => {
         } else {
           setStats({ total: 0, totalValue: 0, avgTicket: 0, uniqueVehicles: 0 });
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error loading maintenances:', error);
         toast({
           title: "Erro ao carregar dados",
-          description: "Não foi possível carregar o histórico.",
+          description: error?.message || "Não foi possível carregar o histórico.",
           variant: "destructive",
         });
       } finally {
