@@ -347,7 +347,7 @@ const NewServiceDetails = () => {
             model: vehicleData.model,
             year: vehicleData.year,
             color: vehicleData.color || null,
-            current_mileage: vehicleData.km || null,
+            current_km: vehicleData.km || null,
             user_id: clientData.userId || null,
           })
           .select('id')
@@ -384,7 +384,7 @@ const NewServiceDetails = () => {
         .insert({
           vehicle_id: vehicleId,
           user_id: clientData.userId || null,
-          service_type: serviceItems.length === 1 ? serviceItems[0].name : 'Servicos Diversos',
+          service_type: serviceItems.length === 1 ? serviceItems[0].name : 'Serviços Diversos',
           notes: `${servicesDescription}\n\n${notes}`.trim(),
           cost: total,
           date: getLocalDate(),
