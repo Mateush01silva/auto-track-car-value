@@ -42,6 +42,7 @@ interface Vehicle {
   current_km: number;
   initial_km?: number;
   user_id: string | null;
+  mostrar_selo_publico?: boolean;
 }
 
 interface Maintenance {
@@ -392,7 +393,7 @@ const PublicVehicleHistory = () => {
         </Card>
 
         {/* Selo de Qualidade */}
-        {selo && (
+        {selo && vehicle?.mostrar_selo_publico !== false && (
           <div className="mb-8">
             <SeloVeiculo selo={selo} compact={false} />
           </div>

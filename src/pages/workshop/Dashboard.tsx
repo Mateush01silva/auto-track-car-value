@@ -300,6 +300,15 @@ const WorkshopDashboard = () => {
               <Button
                 variant="ghost"
                 size="sm"
+                onClick={() => navigate("/workshop/opportunities")}
+                className="flex items-center gap-2"
+              >
+                <TrendingUp className="h-4 w-4" />
+                Oportunidades
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => navigate("/workshop/history")}
                 className="flex items-center gap-2"
               >

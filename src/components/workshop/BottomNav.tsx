@@ -8,7 +8,8 @@ import {
   MoreHorizontal,
   Settings,
   FileText,
-  CreditCard
+  CreditCard,
+  TrendingUp
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -32,6 +33,7 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 const MORE_ITEMS = [
+  { icon: TrendingUp, label: "Oportunidades", path: "/workshop/opportunities" },
   { icon: FileText, label: "Templates", path: "/workshop/templates" },
   { icon: Settings, label: "Configurações", path: "/workshop/settings" },
   { icon: CreditCard, label: "Planos", path: "/workshop/plans" },
