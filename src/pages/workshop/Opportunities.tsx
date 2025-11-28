@@ -66,10 +66,35 @@ interface ClientOpportunity {
   lowCount: number;
   minRevenue: number;
   maxRevenue: number;
-  avgRevenue: number;
+  minLabor: number; // Mão de obra mínima
+  maxLabor: number; // Mão de obra máxima
+  minTotal: number; // Total mínimo (peças + mão de obra)
+  maxTotal: number; // Total máximo (peças + mão de obra)
   daysSinceLastVisit: number | null;
   publicToken: string | null;
 }
+
+// Calcular estimativa de mão de obra baseada na criticidade
+const calculateLaborCost = (partsCost: number, criticidade: string): number => {
+  let laborPercentage = 0.25; // 25% padrão
+
+  switch (criticidade) {
+    case "Crítica":
+      laborPercentage = 0.35; // 35% para serviços críticos (mais complexos)
+      break;
+    case "Alta":
+      laborPercentage = 0.30; // 30% para serviços de alta complexidade
+      break;
+    case "Média":
+      laborPercentage = 0.25; // 25% para serviços médios
+      break;
+    case "Baixa":
+      laborPercentage = 0.20; // 20% para serviços simples
+      break;
+  }
+
+  return Math.round(partsCost * laborPercentage);
+};
 
 const WorkshopOpportunities = () => {
   const navigate = useNavigate();
@@ -243,7 +268,10 @@ const WorkshopOpportunities = () => {
           lowCount: 0,
           minRevenue: 0,
           maxRevenue: 0,
-          avgRevenue: 0,
+          minLabor: 0,
+          maxLabor: 0,
+          minTotal: 0,
+          maxTotal: 0,
           daysSinceLastVisit,
           publicToken,
         });
@@ -269,14 +297,22 @@ const WorkshopOpportunities = () => {
           break;
       }
 
-      // Sum revenue potential
+      // Sum revenue potential (parts only)
       opportunity.minRevenue += alert.recommendation.custoMinimo;
       opportunity.maxRevenue += alert.recommendation.custoMaximo;
+
+      // Calculate labor costs
+      const minLabor = calculateLaborCost(alert.recommendation.custoMinimo, alert.recommendation.criticidade);
+      const maxLabor = calculateLaborCost(alert.recommendation.custoMaximo, alert.recommendation.criticidade);
+
+      opportunity.minLabor += minLabor;
+      opportunity.maxLabor += maxLabor;
     });
 
-    // Calculate average revenue
+    // Calculate totals (parts + labor)
     clientMap.forEach((opp) => {
-      opp.avgRevenue = (opp.minRevenue + opp.maxRevenue) / 2;
+      opp.minTotal = opp.minRevenue + opp.minLabor;
+      opp.maxTotal = opp.maxRevenue + opp.maxLabor;
     });
 
     let opportunitiesArray = Array.from(clientMap.values());
@@ -310,9 +346,10 @@ const WorkshopOpportunities = () => {
           if (a.highCount !== b.highCount) {
             return b.highCount - a.highCount;
           }
-          return b.avgRevenue - a.avgRevenue;
+          return b.maxTotal - a.maxTotal;
         case "revenue":
-          return b.avgRevenue - a.avgRevenue;
+          // Sort by max total (parts + labor)
+          return b.maxTotal - a.maxTotal;
         case "days":
           if (a.daysSinceLastVisit === null) return 1;
           if (b.daysSinceLastVisit === null) return -1;
@@ -386,7 +423,8 @@ const WorkshopOpportunities = () => {
 
   // Calculate summary metrics
   const totalOpportunities = opportunities.length;
-  const totalRevenuePotential = opportunities.reduce((sum, opp) => sum + opp.avgRevenue, 0);
+  const totalMinRevenue = opportunities.reduce((sum, opp) => sum + opp.minTotal, 0);
+  const totalMaxRevenue = opportunities.reduce((sum, opp) => sum + opp.maxTotal, 0);
   const totalCritical = opportunities.reduce((sum, opp) => sum + opp.criticalCount, 0);
   const totalHigh = opportunities.reduce((sum, opp) => sum + opp.highCount, 0);
 
@@ -509,8 +547,10 @@ const WorkshopOpportunities = () => {
               <DollarSign className="h-4 w-4 text-green-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(totalRevenuePotential)}</div>
-              <p className="text-xs text-gray-500">valor médio estimado</p>
+              <div className="text-lg font-bold text-green-600">
+                {formatCurrency(totalMinRevenue)} - {formatCurrency(totalMaxRevenue)}
+              </div>
+              <p className="text-xs text-gray-500">faixa estimada (peças + mão de obra)</p>
             </CardContent>
           </Card>
 
@@ -637,11 +677,14 @@ const WorkshopOpportunities = () => {
                           </TableCell>
                           <TableCell>
                             <div>
-                              <p className="font-semibold text-green-600">
-                                {formatCurrency(opp.avgRevenue)}
+                              <p className="font-semibold text-green-600 text-sm">
+                                {formatCurrency(opp.minTotal)} - {formatCurrency(opp.maxTotal)}
                               </p>
                               <p className="text-xs text-gray-500">
-                                {formatCurrency(opp.minRevenue)} - {formatCurrency(opp.maxRevenue)}
+                                Peças: {formatCurrency(opp.minRevenue)} - {formatCurrency(opp.maxRevenue)}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                M.O.: {formatCurrency(opp.minLabor)} - {formatCurrency(opp.maxLabor)}
                               </p>
                             </div>
                           </TableCell>
@@ -751,11 +794,23 @@ const WorkshopOpportunities = () => {
                         </div>
 
                         <div className="pt-2 border-t">
-                          <div className="flex justify-between items-center mb-1">
-                            <span className="text-sm text-gray-500">Receita potencial:</span>
-                            <span className="font-semibold text-green-600">
-                              {formatCurrency(opp.avgRevenue)}
-                            </span>
+                          <div className="mb-2">
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="text-sm text-gray-500 font-medium">Total estimado:</span>
+                              <span className="font-semibold text-green-600">
+                                {formatCurrency(opp.minTotal)} - {formatCurrency(opp.maxTotal)}
+                              </span>
+                            </div>
+                            <div className="text-xs text-gray-500 space-y-0.5">
+                              <div className="flex justify-between">
+                                <span>• Peças:</span>
+                                <span>{formatCurrency(opp.minRevenue)} - {formatCurrency(opp.maxRevenue)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>• Mão de obra:</span>
+                                <span>{formatCurrency(opp.minLabor)} - {formatCurrency(opp.maxLabor)}</span>
+                              </div>
+                            </div>
                           </div>
                           {opp.daysSinceLastVisit !== null && (
                             <div className="flex justify-between items-center">
