@@ -53,19 +53,39 @@ export const useMaintenanceAlerts = (
 
         // Verificar por KM
         if (recommendation.kmInterval) {
-          const kmSinceLastMaintenance = currentKm - lastMaintenanceKm;
-          kmRemaining = recommendation.kmInterval - kmSinceLastMaintenance;
+          // Se nunca fez a manutenção, calcular o próximo marco APÓS initial_km
+          if (!lastMaintenance) {
+            // Exemplo: initial_km = 28000, kmInterval = 10000
+            // Próximo marco = Math.ceil(28000/10000) * 10000 = 3 * 10000 = 30000
+            const nextMilestone = Math.ceil(initialKm / recommendation.kmInterval) * recommendation.kmInterval;
+            const kmUntilNextMilestone = nextMilestone - currentKm;
 
-          if (kmRemaining <= 0) {
-            status = "overdue";
-            message = `${recommendation.item} atrasada — excedeu ${Math.abs(kmRemaining).toLocaleString()} km`;
-          } else if (kmRemaining <= KM_THRESHOLD && status === "ok") {
-            status = "due-soon";
-            message = `${recommendation.item} próxima — faltam ${kmRemaining.toLocaleString()} km`;
+            // Só alertar se estiver próximo ou passou do próximo marco
+            if (kmUntilNextMilestone <= 0) {
+              status = "overdue";
+              message = `${recommendation.item} atrasada — deveria ter sido feita aos ${nextMilestone.toLocaleString()} km`;
+              kmRemaining = kmUntilNextMilestone;
+            } else if (kmUntilNextMilestone <= KM_THRESHOLD) {
+              status = "due-soon";
+              message = `${recommendation.item} próxima — faltam ${kmUntilNextMilestone.toLocaleString()} km`;
+              kmRemaining = kmUntilNextMilestone;
+            }
+          } else {
+            // Se já fez a manutenção, calcular normalmente desde a última
+            const kmSinceLastMaintenance = currentKm - lastMaintenanceKm;
+            kmRemaining = recommendation.kmInterval - kmSinceLastMaintenance;
+
+            if (kmRemaining <= 0) {
+              status = "overdue";
+              message = `${recommendation.item} atrasada — excedeu ${Math.abs(kmRemaining).toLocaleString()} km`;
+            } else if (kmRemaining <= KM_THRESHOLD && status === "ok") {
+              status = "due-soon";
+              message = `${recommendation.item} próxima — faltam ${kmRemaining.toLocaleString()} km`;
+            }
           }
         }
 
-        // Verificar por tempo
+        // Verificar por tempo (apenas se já fez alguma vez)
         if (recommendation.timeInterval && lastMaintenanceDate) {
           const monthsSinceLastMaintenance = differenceInMonths(now, lastMaintenanceDate);
           const daysSinceLastMaintenance = differenceInDays(now, lastMaintenanceDate);
@@ -78,21 +98,6 @@ export const useMaintenanceAlerts = (
           } else if (daysRemaining <= DAYS_THRESHOLD && status === "ok") {
             status = "due-soon";
             message = `${recommendation.item} próxima — faltam ${daysRemaining} dias`;
-          }
-        }
-
-        // Se nunca foi feita a manutenção e passou do intervalo recomendado
-        if (!lastMaintenance) {
-          if (recommendation.kmInterval && currentKm >= recommendation.kmInterval) {
-            status = "overdue";
-            message = `${recommendation.item} nunca realizada — recomendada a cada ${recommendation.kmInterval.toLocaleString()} km`;
-          } else if (recommendation.timeInterval) {
-            // Alertar apenas para manutenções mais críticas que nunca foram feitas
-            const criticalItems = ["Troca de óleo", "Filtro de óleo", "Revisão básica"];
-            if (criticalItems.includes(recommendation.item)) {
-              status = "due-soon";
-              message = `${recommendation.item} nunca registrada — recomendada`;
-            }
           }
         }
 
