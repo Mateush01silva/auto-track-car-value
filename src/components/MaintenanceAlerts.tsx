@@ -14,10 +14,12 @@ interface MaintenanceAlertsProps {
 export const MaintenanceAlerts = ({ alerts, onRegisterMaintenance }: MaintenanceAlertsProps) => {
   const [filterVehicle, setFilterVehicle] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterCriticality, setFilterCriticality] = useState<string>("all");
 
   const filteredAlerts = alerts.filter((alert) => {
     if (filterVehicle !== "all" && alert.vehicleId !== filterVehicle) return false;
     if (filterStatus !== "all" && alert.status !== filterStatus) return false;
+    if (filterCriticality !== "all" && alert.recommendation.criticidade !== filterCriticality) return false;
     return true;
   });
 
@@ -67,6 +69,12 @@ export const MaintenanceAlerts = ({ alerts, onRegisterMaintenance }: Maintenance
   const overdueCount = filteredAlerts.filter((a) => a.status === "overdue").length;
   const dueSoonCount = filteredAlerts.filter((a) => a.status === "due-soon").length;
 
+  // Contadores por criticidade
+  const criticaCount = filteredAlerts.filter((a) => a.recommendation.criticidade === "Crítica").length;
+  const altaCount = filteredAlerts.filter((a) => a.recommendation.criticidade === "Alta").length;
+  const mediaCount = filteredAlerts.filter((a) => a.recommendation.criticidade === "Média").length;
+  const baixaCount = filteredAlerts.filter((a) => a.recommendation.criticidade === "Baixa").length;
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
@@ -109,6 +117,39 @@ export const MaintenanceAlerts = ({ alerts, onRegisterMaintenance }: Maintenance
               <SelectItem value="all">Todos</SelectItem>
               <SelectItem value="overdue">Atrasadas</SelectItem>
               <SelectItem value="due-soon">Próximas</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={filterCriticality} onValueChange={setFilterCriticality}>
+            <SelectTrigger className="w-full sm:w-[150px]">
+              <SelectValue placeholder="Criticidade" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas ({alerts.length})</SelectItem>
+              <SelectItem value="Crítica">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-[#FF0000]" />
+                  Crítica ({criticaCount})
+                </div>
+              </SelectItem>
+              <SelectItem value="Alta">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-[#FFA500]" />
+                  Alta ({altaCount})
+                </div>
+              </SelectItem>
+              <SelectItem value="Média">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-[#FFD700]" />
+                  Média ({mediaCount})
+                </div>
+              </SelectItem>
+              <SelectItem value="Baixa">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-[#90EE90]" />
+                  Baixa ({baixaCount})
+                </div>
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>

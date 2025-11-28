@@ -59,6 +59,8 @@ interface Workshop {
   notification_copy_email: string | null;
 }
 
+type ClientSegment = "vip" | "regular" | "at-risk" | "new";
+
 interface ClientData {
   plate: string;
   brand: string;
@@ -74,6 +76,8 @@ interface ClientData {
   lastVisit: string;
   lastKm: number;
   maintenances: MaintenanceItem[];
+  segment?: ClientSegment;
+  loyaltyScore?: number;
 }
 
 interface MaintenanceItem {
@@ -272,10 +276,44 @@ const WorkshopClients = () => {
           }
         }
 
-        // Convert to array and sort by last visit
-        const clientsList = Array.from(clientsMap.values()).sort(
-          (a, b) => new Date(b.lastVisit).getTime() - new Date(a.lastVisit).getTime()
-        );
+        // Convert to array
+        let clientsList = Array.from(clientsMap.values());
+
+        // Calculate average spending for segmentation
+        const avgSpent = clientsList.length > 0
+          ? clientsList.reduce((sum, c) => sum + c.totalSpent, 0) / clientsList.length
+          : 0;
+
+        // Add segmentation and loyalty score to each client
+        clientsList = clientsList.map(client => {
+          const [year, month, day] = client.lastVisit.split('-').map(Number);
+          const last = new Date(year, month - 1, day);
+          const now = new Date();
+          now.setHours(0, 0, 0, 0);
+          const daysSince = Math.floor((now.getTime() - last.getTime()) / (1000 * 60 * 60 * 24));
+
+          const segment = determineSegment(client, daysSince, avgSpent);
+          const loyaltyScore = calculateLoyaltyScore(client, daysSince, avgSpent);
+
+          return {
+            ...client,
+            segment,
+            loyaltyScore
+          };
+        });
+
+        // Sort by segment priority (VIP > At Risk > Regular > New), then by loyalty score
+        clientsList.sort((a, b) => {
+          const segmentPriority = { vip: 4, 'at-risk': 3, regular: 2, new: 1 };
+          const aPriority = segmentPriority[a.segment || 'regular'];
+          const bPriority = segmentPriority[b.segment || 'regular'];
+
+          if (aPriority !== bPriority) {
+            return bPriority - aPriority;
+          }
+
+          return (b.loyaltyScore || 0) - (a.loyaltyScore || 0);
+        });
 
         setClients(clientsList);
         setFilteredClients(clientsList);
@@ -373,6 +411,92 @@ const WorkshopClients = () => {
     }
   };
 
+  // Calculate loyalty score (0-100)
+  const calculateLoyaltyScore = (client: ClientData, daysSince: number, avgSpent: number): number => {
+    // Visits score (40 points max)
+    const visitsScore = Math.min(40, client.totalMaintenances * 5);
+
+    // Spending score (30 points max) - compare to average
+    const spendingRatio = avgSpent > 0 ? client.totalSpent / avgSpent : 1;
+    const spendingScore = Math.min(30, spendingRatio * 15);
+
+    // Recency score (30 points max) - inverse of days since last visit
+    let recencyScore = 30;
+    if (daysSince > 180) recencyScore = 5;
+    else if (daysSince > 120) recencyScore = 10;
+    else if (daysSince > 90) recencyScore = 15;
+    else if (daysSince > 60) recencyScore = 20;
+    else if (daysSince > 30) recencyScore = 25;
+
+    return Math.round(visitsScore + spendingScore + recencyScore);
+  };
+
+  // Determine client segment
+  const determineSegment = (client: ClientData, daysSince: number, avgSpent: number): ClientSegment => {
+    // New clients: 1-2 visits
+    if (client.totalMaintenances <= 2) {
+      return "new";
+    }
+
+    // At Risk: haven't visited in 120+ days
+    if (daysSince > 120) {
+      return "at-risk";
+    }
+
+    // VIP: high value + frequent visits
+    const isHighSpender = client.totalSpent > avgSpent * 1.5;
+    const isFrequent = client.totalMaintenances >= 5;
+
+    if (isHighSpender && isFrequent) {
+      return "vip";
+    }
+
+    // Regular: everyone else
+    return "regular";
+  };
+
+  // Get segment badge info
+  const getSegmentBadge = (segment: ClientSegment) => {
+    switch (segment) {
+      case "vip":
+        return {
+          color: 'bg-purple-100 text-purple-700 border-purple-300',
+          label: 'VIP',
+          icon: Crown,
+          description: 'Cliente de alto valor'
+        };
+      case "new":
+        return {
+          color: 'bg-blue-100 text-blue-700 border-blue-300',
+          label: 'Novo',
+          icon: UserPlus,
+          description: 'Cliente novo'
+        };
+      case "at-risk":
+        return {
+          color: 'bg-red-100 text-red-700 border-red-300',
+          label: 'Em Risco',
+          icon: AlertCircle,
+          description: 'Cliente inativo há muito tempo'
+        };
+      case "regular":
+        return {
+          color: 'bg-green-100 text-green-700 border-green-300',
+          label: 'Regular',
+          icon: CheckCircle,
+          description: 'Cliente ativo'
+        };
+    }
+  };
+
+  // Get loyalty score color
+  const getLoyaltyScoreColor = (score: number) => {
+    if (score >= 80) return 'text-green-600';
+    if (score >= 60) return 'text-blue-600';
+    if (score >= 40) return 'text-yellow-600';
+    return 'text-orange-600';
+  };
+
   // Open client details
   const handleClientClick = (client: ClientData) => {
     setSelectedClient(client);
@@ -429,22 +553,43 @@ const WorkshopClients = () => {
       `🎁 Clientes WiseDrive têm benefícios exclusivos!`
     );
 
-    const phone = client.clientPhone?.replace(/\D/g, '') || '';
-    const phoneWithCountry = phone.startsWith('55') ? phone : `55${phone}`;
+    let phone = client.clientPhone?.replace(/\D/g, '') || '';
 
-    if (phone) {
-      window.open(`https://wa.me/${phoneWithCountry}?text=${message}`, '_blank');
-      toast({
-        title: "WhatsApp aberto!",
-        description: "Envie o lembrete ao cliente.",
-      });
-    } else {
+    // Validação e formatação do número
+    if (!phone) {
       toast({
         title: "Telefone não disponível",
         description: "Este cliente não tem telefone cadastrado.",
         variant: "destructive",
       });
+      return;
     }
+
+    // Remove código do país se existir e adiciona 55 (Brasil)
+    if (phone.startsWith('55') && phone.length > 12) {
+      phone = phone.substring(2);
+    }
+
+    // Valida formato brasileiro (DDD + número)
+    if (phone.length < 10 || phone.length > 11) {
+      toast({
+        title: "Número inválido",
+        description: "O telefone deve ter 10 ou 11 dígitos (DDD + número).",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const phoneWithCountry = `55${phone}`;
+
+    // Usar api.whatsapp.com ao invés de wa.me para melhor compatibilidade
+    const whatsappUrl = `https://api.whatsapp.com/send?phone=${phoneWithCountry}&text=${message}`;
+
+    window.open(whatsappUrl, '_blank');
+    toast({
+      title: "WhatsApp aberto!",
+      description: "A conversa será aberta no WhatsApp Web ou App.",
+    });
   };
 
   // Send reminder via Email
@@ -616,24 +761,52 @@ const WorkshopClients = () => {
 
                       {/* Info */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <h3 className="font-medium truncate">
                             {client.clientName || formatPlate(client.plate)}
                           </h3>
-                          {client.userId ? (
+                          {client.segment && (() => {
+                            const segmentInfo = getSegmentBadge(client.segment);
+                            const SegmentIcon = segmentInfo.icon;
+                            return (
+                              <Badge className={`${segmentInfo.color} text-xs border`}>
+                                <SegmentIcon className="h-3 w-3 mr-1" />
+                                {segmentInfo.label}
+                              </Badge>
+                            );
+                          })()}
+                          {client.userId && (
                             <Badge className="bg-green-100 text-green-700 text-xs">
                               <CheckCircle className="h-3 w-3 mr-1" />
                               WiseDrive
                             </Badge>
-                          ) : (
-                            <Badge variant="secondary" className="text-xs">
-                              Nao cadastrado
-                            </Badge>
                           )}
                         </div>
-                        <p className="text-sm text-gray-500 mb-3">
+                        <p className="text-sm text-gray-500 mb-2">
                           {client.brand} {client.model} {client.year}
                         </p>
+
+                        {/* Loyalty Score */}
+                        {client.loyaltyScore !== undefined && (
+                          <div className="mb-3">
+                            <div className="flex items-center justify-between text-xs mb-1">
+                              <span className="text-gray-500">Score de Fidelidade</span>
+                              <span className={`font-semibold ${getLoyaltyScoreColor(client.loyaltyScore)}`}>
+                                {client.loyaltyScore}/100
+                              </span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-1.5">
+                              <div
+                                className={`h-1.5 rounded-full ${
+                                  client.loyaltyScore >= 80 ? 'bg-green-600' :
+                                  client.loyaltyScore >= 60 ? 'bg-blue-600' :
+                                  client.loyaltyScore >= 40 ? 'bg-yellow-600' : 'bg-orange-600'
+                                }`}
+                                style={{ width: `${client.loyaltyScore}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
 
                         {/* Stats */}
                         <div className="grid grid-cols-2 gap-2 text-xs">
@@ -706,24 +879,67 @@ const WorkshopClients = () => {
                       {getInitials(selectedClient.clientName, selectedClient.plate)}
                     </AvatarFallback>
                   </Avatar>
-                  <div>
+                  <div className="flex-1">
                     <DialogTitle>
                       {selectedClient.clientName || formatPlate(selectedClient.plate)}
                     </DialogTitle>
                     <DialogDescription>
                       {selectedClient.brand} {selectedClient.model} {selectedClient.year}
                     </DialogDescription>
-                    {selectedClient.userId && (
-                      <Badge className="bg-green-100 text-green-700 text-xs mt-1">
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Usuario WiseDrive
-                      </Badge>
-                    )}
+                    <div className="flex gap-2 mt-2 flex-wrap">
+                      {selectedClient.segment && (() => {
+                        const segmentInfo = getSegmentBadge(selectedClient.segment);
+                        const SegmentIcon = segmentInfo.icon;
+                        return (
+                          <Badge className={`${segmentInfo.color} text-xs border`}>
+                            <SegmentIcon className="h-3 w-3 mr-1" />
+                            {segmentInfo.label}
+                          </Badge>
+                        );
+                      })()}
+                      {selectedClient.userId && (
+                        <Badge className="bg-green-100 text-green-700 text-xs">
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Usuario WiseDrive
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 </div>
               </DialogHeader>
 
               <div className="space-y-4">
+                {/* Loyalty Score */}
+                {selectedClient.loyaltyScore !== undefined && (
+                  <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">Score de Fidelidade</p>
+                        <p className="text-xs text-gray-500">
+                          {selectedClient.segment && getSegmentBadge(selectedClient.segment).description}
+                        </p>
+                      </div>
+                      <div className={`text-3xl font-bold ${getLoyaltyScoreColor(selectedClient.loyaltyScore)}`}>
+                        {selectedClient.loyaltyScore}
+                        <span className="text-lg text-gray-400">/100</span>
+                      </div>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full transition-all ${
+                          selectedClient.loyaltyScore >= 80 ? 'bg-green-600' :
+                          selectedClient.loyaltyScore >= 60 ? 'bg-blue-600' :
+                          selectedClient.loyaltyScore >= 40 ? 'bg-yellow-600' : 'bg-orange-600'
+                        }`}
+                        style={{ width: `${selectedClient.loyaltyScore}%` }}
+                      />
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-500 mt-1">
+                      <span>0</span>
+                      <span>100</span>
+                    </div>
+                  </div>
+                )}
                 {/* Contact Info */}
                 {(selectedClient.clientPhone || selectedClient.clientEmail) && (
                   <div className="bg-gray-50 rounded-lg p-3 space-y-2">
