@@ -27,6 +27,9 @@ import {
   ExternalLink,
   AlertCircle,
 } from "lucide-react";
+import { SeloVeiculo } from "@/components/SeloVeiculo";
+import { calcularSeloVeiculo, buscarSeloVeiculo, VeiculoSelo } from "@/services/seloQualidade";
+import { GaleriaComprovantes, Comprovante } from "@/components/GaleriaComprovantes";
 
 interface Vehicle {
   id: string;
@@ -36,6 +39,8 @@ interface Vehicle {
   year: number;
   color: string | null;
   current_mileage: number | null;
+  current_km: number;
+  initial_km?: number;
   user_id: string | null;
 }
 
@@ -63,6 +68,7 @@ const PublicVehicleHistory = () => {
   const [notFound, setNotFound] = useState(false);
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [maintenances, setMaintenances] = useState<Maintenance[]>([]);
+  const [selo, setSelo] = useState<VeiculoSelo | null>(null);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -120,6 +126,11 @@ const PublicVehicleHistory = () => {
         }
 
         setMaintenances(allMaintenances || []);
+
+        // Calcular selo se temos veículo e manutenções
+        if (vehicleData && allMaintenances) {
+          await calcularESalvarSelo(vehicleData, allMaintenances);
+        }
       } catch (error) {
         console.error('Error:', error);
         setNotFound(true);
@@ -130,6 +141,27 @@ const PublicVehicleHistory = () => {
 
     fetchData();
   }, [token]);
+
+  const calcularESalvarSelo = async (vehicleData: Vehicle, maintenancesData: Maintenance[]) => {
+    try {
+      // Buscar selo existente
+      const seloExistente = await buscarSeloVeiculo(vehicleData.id);
+
+      if (seloExistente) {
+        setSelo(seloExistente);
+      } else {
+        // Calcular novo selo
+        const seloCalculado = calcularSeloVeiculo(vehicleData as any, maintenancesData as any);
+        setSelo({
+          ...seloCalculado,
+          id: vehicleData.id,
+          data_calculo: new Date().toISOString(),
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao calcular selo:", error);
+    }
+  };
 
   // Toggle expanded state for maintenance item
   const toggleExpanded = (id: string) => {
@@ -359,6 +391,13 @@ const PublicVehicleHistory = () => {
           </CardContent>
         </Card>
 
+        {/* Selo de Qualidade */}
+        {selo && (
+          <div className="mb-8">
+            <SeloVeiculo selo={selo} compact={false} />
+          </div>
+        )}
+
         {/* Timeline */}
         <div className="mb-8">
           <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
@@ -460,37 +499,17 @@ const PublicVehicleHistory = () => {
                                   </div>
                                 )}
 
-                                {/* Attachments */}
+                                {/* Attachments - Galeria de Comprovantes */}
                                 {hasAttachments && (
-                                  <div>
-                                    <p className="text-xs font-medium text-gray-500 mb-2">Anexos:</p>
-                                    <div className="flex flex-wrap gap-2">
-                                      {maintenance.attachments!.map((attachment, index) => {
-                                        const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(attachment);
-                                        const isPdf = /\.pdf$/i.test(attachment);
-
-                                        return (
-                                          <a
-                                            key={index}
-                                            href={attachment}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="flex items-center gap-1 bg-gray-100 hover:bg-gray-200 rounded px-2 py-1 text-xs text-gray-700"
-                                          >
-                                            {isImage ? (
-                                              <ImageIcon className="h-3 w-3" />
-                                            ) : isPdf ? (
-                                              <FileText className="h-3 w-3" />
-                                            ) : (
-                                              <Download className="h-3 w-3" />
-                                            )}
-                                            <span>Anexo {index + 1}</span>
-                                            <ExternalLink className="h-3 w-3" />
-                                          </a>
-                                        );
-                                      })}
-                                    </div>
-                                  </div>
+                                  <GaleriaComprovantes
+                                    comprovantes={maintenance.attachments!.map((url) => {
+                                      const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
+                                      return {
+                                        url,
+                                        tipo: isImage ? "imagem" : "pdf",
+                                      } as Comprovante;
+                                    })}
+                                  />
                                 )}
                               </CollapsibleContent>
                             </Collapsible>
