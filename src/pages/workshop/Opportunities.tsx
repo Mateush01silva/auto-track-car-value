@@ -3,6 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -106,6 +114,11 @@ const WorkshopOpportunities = () => {
   const [opportunities, setOpportunities] = useState<ClientOpportunity[]>([]);
   const [sortBy, setSortBy] = useState<"criticality" | "revenue" | "days">("criticality");
   const [filterCriticality, setFilterCriticality] = useState<string>("all");
+
+  // Modal state
+  const [selectedOpportunity, setSelectedOpportunity] = useState<ClientOpportunity | null>(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedAlerts, setSelectedAlerts] = useState<Set<string>>(new Set());
 
   const alerts = useMaintenanceAlerts(vehicles, maintenances);
 
@@ -421,6 +434,83 @@ const WorkshopOpportunities = () => {
     }).format(value);
   };
 
+  // Open opportunity details modal
+  const handleOpportunityClick = (opportunity: ClientOpportunity) => {
+    setSelectedOpportunity(opportunity);
+    // Initialize with all alerts selected
+    const allAlertIds = new Set(opportunity.alerts.map(a => a.id));
+    setSelectedAlerts(allAlertIds);
+    setShowDetailsModal(true);
+  };
+
+  // Toggle alert selection
+  const toggleAlertSelection = (alertId: string) => {
+    const newSelection = new Set(selectedAlerts);
+    if (newSelection.has(alertId)) {
+      newSelection.delete(alertId);
+    } else {
+      newSelection.add(alertId);
+    }
+    setSelectedAlerts(newSelection);
+  };
+
+  // Select/deselect all alerts
+  const toggleAllAlerts = (selectAll: boolean) => {
+    if (!selectedOpportunity) return;
+    if (selectAll) {
+      setSelectedAlerts(new Set(selectedOpportunity.alerts.map(a => a.id)));
+    } else {
+      setSelectedAlerts(new Set());
+    }
+  };
+
+  // Calculate filtered values based on selected alerts
+  const getFilteredValues = () => {
+    if (!selectedOpportunity) return null;
+
+    const selectedAlertsArray = selectedOpportunity.alerts.filter(a => selectedAlerts.has(a.id));
+
+    let minRevenue = 0;
+    let maxRevenue = 0;
+    let minLabor = 0;
+    let maxLabor = 0;
+    let criticalCount = 0;
+    let highCount = 0;
+    let mediumCount = 0;
+    let lowCount = 0;
+
+    selectedAlertsArray.forEach(alert => {
+      minRevenue += alert.recommendation.custoMinimo;
+      maxRevenue += alert.recommendation.custoMaximo;
+
+      const minL = calculateLaborCost(alert.recommendation.custoMinimo, alert.recommendation.criticidade);
+      const maxL = calculateLaborCost(alert.recommendation.custoMaximo, alert.recommendation.criticidade);
+      minLabor += minL;
+      maxLabor += maxL;
+
+      switch (alert.recommendation.criticidade) {
+        case "Crítica": criticalCount++; break;
+        case "Alta": highCount++; break;
+        case "Média": mediumCount++; break;
+        case "Baixa": lowCount++; break;
+      }
+    });
+
+    return {
+      count: selectedAlertsArray.length,
+      minRevenue,
+      maxRevenue,
+      minLabor,
+      maxLabor,
+      minTotal: minRevenue + minLabor,
+      maxTotal: maxRevenue + maxLabor,
+      criticalCount,
+      highCount,
+      mediumCount,
+      lowCount,
+    };
+  };
+
   // Calculate summary metrics
   const totalOpportunities = opportunities.length;
   const totalMinRevenue = opportunities.reduce((sum, opp) => sum + opp.minTotal, 0);
@@ -639,7 +729,11 @@ const WorkshopOpportunities = () => {
                     </TableHeader>
                     <TableBody>
                       {opportunities.map((opp, index) => (
-                        <TableRow key={index}>
+                        <TableRow
+                          key={index}
+                          className="cursor-pointer hover:bg-gray-50 transition-colors"
+                          onClick={() => handleOpportunityClick(opp)}
+                        >
                           <TableCell>
                             <div>
                               <p className="font-semibold">{opp.clientName}</p>
@@ -734,7 +828,8 @@ const WorkshopOpportunities = () => {
                   {opportunities.map((opp, index) => (
                     <div
                       key={index}
-                      className="p-4 border rounded-lg bg-white hover:bg-gray-50 transition-colors"
+                      className="p-4 border rounded-lg bg-white hover:bg-gray-50 transition-colors cursor-pointer"
+                      onClick={() => handleOpportunityClick(opp)}
                     >
                       <div className="flex justify-between items-start mb-3">
                         <div>
@@ -839,6 +934,200 @@ const WorkshopOpportunities = () => {
         {/* Spacer for bottom nav on mobile */}
         <div className="h-20 md:hidden" />
       </main>
+
+      {/* Opportunity Details Modal */}
+      <Dialog open={showDetailsModal} onOpenChange={setShowDetailsModal}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          {selectedOpportunity && (() => {
+            const filteredValues = getFilteredValues();
+            const allSelected = selectedAlerts.size === selectedOpportunity.alerts.length;
+            const noneSelected = selectedAlerts.size === 0;
+
+            return (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="text-xl">
+                    Detalhes da Oportunidade
+                  </DialogTitle>
+                  <DialogDescription>
+                    {selectedOpportunity.clientName} • {selectedOpportunity.vehicleName} ({selectedOpportunity.vehiclePlate})
+                  </DialogDescription>
+                </DialogHeader>
+
+                {/* Summary Cards */}
+                {filteredValues && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <Card className="bg-blue-50 border-blue-200">
+                      <CardContent className="pt-4">
+                        <p className="text-sm text-gray-600 mb-1">Itens Selecionados</p>
+                        <p className="text-2xl font-bold text-blue-600">
+                          {filteredValues.count} / {selectedOpportunity.totalPendingItems}
+                        </p>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="bg-green-50 border-green-200">
+                      <CardContent className="pt-4">
+                        <p className="text-sm text-gray-600 mb-1">Receita Total</p>
+                        <p className="text-lg font-bold text-green-600">
+                          {formatCurrency(filteredValues.minTotal)} - {formatCurrency(filteredValues.maxTotal)}
+                        </p>
+                        <div className="text-xs text-gray-500 mt-1">
+                          <div>Peças: {formatCurrency(filteredValues.minRevenue)} - {formatCurrency(filteredValues.maxRevenue)}</div>
+                          <div>M.O.: {formatCurrency(filteredValues.minLabor)} - {formatCurrency(filteredValues.maxLabor)}</div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="bg-orange-50 border-orange-200">
+                      <CardContent className="pt-4">
+                        <p className="text-sm text-gray-600 mb-1">Por Criticidade</p>
+                        <div className="flex gap-1 flex-wrap mt-2">
+                          {filteredValues.criticalCount > 0 && (
+                            <Badge className="bg-red-600 text-xs">{filteredValues.criticalCount}</Badge>
+                          )}
+                          {filteredValues.highCount > 0 && (
+                            <Badge className="bg-orange-500 text-xs">{filteredValues.highCount}</Badge>
+                          )}
+                          {filteredValues.mediumCount > 0 && (
+                            <Badge className="bg-yellow-500 text-xs">{filteredValues.mediumCount}</Badge>
+                          )}
+                          {filteredValues.lowCount > 0 && (
+                            <Badge className="bg-green-500 text-xs">{filteredValues.lowCount}</Badge>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+
+                {/* Selection Controls */}
+                <div className="flex justify-between items-center mb-4 pb-4 border-b">
+                  <p className="text-sm text-gray-600">
+                    Selecione os serviços que sua oficina realiza
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => toggleAllAlerts(true)}
+                      disabled={allSelected}
+                    >
+                      Selecionar Todos
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => toggleAllAlerts(false)}
+                      disabled={noneSelected}
+                    >
+                      Desmarcar Todos
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Maintenance Items List */}
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {selectedOpportunity.alerts.map((alert) => {
+                    const isSelected = selectedAlerts.has(alert.id);
+                    const rec = alert.recommendation;
+                    const minLabor = calculateLaborCost(rec.custoMinimo, rec.criticidade);
+                    const maxLabor = calculateLaborCost(rec.custoMaximo, rec.criticidade);
+                    const minTotal = rec.custoMinimo + minLabor;
+                    const maxTotal = rec.custoMaximo + maxLabor;
+
+                    return (
+                      <div
+                        key={alert.id}
+                        className={`p-4 border rounded-lg transition-all ${
+                          isSelected ? 'bg-green-50 border-green-300' : 'bg-gray-50 border-gray-200 opacity-60'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => toggleAlertSelection(alert.id)}
+                            className="mt-1"
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-start justify-between gap-2 mb-2">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <h4 className="font-semibold">{rec.item}</h4>
+                                  <Badge
+                                    className={
+                                      rec.criticidade === "Crítica" ? "bg-red-600" :
+                                      rec.criticidade === "Alta" ? "bg-orange-500" :
+                                      rec.criticidade === "Média" ? "bg-yellow-500 text-gray-900" :
+                                      "bg-green-500"
+                                    }
+                                  >
+                                    {rec.criticidade}
+                                  </Badge>
+                                  <Badge variant="outline" className="text-xs">
+                                    {rec.category}
+                                  </Badge>
+                                </div>
+                                <p className="text-sm text-gray-600 mt-1">{rec.description}</p>
+                                <div className="flex gap-4 mt-2 text-xs text-gray-500">
+                                  {rec.kmInterval && (
+                                    <span>📍 A cada {rec.kmInterval.toLocaleString()} km</span>
+                                  )}
+                                  {rec.timeInterval && (
+                                    <span>⏰ A cada {rec.timeInterval} meses</span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <p className="font-bold text-green-600">
+                                  {formatCurrency(minTotal)} - {formatCurrency(maxTotal)}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  Peças: {formatCurrency(rec.custoMinimo)} - {formatCurrency(rec.custoMaximo)}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  M.O.: {formatCurrency(minLabor)} - {formatCurrency(maxLabor)}
+                                </p>
+                              </div>
+                            </div>
+                            <p className="text-sm text-orange-600 mt-2">
+                              {alert.message}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Actions */}
+                <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowDetailsModal(false)}
+                  >
+                    Fechar
+                  </Button>
+                  <Button
+                    className="bg-green-600 hover:bg-green-700"
+                    onClick={() => {
+                      handleSendWhatsApp(
+                        selectedOpportunity.clientPhone,
+                        selectedOpportunity.clientName,
+                        selectedOpportunity.vehicleName
+                      );
+                    }}
+                    disabled={!selectedOpportunity.clientPhone || noneSelected}
+                  >
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Enviar WhatsApp
+                  </Button>
+                </div>
+              </>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
 
       {/* Bottom Navigation - Mobile */}
       <WorkshopBottomNav />
