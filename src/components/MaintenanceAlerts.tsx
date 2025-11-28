@@ -49,6 +49,21 @@ export const MaintenanceAlerts = ({ alerts, onRegisterMaintenance }: Maintenance
     }
   };
 
+  const getCriticalityBadge = (criticidade: string) => {
+    switch (criticidade) {
+      case "Crítica":
+        return <Badge className="bg-[#FF0000] hover:bg-[#FF0000]/90 text-white">Crítica</Badge>;
+      case "Alta":
+        return <Badge className="bg-[#FFA500] hover:bg-[#FFA500]/90 text-white">Alta</Badge>;
+      case "Média":
+        return <Badge className="bg-[#FFD700] hover:bg-[#FFD700]/90 text-gray-900">Média</Badge>;
+      case "Baixa":
+        return <Badge className="bg-[#90EE90] hover:bg-[#90EE90]/90 text-gray-900">Baixa</Badge>;
+      default:
+        return null;
+    }
+  };
+
   const overdueCount = filteredAlerts.filter((a) => a.status === "overdue").length;
   const dueSoonCount = filteredAlerts.filter((a) => a.status === "due-soon").length;
 
@@ -130,7 +145,10 @@ export const MaintenanceAlerts = ({ alerts, onRegisterMaintenance }: Maintenance
                       </CardDescription>
                     </div>
                   </div>
-                  {getStatusBadge(alert.status)}
+                  <div className="flex gap-2 flex-wrap justify-end">
+                    {getStatusBadge(alert.status)}
+                    {getCriticalityBadge(alert.recommendation.criticidade)}
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -158,6 +176,15 @@ export const MaintenanceAlerts = ({ alerts, onRegisterMaintenance }: Maintenance
                         🚗 Última KM: {alert.lastMaintenanceKm.toLocaleString()}
                       </span>
                     )}
+                  </div>
+
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="font-medium text-primary">
+                      💰 Custo estimado: R$ {alert.recommendation.custoMinimo.toLocaleString('pt-BR')} - R$ {alert.recommendation.custoMaximo.toLocaleString('pt-BR')}
+                    </span>
+                    <span className="text-xs text-muted-foreground italic">
+                      (referência 2024)
+                    </span>
                   </div>
 
                   <p className="text-xs text-muted-foreground italic">

@@ -5,8 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
-import { 
-  Car, 
+import {
+  Car,
   ArrowLeft,
   Calendar,
   DollarSign,
@@ -14,6 +14,8 @@ import {
   CheckCircle2,
   QrCode
 } from "lucide-react";
+import { SeloVeiculo } from "@/components/SeloVeiculo";
+import { calcularSeloVeiculo, buscarSeloVeiculo, VeiculoSelo } from "@/services/seloQualidade";
 
 interface Vehicle {
   id: string;
@@ -22,6 +24,7 @@ interface Vehicle {
   year: number;
   plate: string;
   current_km: number;
+  initial_km?: number;
 }
 
 interface Maintenance {
@@ -30,12 +33,14 @@ interface Maintenance {
   service_type: string;
   cost: number;
   km: number;
+  vehicle_id: string;
 }
 
 const Report = () => {
   const { vehicleId } = useParams<{ vehicleId?: string }>();
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [maintenances, setMaintenances] = useState<Maintenance[]>([]);
+  const [selo, setSelo] = useState<VeiculoSelo | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -66,6 +71,11 @@ const Report = () => {
 
         if (maintenancesError) throw maintenancesError;
         setMaintenances(maintenancesData || []);
+
+        // Calcular selo se temos veículo e manutenções
+        if (vehicleData && maintenancesData) {
+          await calcularESalvarSelo(vehicleData, maintenancesData);
+        }
       } else {
         // Load first vehicle from user
         const { data: { user } } = await supabase.auth.getUser();
@@ -90,12 +100,38 @@ const Report = () => {
 
           if (maintenancesError) throw maintenancesError;
           setMaintenances(maintenancesData || []);
+
+          // Calcular selo se temos veículo e manutenções
+          if (vehiclesData && maintenancesData) {
+            await calcularESalvarSelo(vehiclesData, maintenancesData);
+          }
         }
       }
     } catch (error) {
       console.error("Erro ao carregar dados:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const calcularESalvarSelo = async (vehicleData: Vehicle, maintenancesData: Maintenance[]) => {
+    try {
+      // Buscar selo existente
+      const seloExistente = await buscarSeloVeiculo(vehicleData.id);
+
+      if (seloExistente) {
+        setSelo(seloExistente);
+      } else {
+        // Calcular novo selo
+        const seloCalculado = calcularSeloVeiculo(vehicleData as any, maintenancesData as any);
+        setSelo({
+          ...seloCalculado,
+          id: vehicleData.id,
+          data_calculo: new Date().toISOString(),
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao calcular selo:", error);
     }
   };
 
@@ -155,6 +191,13 @@ const Report = () => {
             </span>
           </p>
         </div>
+
+        {/* Selo de Qualidade */}
+        {selo && (
+          <div className="mb-8 animate-fade-in">
+            <SeloVeiculo selo={selo} />
+          </div>
+        )}
 
         {/* Main Report Card */}
         <Card className="shadow-2xl mb-8 animate-scale-in">
