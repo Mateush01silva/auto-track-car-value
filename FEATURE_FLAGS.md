@@ -348,16 +348,18 @@ VITE_CAR_API_KEY="${CAR_API_KEY}"  # Variável do servidor
 
 ---
 
-### P: Onde coloco a URL e chave da minha API?
+### P: Onde coloco a URL e chave da API SUIV?
 
 **R:** No arquivo `.env` na raiz do projeto:
 
 ```env
-VITE_CAR_API_URL="https://api.minhaapi.com.br"
-VITE_CAR_API_KEY="minha_chave_secreta_aqui"
+VITE_CAR_API_URL="https://api.suiv.com.br"
+VITE_CAR_API_KEY="sua_chave_api_suiv_aqui"
 ```
 
 ⚠️ **Nunca commite** o `.env` com credenciais reais no Git!
+
+Para obter sua chave de API SUIV, acesse: https://api.suiv.com.br
 
 ---
 
@@ -370,6 +372,58 @@ VITE_CAR_API_KEY="minha_chave_secreta_aqui"
 - `.env.production` - Para produção
 
 O Vite carrega automaticamente o arquivo correto baseado no comando usado.
+
+---
+
+## 📡 Sobre a API SUIV
+
+O WiseDrive está integrado com a **API SUIV V4**, uma API completa para consulta de informações veiculares no Brasil.
+
+### Funcionalidades da API SUIV:
+
+1. **Consulta por Placa** (`/api/v4/VehicleInfo/byplate`)
+   - Retorna: marca, modelo, versão, ano, combustível, VIN, cor, etc.
+   - Suporta placas antigas (ABC-1234) e Mercosul (ABC1D23)
+
+2. **Plano de Revisões** (`/api/v4/RevisionPlan`)
+   - Revisões específicas do fabricante
+   - Peças a serem trocadas por quilometragem
+   - Inspeções recomendadas
+   - Estimativa de preços e tempo
+
+3. **Catálogo Completo:**
+   - `/api/v4/Makers` - Lista de fabricantes
+   - `/api/v4/Models` - Modelos por fabricante
+   - `/api/v4/Versions` - Versões por modelo
+
+### Como a integração funciona:
+
+**Busca por Placa:**
+```
+Usuário digita placa → API SUIV retorna dados → WiseDrive cadastra automaticamente
+```
+
+**Plano de Revisões:**
+```
+1. Busca ID da marca (Makers)
+2. Busca ID do modelo (Models)
+3. Busca ID da versão (Versions)
+4. Busca plano de revisão (RevisionPlan)
+5. WiseDrive exibe recomendações personalizadas
+```
+
+### Autenticação:
+
+A API SUIV usa **query parameter** para autenticação:
+```
+https://api.suiv.com.br/api/v4/VehicleInfo/byplate?plate=ABC1234&key=SUA_CHAVE_AQUI
+```
+
+### Limitações e Custos:
+
+- ⚠️ **API Paga** - Requer assinatura
+- Consulte preços e planos em: https://api.suiv.com.br
+- Documentação completa: https://api.suiv.com.br/documentation/
 
 ---
 

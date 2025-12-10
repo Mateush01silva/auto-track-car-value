@@ -1,18 +1,20 @@
 /**
- * Plate API Service
+ * SUIV API Service
  *
- * Serviço para integração com API de busca por placa.
+ * Serviço para integração com API SUIV (https://api.suiv.com.br).
  * Esta API permite buscar informações completas do veículo através da placa,
  * eliminando a necessidade do usuário selecionar marca/modelo/ano manualmente.
  *
- * ⚠️ Requer assinatura paga da API
+ * ⚠️ Requer assinatura paga da API SUIV
+ *
+ * Documentação: https://api.suiv.com.br/documentation/
  */
 
 import { featureConfig } from '../config/featureFlags';
 
 /**
- * Interface para resposta da busca por placa
- * NOTA: Ajuste esta interface de acordo com a estrutura real da sua API
+ * Interface para resposta da busca por placa (API SUIV)
+ * Baseada na resposta da API /api/v4/VehicleInfo/byplate
  */
 export interface PlateSearchResponse {
   plate: string;
@@ -22,12 +24,51 @@ export interface PlateSearchResponse {
   year: number;
   color?: string;
   fuel?: string;
-  // Adicione outros campos que a API retorna
+  vin?: string;
+  yearFab?: number;
+  type?: string;
+  species?: string;
+  power?: number;
+  cubicCentimeters?: number;
+  seatCount?: number;
 }
 
 /**
- * Interface para resposta de revisões específicas do fabricante
- * NOTA: Ajuste de acordo com a estrutura real da API
+ * Interface para uma peça trocada no plano de revisão
+ */
+export interface ChangedPart {
+  nicknameId: number;
+  setId: number;
+  setDescription: string;
+  description: string;
+  amount: number;
+}
+
+/**
+ * Interface para uma inspeção no plano de revisão
+ */
+export interface Inspection {
+  description: string;
+  inspectionId: number;
+}
+
+/**
+ * Interface para um item do plano de revisão (API SUIV)
+ * Baseada na resposta da API /api/v4/RevisionPlan
+ */
+export interface RevisionPlanItem {
+  kilometers: number;
+  months: number;
+  parcels: number;
+  durationMinutes: number;
+  fullPrice: number | null;
+  parcelPrice: number | null;
+  changedParts: ChangedPart[];
+  inspections: Inspection[];
+}
+
+/**
+ * Interface unificada para compatibilidade com o maintenanceApiAdapter
  */
 export interface ManufacturerRevision {
   id: string;
@@ -38,7 +79,6 @@ export interface ManufacturerRevision {
   timeInterval: number | null; // em meses
   type: 'Preventiva' | 'Corretiva';
   criticidade: 'Crítica' | 'Alta' | 'Média' | 'Baixa';
-  // Campos opcionais que podem vir da API
   custoEstimado?: number;
   tempoEstimado?: number; // em minutos
 }
@@ -74,30 +114,34 @@ class PlateApiClient {
   }
 
   /**
-   * Realiza uma requisição HTTP para a API
+   * Realiza uma requisição HTTP para a API SUIV
+   * SUIV usa query parameter 'key' para autenticação, não header
    */
-  private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  private async request<T>(endpoint: string, params?: Record<string, string>): Promise<T> {
     if (!this.baseUrl || !this.apiKey) {
-      throw new PlateApiError('API não configurada. Verifique as variáveis de ambiente.');
+      throw new PlateApiError('API SUIV não configurada. Verifique VITE_CAR_API_URL e VITE_CAR_API_KEY no .env');
     }
 
-    const url = `${this.baseUrl}${endpoint}`;
+    // Adiciona a API key aos parâmetros
+    const queryParams = new URLSearchParams({
+      key: this.apiKey,
+      ...params,
+    });
+
+    const url = `${this.baseUrl}${endpoint}?${queryParams}`;
 
     try {
       const response = await fetch(url, {
-        ...options,
+        method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`,
-          // Ou dependendo da API: 'X-API-Key': this.apiKey,
-          ...options?.headers,
+          'Accept': 'application/json',
         },
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+        const errorData = await response.text().catch(() => '');
         throw new PlateApiError(
-          errorData.message || `Erro na API: ${response.status} ${response.statusText}`,
+          `Erro na API SUIV: ${response.status} ${response.statusText}`,
           response.status,
           errorData
         );
@@ -110,7 +154,7 @@ class PlateApiClient {
       }
 
       throw new PlateApiError(
-        'Erro ao conectar com a API',
+        'Erro ao conectar com a API SUIV',
         undefined,
         error
       );
@@ -118,13 +162,13 @@ class PlateApiClient {
   }
 
   /**
-   * Busca informações do veículo pela placa
+   * Busca informações do veículo pela placa (API SUIV)
    *
    * @param plate - Placa do veículo (formato: ABC-1234 ou ABC1D23)
    * @returns Informações completas do veículo
    *
    * @example
-   * const vehicle = await searchByPlate('ABC-1234');
+   * const vehicle = await searchByPlate('PGR4B43');
    * console.log(vehicle.brand, vehicle.model, vehicle.year);
    */
   async searchByPlate(plate: string): Promise<PlateSearchResponse> {
@@ -135,21 +179,126 @@ class PlateApiClient {
       throw new PlateApiError('Placa inválida. Use o formato ABC-1234 ou ABC1D23');
     }
 
-    // NOTA: Ajuste o endpoint de acordo com a documentação da sua API
-    // Exemplos comuns:
-    // - /vehicles/search?plate=${cleanPlate}
-    // - /api/v1/vehicle/${cleanPlate}
-    // - /consulta/placa/${cleanPlate}
+    // Endpoint: GET /api/v4/VehicleInfo/byplate
+    // Parâmetros: plate, withFipe=false, searchOtherProviders=true
+    interface SuivVehicleResponse {
+      maker: string;
+      model: string;
+      version?: string;
+      plate: string;
+      yearModel: number;
+      yearFab: number;
+      fuel: string;
+      vin?: string;
+      type?: string;
+      species?: string;
+      color?: string;
+      power?: number;
+      cubicCentimeters?: number;
+      seatCount?: number;
+    }
 
-    return this.request<PlateSearchResponse>(`/vehicles/search?plate=${cleanPlate}`);
+    const response = await this.request<SuivVehicleResponse>('/api/v4/VehicleInfo/byplate', {
+      plate: cleanPlate,
+      withFipe: 'false',
+      searchOtherProviders: 'true',
+    });
+
+    // Mapeia para a interface PlateSearchResponse
+    return {
+      plate: response.plate,
+      brand: response.maker,
+      model: response.model,
+      version: response.version,
+      year: response.yearModel,
+      yearFab: response.yearFab,
+      fuel: response.fuel,
+      vin: response.vin,
+      type: response.type,
+      species: response.species,
+      color: response.color,
+      power: response.power,
+      cubicCentimeters: response.cubicCentimeters,
+      seatCount: response.seatCount,
+    };
   }
 
   /**
-   * Busca revisões específicas do fabricante para um veículo
+   * Busca o ID da marca na API SUIV
+   * @private
+   */
+  private async getMakerId(brandName: string): Promise<number | null> {
+    interface Maker {
+      id: number;
+      description: string;
+    }
+
+    const makers = await this.request<Maker[]>('/api/v4/Makers');
+    const maker = makers.find(m =>
+      m.description.toUpperCase() === brandName.toUpperCase()
+    );
+
+    return maker?.id || null;
+  }
+
+  /**
+   * Busca o ID do modelo na API SUIV
+   * @private
+   */
+  private async getModelId(makerId: number, modelName: string): Promise<number | null> {
+    interface Model {
+      id: number;
+      description: string;
+    }
+
+    const models = await this.request<Model[]>('/api/v4/Models', {
+      makerId: makerId.toString(),
+    });
+
+    // Busca aproximada por substring (modelo pode vir com anos e detalhes)
+    const model = models.find(m =>
+      m.description.toUpperCase().includes(modelName.toUpperCase())
+    );
+
+    return model?.id || null;
+  }
+
+  /**
+   * Busca o ID da versão na API SUIV
+   * @private
+   */
+  private async getVersionId(modelId: number, year: number): Promise<number | null> {
+    interface Version {
+      id: number;
+      description: string;
+      startingYear: number;
+      endingYear: number;
+    }
+
+    const versions = await this.request<Version[]>('/api/v4/Versions', {
+      modelId: modelId.toString(),
+    });
+
+    // Busca versão que inclui o ano especificado
+    const version = versions.find(v =>
+      v.startingYear <= year && v.endingYear >= year
+    );
+
+    return version?.id || null;
+  }
+
+  /**
+   * Busca revisões específicas do fabricante para um veículo (API SUIV)
    *
-   * @param brand - Marca do veículo
-   * @param model - Modelo do veículo
-   * @param year - Ano do veículo
+   * IMPORTANTE: Este método requer múltiplas chamadas à API SUIV:
+   * 1. Buscar ID da marca (Makers)
+   * 2. Buscar ID do modelo (Models)
+   * 3. Buscar ID da versão (Versions)
+   * 4. Buscar plano de revisão (RevisionPlan)
+   *
+   * @param brand - Marca do veículo (ex: "CHEVROLET")
+   * @param model - Modelo do veículo (ex: "COBALT")
+   * @param year - Ano do veículo (ex: 2014)
    * @returns Lista de revisões recomendadas pelo fabricante
    */
   async getManufacturerRevisions(
@@ -157,24 +306,117 @@ class PlateApiClient {
     model: string,
     year: number
   ): Promise<ManufacturerRevision[]> {
-    // NOTA: Ajuste o endpoint de acordo com a documentação da sua API
-    const params = new URLSearchParams({
-      brand,
-      model,
-      year: year.toString(),
-    });
+    try {
+      // Passo 1: Buscar ID da marca
+      const makerId = await this.getMakerId(brand);
+      if (!makerId) {
+        throw new PlateApiError(`Marca "${brand}" não encontrada na API SUIV`);
+      }
 
-    return this.request<ManufacturerRevision[]>(`/revisions?${params}`);
+      // Passo 2: Buscar ID do modelo
+      const modelId = await this.getModelId(makerId, model);
+      if (!modelId) {
+        throw new PlateApiError(`Modelo "${model}" não encontrado para a marca "${brand}"`);
+      }
+
+      // Passo 3: Buscar ID da versão
+      const versionId = await this.getVersionId(modelId, year);
+      if (!versionId) {
+        throw new PlateApiError(`Versão não encontrada para ${brand} ${model} (${year})`);
+      }
+
+      // Passo 4: Buscar plano de revisão
+      const revisionPlan = await this.request<RevisionPlanItem[]>('/api/v4/RevisionPlan', {
+        versionId: versionId.toString(),
+        year: year.toString(),
+      });
+
+      // Converte o plano de revisão SUIV para o formato ManufacturerRevision
+      return this.convertRevisionPlanToManufacturerRevisions(revisionPlan);
+    } catch (error) {
+      if (error instanceof PlateApiError) {
+        throw error;
+      }
+      throw new PlateApiError('Erro ao buscar plano de revisão', undefined, error);
+    }
   }
 
   /**
-   * Verifica se a API está configurada e funcionando
+   * Converte o plano de revisão da SUIV para o formato ManufacturerRevision
+   * @private
+   */
+  private convertRevisionPlanToManufacturerRevisions(
+    revisionPlan: RevisionPlanItem[]
+  ): ManufacturerRevision[] {
+    const revisions: ManufacturerRevision[] = [];
+
+    for (const item of revisionPlan) {
+      // Adiciona peças a serem trocadas
+      for (const part of item.changedParts) {
+        revisions.push({
+          id: `part_${item.kilometers}_${part.nicknameId}`,
+          category: part.setDescription,
+          item: part.description,
+          description: `Troca de ${part.description} (${part.amount}x)`,
+          kmInterval: item.kilometers,
+          timeInterval: item.months,
+          type: 'Preventiva',
+          criticidade: this.estimateCriticality(part.setDescription),
+          custoEstimado: item.fullPrice || undefined,
+          tempoEstimado: item.durationMinutes || undefined,
+        });
+      }
+
+      // Adiciona inspeções
+      for (const inspection of item.inspections) {
+        revisions.push({
+          id: `inspection_${item.kilometers}_${inspection.inspectionId}`,
+          category: 'Inspeção',
+          item: inspection.description,
+          description: `Inspeção: ${inspection.description}`,
+          kmInterval: item.kilometers,
+          timeInterval: item.months,
+          type: 'Preventiva',
+          criticidade: 'Baixa',
+          custoEstimado: 0,
+          tempoEstimado: item.durationMinutes || undefined,
+        });
+      }
+    }
+
+    return revisions;
+  }
+
+  /**
+   * Estima a criticidade baseada na categoria
+   * @private
+   */
+  private estimateCriticality(category: string): 'Crítica' | 'Alta' | 'Média' | 'Baixa' {
+    const lowerCategory = category.toLowerCase();
+
+    if (lowerCategory.includes('motor') || lowerCategory.includes('freio')) {
+      return 'Crítica';
+    }
+    if (lowerCategory.includes('combustível') || lowerCategory.includes('óleo')) {
+      return 'Alta';
+    }
+    if (lowerCategory.includes('filtro')) {
+      return 'Média';
+    }
+    return 'Baixa';
+  }
+
+  /**
+   * Verifica se a API SUIV está configurada e funcionando
+   * Testa fazendo uma chamada simples à API de marcas
    */
   async healthCheck(): Promise<boolean> {
     try {
-      // NOTA: Ajuste o endpoint de acordo com a sua API
-      // Muitas APIs têm um endpoint /health ou /ping
-      await this.request('/health');
+      if (!this.baseUrl || !this.apiKey) {
+        return false;
+      }
+      // Testa com endpoint de marcas (leve e rápido)
+      await this.request('/api/v4/Makers');
       return true;
     } catch {
       return false;
