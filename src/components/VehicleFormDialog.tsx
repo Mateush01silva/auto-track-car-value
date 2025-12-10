@@ -6,7 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { fipeApi, FipeBrand, FipeModel, FipeYear } from "@/services/fipeApi";
 import { useVehicles, Vehicle } from "@/hooks/useVehicles";
-import { Loader2 } from "lucide-react";
+import { useVehicleMode, usePlateSearch, usePlateValidation } from "@/hooks/useFeatureFlags";
+import { Loader2, Search, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface VehicleFormDialogProps {
   open: boolean;
@@ -22,31 +24,65 @@ const POPULAR_BRANDS = [
 
 export const VehicleFormDialog = ({ open, onOpenChange, vehicle }: VehicleFormDialogProps) => {
   const { addVehicle, updateVehicle } = useVehicles();
+  const vehicleMode = useVehicleMode();
+  const plateSearch = usePlateSearch();
+  const plateValidation = usePlateValidation();
+
   const [loading, setLoading] = useState(false);
   const [loadingFipe, setLoadingFipe] = useState(false);
 
+  // Estados do modo Fipe
   const [brands, setBrands] = useState<FipeBrand[]>([]);
   const [models, setModels] = useState<FipeModel[]>([]);
   const [years, setYears] = useState<FipeYear[]>([]);
-
   const [selectedBrand, setSelectedBrand] = useState("");
   const [selectedModel, setSelectedModel] = useState("");
   const [selectedYear, setSelectedYear] = useState("");
+
+  // Estados compartilhados
   const [plate, setPlate] = useState("");
   const [currentKm, setCurrentKm] = useState("");
 
+  // Estados do modo Plate API
+  const [plateSearchInput, setPlateSearchInput] = useState("");
+  const [vehicleData, setVehicleData] = useState<{
+    brand: string;
+    model: string;
+    year: number;
+    version?: string;
+  } | null>(null);
+
   useEffect(() => {
     if (open && !vehicle) {
-      loadBrands();
+      // Modo Fipe: carrega marcas
+      if (vehicleMode.isFipeMode) {
+        loadBrands();
+      }
+      // Modo Plate: limpa estado
+      if (vehicleMode.isPlateMode) {
+        setPlateSearchInput("");
+        setVehicleData(null);
+      }
     }
     if (vehicle) {
       setSelectedBrand(vehicle.brand);
       setPlate(vehicle.plate);
+      setPlateSearchInput(vehicle.plate);
       // Formata o KM com pontos de milhar
       const formattedKm = vehicle.current_km.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
       setCurrentKm(formattedKm);
+
+      // Se estiver editando no modo Plate, preenche os dados do veículo
+      if (vehicleMode.isPlateMode) {
+        setVehicleData({
+          brand: vehicle.brand,
+          model: vehicle.model,
+          year: vehicle.year,
+          version: vehicle.version || undefined,
+        });
+      }
     }
-  }, [open, vehicle]);
+  }, [open, vehicle, vehicleMode.isFipeMode, vehicleMode.isPlateMode]);
 
   const loadBrands = async () => {
     setLoadingFipe(true);
@@ -160,22 +196,59 @@ export const VehicleFormDialog = ({ open, onOpenChange, vehicle }: VehicleFormDi
     loadYears(selectedBrand, modelCode);
   };
 
+  const handlePlateSearch = async () => {
+    if (!plateSearchInput || !plateValidation.isValid(plateSearchInput)) {
+      return;
+    }
+
+    await plateSearch.searchByPlate(plateSearchInput);
+
+    // Se encontrou o veículo, preenche os dados
+    if (plateSearch.result) {
+      setVehicleData({
+        brand: plateSearch.result.brand,
+        model: plateSearch.result.model,
+        year: plateSearch.result.year,
+        version: plateSearch.result.version,
+      });
+      setPlate(plateSearch.result.plate || plateSearchInput);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      // Se estiver editando, use os valores já salvos
-      const brandName = vehicle ? vehicle.brand : (brands.find((b) => b.codigo === selectedBrand)?.nome || "");
-      const modelName = vehicle ? vehicle.model : (models.find((m) => m.codigo.toString() === selectedModel)?.nome || "");
-      const yearNumber = vehicle ? vehicle.year : parseInt(years.find((y) => y.codigo === selectedYear)?.nome.split("-")[0] || "0");
+      let brandName = "";
+      let modelName = "";
+      let yearNumber = 0;
+      let version: string | null = null;
+
+      // Modo Plate: usa dados da busca
+      if (vehicleMode.isPlateMode) {
+        if (!vehicleData) {
+          throw new Error("Busque o veículo pela placa antes de salvar");
+        }
+        brandName = vehicleData.brand;
+        modelName = vehicleData.model;
+        yearNumber = vehicleData.year;
+        version = vehicleData.version || null;
+      }
+      // Modo Fipe: usa seleções dos dropdowns
+      else {
+        // Se estiver editando, use os valores já salvos
+        brandName = vehicle ? vehicle.brand : (brands.find((b) => b.codigo === selectedBrand)?.nome || "");
+        modelName = vehicle ? vehicle.model : (models.find((m) => m.codigo.toString() === selectedModel)?.nome || "");
+        yearNumber = vehicle ? vehicle.year : parseInt(years.find((y) => y.codigo === selectedYear)?.nome.split("-")[0] || "0");
+      }
 
       const kmValue = parseInt(currentKm.replace(/\D/g, ''));
 
-      const vehicleData = {
+      const vehicleDataToSave = {
         brand: brandName,
         model: modelName,
-        version: null,
+        version,
         year: yearNumber,
         plate: plate.toUpperCase(),
         initial_km: vehicle ? vehicle.initial_km : kmValue, // Mantém initial_km em edição
@@ -184,9 +257,9 @@ export const VehicleFormDialog = ({ open, onOpenChange, vehicle }: VehicleFormDi
       };
 
       if (vehicle) {
-        await updateVehicle(vehicle.id, vehicleData);
+        await updateVehicle(vehicle.id, vehicleDataToSave);
       } else {
-        await addVehicle(vehicleData);
+        await addVehicle(vehicleDataToSave);
       }
 
       onOpenChange(false);
@@ -206,6 +279,25 @@ export const VehicleFormDialog = ({ open, onOpenChange, vehicle }: VehicleFormDi
     setCurrentKm("");
     setModels([]);
     setYears([]);
+    setPlateSearchInput("");
+    setVehicleData(null);
+    plateSearch.reset();
+  };
+
+  // Determina se o formulário pode ser submetido
+  const canSubmit = () => {
+    if (vehicle) {
+      // Se estiver editando, só precisa de placa e KM
+      return plate && currentKm;
+    }
+
+    if (vehicleMode.isPlateMode) {
+      // Modo Plate: precisa ter buscado o veículo
+      return vehicleData && plate && currentKm;
+    }
+
+    // Modo Fipe: precisa de todos os selects
+    return selectedBrand && selectedModel && selectedYear && plate && currentKm;
   };
 
   return (
@@ -217,120 +309,191 @@ export const VehicleFormDialog = ({ open, onOpenChange, vehicle }: VehicleFormDi
             {vehicle ? "Atualize as informações do seu veículo." : "Cadastre um novo veículo para começar a registrar seu histórico de manutenções."}
           </DialogDescription>
         </DialogHeader>
+
+        {/* Indicador de modo (apenas em desenvolvimento) */}
+        {import.meta.env.DEV && (
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="text-xs">
+              <strong>Modo atual:</strong> {vehicleMode.info.description}
+            </AlertDescription>
+          </Alert>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="brand">Marca</Label>
-            <Select value={selectedBrand} onValueChange={handleBrandChange} disabled={loadingFipe || !!vehicle}>
-              <SelectTrigger className="bg-background">
-                {loadingFipe && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                <SelectValue placeholder={loadingFipe ? "Carregando marcas..." : "Selecione a marca"} />
-              </SelectTrigger>
-              <SelectContent className="bg-popover border border-border shadow-lg">
-                {brands.map((brand, index) => (
-                  <SelectItem key={brand.codigo} value={brand.codigo} className={index < POPULAR_BRANDS.length ? "font-medium" : ""}>
-                    {brand.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {/* MODO PLATE API - Busca por placa */}
+          {vehicleMode.isPlateMode && !vehicle && (
+            <div className="space-y-4 pb-4 border-b">
+              <div className="space-y-2">
+                <Label htmlFor="plate-search">Buscar veículo pela placa</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="plate-search"
+                    placeholder="ABC-1234 ou ABC1D34"
+                    value={plateSearchInput}
+                    onChange={(e) => {
+                      let value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                      if (value.length > 3) {
+                        value = value.slice(0, 3) + '-' + value.slice(3, 7);
+                      }
+                      setPlateSearchInput(value);
+                    }}
+                    maxLength={8}
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    onClick={handlePlateSearch}
+                    disabled={!plateSearchInput || !plateValidation.isValid(plateSearchInput) || plateSearch.isLoading}
+                  >
+                    {plateSearch.isLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Search className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+                {plateSearch.error && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription className="text-xs">{plateSearch.error}</AlertDescription>
+                  </Alert>
+                )}
+                {vehicleData && (
+                  <Alert>
+                    <AlertDescription className="text-xs">
+                      <strong>Encontrado:</strong> {vehicleData.brand} {vehicleData.model} ({vehicleData.year})
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            </div>
+          )}
 
-          <div className="space-y-2">
-            <Label htmlFor="model">Modelo</Label>
-            <Select value={selectedModel} onValueChange={handleModelChange} disabled={!selectedBrand || loadingFipe || !!vehicle}>
-              <SelectTrigger className="bg-background">
-                {loadingFipe && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                <SelectValue placeholder={loadingFipe ? "Carregando modelos..." : "Selecione o modelo"} />
-              </SelectTrigger>
-              <SelectContent className="bg-popover border border-border shadow-lg">
-                {models.map((model) => (
-                  <SelectItem key={model.codigo} value={model.codigo.toString()}>
-                    {model.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {/* MODO FIPE - Seleção manual */}
+          {vehicleMode.isFipeMode && !vehicle && (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="brand">Marca</Label>
+                <Select value={selectedBrand} onValueChange={handleBrandChange} disabled={loadingFipe}>
+                  <SelectTrigger className="bg-background">
+                    {loadingFipe && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <SelectValue placeholder={loadingFipe ? "Carregando marcas..." : "Selecione a marca"} />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border border-border shadow-lg">
+                    {brands.map((brand, index) => (
+                      <SelectItem key={brand.codigo} value={brand.codigo} className={index < POPULAR_BRANDS.length ? "font-medium" : ""}>
+                        {brand.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="year">Ano</Label>
-            <Select value={selectedYear} onValueChange={setSelectedYear} disabled={!selectedModel || loadingFipe || !!vehicle}>
-              <SelectTrigger className="bg-background">
-                {loadingFipe && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                <SelectValue placeholder={loadingFipe ? "Carregando anos..." : "Selecione o ano"} />
-              </SelectTrigger>
-              <SelectContent className="bg-popover border border-border shadow-lg">
-                {years.map((year) => (
-                  <SelectItem key={year.codigo} value={year.codigo}>
-                    {year.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+              <div className="space-y-2">
+                <Label htmlFor="model">Modelo</Label>
+                <Select value={selectedModel} onValueChange={handleModelChange} disabled={!selectedBrand || loadingFipe}>
+                  <SelectTrigger className="bg-background">
+                    {loadingFipe && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <SelectValue placeholder={loadingFipe ? "Carregando modelos..." : "Selecione o modelo"} />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border border-border shadow-lg">
+                    {models.map((model) => (
+                      <SelectItem key={model.codigo} value={model.codigo.toString()}>
+                        {model.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="plate">Placa</Label>
-            <Input
-              id="plate"
-              placeholder="ABC-1234 ou ABC1D34"
-              value={plate}
-              onChange={(e) => {
-                let value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+              <div className="space-y-2">
+                <Label htmlFor="year">Ano</Label>
+                <Select value={selectedYear} onValueChange={setSelectedYear} disabled={!selectedModel || loadingFipe}>
+                  <SelectTrigger className="bg-background">
+                    {loadingFipe && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <SelectValue placeholder={loadingFipe ? "Carregando anos..." : "Selecione o ano"} />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border border-border shadow-lg">
+                    {years.map((year) => (
+                      <SelectItem key={year.codigo} value={year.codigo}>
+                        {year.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          )}
 
-                // Aplicar máscara baseado no formato
-                if (value.length <= 7) {
-                  // Formato antigo: ABC-1234
-                  if (value.length > 3) {
-                    value = value.slice(0, 3) + '-' + value.slice(3, 7);
-                  }
-                } else {
-                  // Formato Mercosul: ABC1D34
-                  value = value.slice(0, 7);
-                }
+          {/* Campos compartilhados entre os modos */}
+          {(vehicleMode.isFipeMode || vehicleData || vehicle) && (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="plate">Placa</Label>
+                <Input
+                  id="plate"
+                  placeholder="ABC-1234 ou ABC1D34"
+                  value={plate}
+                  onChange={(e) => {
+                    let value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
 
-                setPlate(value);
-              }}
-              maxLength={8}
-              required
-            />
-            <p className="text-xs text-muted-foreground">
-              Formatos aceitos: ABC-1234 (antigo) ou ABC1D34 (Mercosul)
-            </p>
-          </div>
+                    // Aplicar máscara baseado no formato
+                    if (value.length <= 7) {
+                      // Formato antigo: ABC-1234
+                      if (value.length > 3) {
+                        value = value.slice(0, 3) + '-' + value.slice(3, 7);
+                      }
+                    } else {
+                      // Formato Mercosul: ABC1D34
+                      value = value.slice(0, 7);
+                    }
 
-          <div className="space-y-2">
-            <Label htmlFor="km">Quilometragem atual</Label>
-            <Input
-              id="km"
-              type="text"
-              placeholder="45.000"
-              value={currentKm}
-              onChange={(e) => {
-                // Remove tudo que não é número
-                const numbers = e.target.value.replace(/\D/g, '');
+                    setPlate(value);
+                  }}
+                  maxLength={8}
+                  required
+                  disabled={vehicleMode.isPlateMode && !vehicle}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Formatos aceitos: ABC-1234 (antigo) ou ABC1D34 (Mercosul)
+                </p>
+              </div>
 
-                // Limita a 999999 (999.999 km)
-                const limited = numbers.slice(0, 6);
+              <div className="space-y-2">
+                <Label htmlFor="km">Quilometragem atual</Label>
+                <Input
+                  id="km"
+                  type="text"
+                  placeholder="45.000"
+                  value={currentKm}
+                  onChange={(e) => {
+                    // Remove tudo que não é número
+                    const numbers = e.target.value.replace(/\D/g, '');
 
-                // Formata com pontos de milhar
-                const formatted = limited.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                    // Limita a 999999 (999.999 km)
+                    const limited = numbers.slice(0, 6);
 
-                setCurrentKm(formatted);
-              }}
-              maxLength={7}
-              required
-            />
-            <p className="text-xs text-muted-foreground">
-              Sugestão: arredonde para múltiplos de 1.000 (ex: 45.000)
-            </p>
-          </div>
+                    // Formata com pontos de milhar
+                    const formatted = limited.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+                    setCurrentKm(formatted);
+                  }}
+                  maxLength={7}
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  Sugestão: arredonde para múltiplos de 1.000 (ex: 45.000)
+                </p>
+              </div>
+            </>
+          )}
 
           <div className="flex gap-3 pt-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
               Cancelar
             </Button>
-            <Button type="submit" variant="default" className="flex-1" disabled={loading}>
+            <Button type="submit" variant="default" className="flex-1" disabled={loading || !canSubmit()}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {vehicle ? "Atualizar" : "Adicionar"}
             </Button>
