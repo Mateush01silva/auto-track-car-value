@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Select,
   SelectContent,
@@ -15,6 +16,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useVehicleMode, usePlateSearch, usePlateValidation } from "@/hooks/useFeatureFlags";
 import {
   ArrowLeft,
   Search,
@@ -24,7 +26,8 @@ import {
   Loader2,
   Calendar,
   Gauge,
-  Wrench as WrenchIcon
+  Wrench as WrenchIcon,
+  Info
 } from "lucide-react";
 import { WorkshopBottomNav } from "@/components/workshop/BottomNav";
 
@@ -73,6 +76,11 @@ const NewService = () => {
   const { user } = useAuth();
   const { toast } = useToast();
 
+  // Feature flags hooks
+  const vehicleMode = useVehicleMode();
+  const plateSearchApi = usePlateSearch();
+  const plateValidation = usePlateValidation();
+
   // Workshop state
   const [workshop, setWorkshop] = useState<Workshop | null>(null);
   const [loading, setLoading] = useState(true);
@@ -85,6 +93,15 @@ const NewService = () => {
   // Vehicle found state
   const [vehicleFound, setVehicleFound] = useState<Vehicle | null>(null);
   const [vehicleHistory, setVehicleHistory] = useState<Maintenance[]>([]);
+
+  // API SUIV search result
+  const [suivVehicleData, setSuivVehicleData] = useState<{
+    brand: string;
+    model: string;
+    year: number;
+    version?: string;
+    color?: string;
+  } | null>(null);
 
   // Manual registration state
   const [showManualForm, setShowManualForm] = useState(false);
@@ -141,6 +158,7 @@ const NewService = () => {
     setPlate(cleaned);
     setSearchComplete(false);
     setVehicleFound(null);
+    setSuivVehicleData(null);
     setShowManualForm(false);
   };
 
@@ -175,6 +193,7 @@ const NewService = () => {
 
     setSearching(true);
     setVehicleFound(null);
+    setSuivVehicleData(null);
     setShowManualForm(false);
 
     try {
@@ -186,7 +205,7 @@ const NewService = () => {
         ? `${normalizedPlate.slice(0, 3)}-${normalizedPlate.slice(3)}`
         : normalizedPlate;
 
-      // Search for vehicle by plate (try both formats)
+      // ETAPA 1: Buscar no banco de dados local primeiro
       const { data: vehicles, error } = await supabase
         .from('vehicles')
         .select('*')
@@ -199,6 +218,7 @@ const NewService = () => {
       const vehicle = vehicles && vehicles.length > 0 ? vehicles[0] : null;
 
       if (vehicle) {
+        // Veículo encontrado no banco local
         setVehicleFound(vehicle);
 
         // Fetch maintenance history
@@ -210,13 +230,43 @@ const NewService = () => {
           .limit(3);
 
         setVehicleHistory(maintenances || []);
+        setSearchComplete(true);
       } else {
-        // Vehicle not found, show manual form
-        setShowManualForm(true);
-        loadBrands();
-      }
+        // ETAPA 2: Não encontrou no banco, tentar API SUIV (se habilitada)
+        if (vehicleMode.isPlateMode) {
+          try {
+            await plateSearchApi.searchByPlate(normalizedPlate);
 
-      setSearchComplete(true);
+            if (plateSearchApi.result) {
+              // Sucesso! Encontrou na API SUIV
+              setSuivVehicleData({
+                brand: plateSearchApi.result.brand,
+                model: plateSearchApi.result.model,
+                year: plateSearchApi.result.year,
+                version: plateSearchApi.result.version,
+                color: plateSearchApi.result.color,
+              });
+              setSearchComplete(true);
+            } else {
+              // Não encontrou na API SUIV, mostrar formulário manual
+              setShowManualForm(true);
+              loadBrands();
+              setSearchComplete(true);
+            }
+          } catch (suivError) {
+            // Erro na API SUIV, fallback para formulário manual
+            console.warn('Erro na API SUIV, usando formulário manual:', suivError);
+            setShowManualForm(true);
+            loadBrands();
+            setSearchComplete(true);
+          }
+        } else {
+          // ETAPA 3: Modo Fipe - mostrar formulário manual direto
+          setShowManualForm(true);
+          loadBrands();
+          setSearchComplete(true);
+        }
+      }
     } catch (error) {
       console.error('Error searching vehicle:', error);
       toast({
@@ -446,7 +496,7 @@ const NewService = () => {
           </CardContent>
         </Card>
 
-        {/* Vehicle Found */}
+        {/* Vehicle Found in Database */}
         {vehicleFound && (
           <Card className="mb-6 border-green-200 bg-green-50/50">
             <CardHeader>
@@ -509,6 +559,69 @@ const NewService = () => {
                 >
                   <WrenchIcon className="h-5 w-5 mr-2" />
                   Registrar Nova Manutencao
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Vehicle Found via SUIV API */}
+        {suivVehicleData && !vehicleFound && (
+          <Card className="mb-6 border-blue-200 bg-blue-50/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-blue-700">
+                <CheckCircle className="h-5 w-5" />
+                Veículo Identificado via API SUIV
+              </CardTitle>
+              <CardDescription>
+                Os dados foram encontrados automaticamente pela placa
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {/* Vehicle Info */}
+                <div className="flex items-center gap-4">
+                  <div className="bg-white rounded-lg p-4 shadow-sm">
+                    <Car className="h-12 w-12 text-blue-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold font-mono">{plate}</p>
+                    <p className="text-lg">{suivVehicleData.brand} {suivVehicleData.model}</p>
+                    <p className="text-gray-500">
+                      {suivVehicleData.year}
+                      {suivVehicleData.version && ` - ${suivVehicleData.version}`}
+                      {suivVehicleData.color && ` - ${suivVehicleData.color}`}
+                    </p>
+                  </div>
+                </div>
+
+                {/* API Info Alert */}
+                <Alert className="bg-white border-blue-200">
+                  <Info className="h-4 w-4 text-blue-600" />
+                  <AlertDescription className="text-xs text-blue-700">
+                    Este veículo ainda não está cadastrado no sistema. Ao continuar, ele será registrado automaticamente.
+                  </AlertDescription>
+                </Alert>
+
+                <Button
+                  onClick={() => {
+                    // Store SUIV data and continue
+                    localStorage.setItem('workshop_new_service_vehicle', JSON.stringify({
+                      plate: plate.replace('-', '').toUpperCase(),
+                      brand: suivVehicleData.brand,
+                      model: suivVehicleData.model,
+                      year: suivVehicleData.year,
+                      color: suivVehicleData.color || null,
+                      km: null,
+                      isNew: true,
+                    }));
+                    navigate('/workshop/new-service/client');
+                  }}
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                  size="lg"
+                >
+                  <WrenchIcon className="h-5 w-5 mr-2" />
+                  Continuar com Este Veículo
                 </Button>
               </div>
             </CardContent>
