@@ -1,6 +1,6 @@
 # Como se tornar Administrador
 
-Este arquivo contém instruções para marcar seu usuário como administrador no WiseDrive.
+Este arquivo contém instruções para marcar seu usuário como administrador no Vybo.
 
 ## Passo a Passo
 
@@ -17,7 +17,7 @@ WHERE email = 'SEU_EMAIL@exemplo.com';
 ```
 
 5. Clique em **Run** para executar a query
-6. Faça logout e login novamente no WiseDrive
+6. Faça logout e login novamente no Vybo
 7. Pronto! Agora você tem acesso a todas as funcionalidades sem restrições 🎉
 
 ## O que muda quando você é Admin?

@@ -38,7 +38,7 @@ Depois de criar:
 ## 4. Verificar IDs dos Produtos (Test Mode)
 No Stripe Dashboard (em Test mode):
 - [ ] Vá em Products
-- [ ] Clique no produto WiseDrive Pro
+- [ ] Clique no produto Vybo Pro
 - [ ] Copie o ID do preço MENSAL (price_...)
 - [ ] Copie o ID do preço ANUAL (price_...)
 - [ ] No Supabase > Edge Functions > Secrets

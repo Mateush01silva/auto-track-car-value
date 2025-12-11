@@ -45,7 +45,7 @@ serve(async (req) => {
         personalizations: [personalization],
         from: {
           email: 'silva.mateush01@gmail.com',
-          name: from_name || 'WiseDrive'
+          name: from_name || 'Vybo'
         },
         content: [{
           type: 'text/html',

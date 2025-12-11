@@ -4,7 +4,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* WiseDrive Design System - Tecnologia Automotiva */
+/* Vybo Design System - Tecnologia Automotiva */
 
 @layer base {
   :root {
@@ -12,7 +12,7 @@
     --background: 0 0% 100%;
     --foreground: 207 82% 16%;
     
-    /* WiseDrive Brand Colors */
+    /* Vybo Brand Colors */
     --primary: 207 82% 16%; /* Azul escuro #0A2540 */
     --primary-foreground: 0 0% 100%;
     --primary-hover: 207 82% 12%;

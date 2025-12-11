@@ -1,5 +1,5 @@
 -- ============================================
--- WiseDrive - Oficinas (Workshops)
+-- Vybo - Oficinas (Workshops)
 -- Migration to add support for mechanical workshops
 -- ============================================
 

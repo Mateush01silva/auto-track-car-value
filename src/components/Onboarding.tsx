@@ -61,7 +61,7 @@ export const Onboarding = ({ open, onComplete }: OnboardingProps) => {
           {/* Header with progress */}
           <div className="bg-gradient-to-r from-primary to-primary/80 text-white p-6 pb-8">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold">Bem-vindo ao WiseDrive!</h2>
+              <h2 className="text-2xl font-bold">Bem-vindo ao Vybo!</h2>
               <Button
                 variant="ghost"
                 size="sm"

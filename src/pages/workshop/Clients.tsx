@@ -550,7 +550,7 @@ const WorkshopClients = () => {
       `Já se passaram ${daysSince} dias desde a última manutenção do seu ${client.brand} ${client.model} (${formatPlate(client.plate)}).\n\n` +
       `Que tal agendar uma revisão preventiva?\n\n` +
       `📞 Entre em contato conosco para agendar!\n\n` +
-      `🎁 Clientes WiseDrive têm benefícios exclusivos!`
+      `🎁 Clientes Vybo têm benefícios exclusivos!`
     );
 
     let phone = client.clientPhone?.replace(/\D/g, '') || '';
@@ -621,7 +621,7 @@ const WorkshopClients = () => {
               📧 ${workshop.email || 'E-mail não informado'}</p>
               <hr style="margin: 20px 0; border: none; border-top: 1px solid #e5e7eb;" />
               <p style="color: #6b7280; font-size: 12px;">
-                🎁 Clientes WiseDrive têm benefícios exclusivos!
+                🎁 Clientes Vybo têm benefícios exclusivos!
               </p>
             </div>
           `,
@@ -778,7 +778,7 @@ const WorkshopClients = () => {
                           {client.userId && (
                             <Badge className="bg-green-100 text-green-700 text-xs">
                               <CheckCircle className="h-3 w-3 mr-1" />
-                              WiseDrive
+                              Vybo
                             </Badge>
                           )}
                         </div>
@@ -900,7 +900,7 @@ const WorkshopClients = () => {
                       {selectedClient.userId && (
                         <Badge className="bg-green-100 text-green-700 text-xs">
                           <CheckCircle className="h-3 w-3 mr-1" />
-                          Usuario WiseDrive
+                          Usuario Vybo
                         </Badge>
                       )}
                     </div>

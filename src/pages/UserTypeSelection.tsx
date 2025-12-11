@@ -52,10 +52,10 @@ const UserTypeSelection = () => {
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
               <Car className="h-10 w-10 text-white" />
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold text-white">WiseDrive</h1>
+            <h1 className="text-4xl md:text-5xl font-bold text-white">Vybo</h1>
           </div>
           <p className="text-xl text-white/80">
-            Como você deseja usar o WiseDrive?
+            Como você deseja usar o Vybo?
           </p>
         </div>
 

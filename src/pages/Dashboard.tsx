@@ -412,7 +412,7 @@ const Dashboard = () => {
             <div className="bg-primary rounded-lg p-2 group-hover:shadow-glow-primary transition-all duration-300">
               <Car className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold text-primary">WiseDrive</span>
+            <span className="text-xl font-bold text-primary">Vybo</span>
           </Link>
           
           <DropdownMenu>
@@ -1340,7 +1340,7 @@ const Dashboard = () => {
             <Card className="bg-surface/50">
               <CardContent className="pt-6">
                 <p className="text-sm text-muted-foreground text-center">
-                  🚀 <strong>Versão Beta</strong> - Esta é uma demonstração do WiseDrive.
+                  🚀 <strong>Versão Beta</strong> - Esta é uma demonstração do Vybo.
                 </p>
               </CardContent>
             </Card>

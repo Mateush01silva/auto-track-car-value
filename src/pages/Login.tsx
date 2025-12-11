@@ -239,7 +239,7 @@ const Login = () => {
           } else {
             toast({
               title: "Oficina criada com sucesso!",
-              description: "Bem-vindo ao WiseDrive para Oficinas.",
+              description: "Bem-vindo ao Vybo para Oficinas.",
             });
             navigate("/workshop/dashboard", { replace: true });
           }
@@ -296,7 +296,7 @@ const Login = () => {
               )}
             </div>
             <span className={`text-2xl font-bold ${isWorkshop ? 'text-green-600' : 'text-primary'}`}>
-              WiseDrive
+              Vybo
             </span>
           </Link>
 
@@ -579,7 +579,7 @@ const Login = () => {
                 <>
                   <strong>MVP em fase de testes</strong>
                   <br />
-                  Esta e uma demonstracao do WiseDrive. Os dados sao simulados.
+                  Esta e uma demonstracao do Vybo. Os dados sao simulados.
                 </>
               )}
             </p>

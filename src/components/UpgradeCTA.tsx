@@ -29,7 +29,7 @@ const contextMessages = {
   },
   general: {
     title: "Desbloqueie todos os recursos!",
-    description: "Aproveite ao máximo o WiseDrive com o Plano Pro.",
+    description: "Aproveite ao máximo o Vybo com o Plano Pro.",
     features: ["Até 3 veículos", "Manutenções ilimitadas", "Exportação e compartilhamento"],
   },
 };

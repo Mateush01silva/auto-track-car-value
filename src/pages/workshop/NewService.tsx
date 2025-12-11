@@ -507,7 +507,7 @@ const NewService = () => {
                 </CardTitle>
                 {vehicleFound.user_id && (
                   <Badge variant="secondary" className="bg-blue-100 text-blue-700">
-                    Cliente WiseDrive
+                    Cliente Vybo
                   </Badge>
                 )}
               </div>

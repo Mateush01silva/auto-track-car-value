@@ -1,4 +1,4 @@
-# Guia Completo de Configuração do Stripe - WiseDrive
+# Guia Completo de Configuração do Stripe - Vybo
 
 ## 🔴 Problema Atual
 
@@ -17,9 +17,9 @@ Erro ao clicar em "Comprar Plano Pro":
 1. **Acesse o Stripe Dashboard:**
    - https://dashboard.stripe.com/
 
-2. **Criar Produto "WiseDrive Pro":**
+2. **Criar Produto "Vybo Pro":**
    - Menu: **Products** → **+ Add Product**
-   - Name: **WiseDrive Pro**
+   - Name: **Vybo Pro**
    - Description: **Plano profissional com recursos ilimitados**
 
 3. **Criar Preço Mensal:**

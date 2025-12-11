@@ -23,6 +23,10 @@ import WorkshopPlans from "./pages/workshop/Plans";
 import WorkshopOnboarding from "./pages/workshop/Onboarding";
 import WorkshopOpportunities from "./pages/workshop/Opportunities";
 import PublicVehicleHistory from "./pages/PublicVehicleHistory";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import CookiePolicy from "./pages/CookiePolicy";
+import PrivacySettings from "./pages/PrivacySettings";
+import CookieConsent from "./components/CookieConsent";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +36,7 @@ const App = () => (
       <AuthProvider>
         <Toaster />
         <Sonner />
+        <CookieConsent />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
@@ -100,6 +105,13 @@ const App = () => (
             <Route path="/report/:vehicleId" element={<Report />} />
             <Route path="/report" element={<Report />} />
             <Route path="/share/:token" element={<PublicVehicleHistory />} />
+            <Route path="/politica-de-privacidade" element={<PrivacyPolicy />} />
+            <Route path="/politica-de-cookies" element={<CookiePolicy />} />
+            <Route path="/configuracoes/privacidade" element={
+              <ProtectedRoute>
+                <PrivacySettings />
+              </ProtectedRoute>
+            } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

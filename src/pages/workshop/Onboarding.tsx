@@ -339,7 +339,7 @@ const WorkshopOnboarding = () => {
                 <div className="mx-auto mb-4 w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
                   <Sparkles className="h-8 w-8 text-primary" />
                 </div>
-                <CardTitle className="text-2xl">Bem-vindo ao WiseDrive!</CardTitle>
+                <CardTitle className="text-2xl">Bem-vindo ao Vybo!</CardTitle>
                 <CardDescription className="text-base">
                   Vamos configurar sua oficina em 3 passos rápidos.
                 </CardDescription>
@@ -347,7 +347,7 @@ const WorkshopOnboarding = () => {
               <CardContent className="space-y-6">
                 <div className="space-y-4 text-center">
                   <p className="text-muted-foreground">
-                    O WiseDrive ajuda você a gerenciar atendimentos, manter histórico dos veículos
+                    O Vybo ajuda você a gerenciar atendimentos, manter histórico dos veículos
                     e fidelizar seus clientes.
                   </p>
 
