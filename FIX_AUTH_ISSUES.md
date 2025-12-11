@@ -1,4 +1,4 @@
-# Correção de Problemas de Autenticação no WiseDrive
+# Correção de Problemas de Autenticação no Vybo
 
 Este documento contém as soluções para os problemas de autenticação reportados:
 1. Erro "e-mail não confirmado" ao criar nova conta
@@ -51,7 +51,7 @@ O Google OAuth não está configurado no Supabase OU a URL de redirect não est�
 3. Vá em **Credentials** → **Create Credentials** → **OAuth Client ID**
 4. Configure:
    - Application type: **Web application**
-   - Name: **WiseDrive**
+   - Name: **Vybo**
    - Authorized JavaScript origins:
      ```
      https://www.wisedrive.com.br

@@ -1,6 +1,6 @@
 # Feature Flags - Guia Completo
 
-Este guia explica como alternar entre diferentes modos de operação do WiseDrive usando **feature flags**.
+Este guia explica como alternar entre diferentes modos de operação do Vybo usando **feature flags**.
 
 ## 📋 Índice
 
@@ -16,7 +16,7 @@ Este guia explica como alternar entre diferentes modos de operação do WiseDriv
 
 ## 🎯 Visão Geral
 
-O WiseDrive agora suporta **dois modos de operação** que podem ser alternados facilmente através de variáveis de ambiente:
+O Vybo agora suporta **dois modos de operação** que podem ser alternados facilmente através de variáveis de ambiente:
 
 ### 1. **Modo de Cadastro de Veículos**
 - **Fipe** (atual): API gratuita com seleção manual de marca/modelo/ano
@@ -267,7 +267,7 @@ No modo de desenvolvimento, você verá logs úteis:
 ```javascript
 // Abra o console do navegador (F12)
 // Você verá informações sobre o modo atual:
-🚗 WiseDrive - Feature Flags
+🚗 Vybo - Feature Flags
 Modo de Veículos: plate
 Modo de Manutenção: generic
 API URL: https://api-teste.exemplo.com.br
@@ -311,7 +311,7 @@ VITE_MAINTENANCE_MODE="generic"      # Manutenções antigas
 
 ### P: Como sei qual modo está ativo?
 
-**R:** Em modo de desenvolvimento, você verá um alerta azul no topo do formulário de veículos mostrando o modo atual. Você também pode verificar no console do navegador (F12) procurando por "WiseDrive - Feature Flags".
+**R:** Em modo de desenvolvimento, você verá um alerta azul no topo do formulário de veículos mostrando o modo atual. Você também pode verificar no console do navegador (F12) procurando por "Vybo - Feature Flags".
 
 ---
 
@@ -377,7 +377,7 @@ O Vite carrega automaticamente o arquivo correto baseado no comando usado.
 
 ## 📡 Sobre a API SUIV
 
-O WiseDrive está integrado com a **API SUIV V4**, uma API completa para consulta de informações veiculares no Brasil.
+O Vybo está integrado com a **API SUIV V4**, uma API completa para consulta de informações veiculares no Brasil.
 
 ### Funcionalidades da API SUIV:
 
@@ -400,7 +400,7 @@ O WiseDrive está integrado com a **API SUIV V4**, uma API completa para consult
 
 **Busca por Placa:**
 ```
-Usuário digita placa → API SUIV retorna dados → WiseDrive cadastra automaticamente
+Usuário digita placa → API SUIV retorna dados → Vybo cadastra automaticamente
 ```
 
 **Plano de Revisões:**
@@ -409,7 +409,7 @@ Usuário digita placa → API SUIV retorna dados → WiseDrive cadastra automati
 2. Busca ID do modelo (Models)
 3. Busca ID da versão (Versions)
 4. Busca plano de revisão (RevisionPlan)
-5. WiseDrive exibe recomendações personalizadas
+5. Vybo exibe recomendações personalizadas
 ```
 
 ### Autenticação:
@@ -440,4 +440,4 @@ Se encontrar problemas:
 
 ## 🎉 Pronto!
 
-Agora você pode alternar facilmente entre os modos de operação do WiseDrive. Teste à vontade e volte ao modo anterior quando precisar!
+Agora você pode alternar facilmente entre os modos de operação do Vybo. Teste à vontade e volte ao modo anterior quando precisar!

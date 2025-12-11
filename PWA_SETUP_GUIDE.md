@@ -1,4 +1,4 @@
-# Guia de Configuração PWA - WiseDrive
+# Guia de Configuração PWA - Vybo
 
 ## ✅ O que já foi configurado:
 
@@ -23,7 +23,7 @@ Você precisa criar 2 ícones do app:
 **Opção 1: Usar um Gerador Online (Mais Fácil)**
 
 1. Acesse: https://www.pwabuilder.com/imageGenerator
-2. Faça upload de um logo do WiseDrive (pode ser quadrado, 512x512)
+2. Faça upload de um logo do Vybo (pode ser quadrado, 512x512)
 3. Baixe os ícones gerados
 4. Coloque os arquivos `icon-192x192.png` e `icon-512x512.png` na pasta `public/`
 
@@ -31,7 +31,7 @@ Você precisa criar 2 ícones do app:
 
 1. Crie um design quadrado 512x512px
 2. Adicione:
-   - Logo do WiseDrive (um carro estilizado?)
+   - Logo do Vybo (um carro estilizado?)
    - Cor de fundo: #4F46E5 (azul índigo)
    - Texto "WD" ou ícone de velocímetro
 3. Exporte em 512x512 e 192x192
@@ -59,7 +59,7 @@ Para melhor experiência na loja de apps:
 1. Acesse: https://www.wisedrive.com.br
 2. Menu (⋮) → **"Adicionar à tela inicial"** ou **"Instalar app"**
 3. Confirme a instalação
-4. O ícone do WiseDrive aparecerá na tela inicial
+4. O ícone do Vybo aparecerá na tela inicial
 5. Abra como um app nativo!
 
 ### No iPhone (Safari):
@@ -68,7 +68,7 @@ Para melhor experiência na loja de apps:
 2. Toque no botão de **Compartilhar** (ícone quadrado com seta)
 3. Role para baixo e toque em **"Adicionar à Tela de Início"**
 4. Confirme
-5. O ícone do WiseDrive aparecerá na tela inicial
+5. O ícone do Vybo aparecerá na tela inicial
 
 ### No Desktop (Chrome/Edge):
 
@@ -86,7 +86,7 @@ Para melhor experiência na loja de apps:
 1. Pressione **F12**
 2. Vá na aba **"Application"**
 3. Verifique:
-   - **Manifest**: Deve mostrar "WiseDrive" com os ícones
+   - **Manifest**: Deve mostrar "Vybo" com os ícones
    - **Service Workers**: Deve estar "activated and running"
    - **Lighthouse**: Rode audit PWA (deve ter score alto)
 
@@ -179,4 +179,4 @@ Depois de criar os ícones:
 
 ---
 
-**Depois de adicionar os ícones, o WiseDrive estará 100% PWA! 🎉**
+**Depois de adicionar os ícones, o Vybo estará 100% PWA! 🎉**

@@ -874,7 +874,7 @@ const WorkshopSettings = () => {
               <CardHeader>
                 <CardTitle>Integrações</CardTitle>
                 <CardDescription>
-                  Conecte o WiseDrive com outros sistemas
+                  Conecte o Vybo com outros sistemas
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -952,13 +952,13 @@ const WorkshopSettings = () => {
                 </Button>
               </div>
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm">
-                <strong className="text-yellow-700">Novidade!</strong> Baixe o app WiseDrive e tenha todo o historico de manutencao do seu veiculo na palma da mao. Gratis!
+                <strong className="text-yellow-700">Novidade!</strong> Baixe o app Vybo e tenha todo o historico de manutencao do seu veiculo na palma da mao. Gratis!
               </div>
             </div>
             {/* Email Footer */}
             <div className="bg-gray-50 border-t p-4 text-center text-xs text-gray-500">
-              <p>Este email foi enviado por <strong>{workshop?.name}</strong> via WiseDrive</p>
-              <p>&copy; 2024 WiseDrive - Sistema de Gestao Automotiva</p>
+              <p>Este email foi enviado por <strong>{workshop?.name}</strong> via Vybo</p>
+              <p>&copy; 2024 Vybo - Sistema de Gestao Automotiva</p>
             </div>
           </div>
         </DialogContent>

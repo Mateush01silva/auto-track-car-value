@@ -11,7 +11,7 @@ const Footer = () => {
               <div className="bg-success rounded-lg p-2">
                 <Car className="h-5 w-5" />
               </div>
-              <span className="text-xl font-bold">WiseDrive</span>
+              <span className="text-xl font-bold">Vybo</span>
             </div>
             <p className="text-sm text-primary-foreground/80">
               Transparência que valoriza seu carro.
@@ -38,14 +38,15 @@ const Footer = () => {
           <div>
             <h4 className="font-semibold mb-4">Legal</h4>
             <ul className="space-y-2 text-sm text-primary-foreground/80">
-              <li><a href="#" className="hover:text-success transition-colors">Política de Privacidade</a></li>
-              <li><a href="#" className="hover:text-success transition-colors">Termos de Uso</a></li>
+              <li><Link to="/politica-de-privacidade" className="hover:text-success transition-colors">Política de Privacidade</Link></li>
+              <li><Link to="/politica-de-cookies" className="hover:text-success transition-colors">Política de Cookies</Link></li>
+              <li><a href="mailto:contato@vybo.com.br" className="hover:text-success transition-colors">Contato</a></li>
             </ul>
           </div>
         </div>
         
         <div className="border-t border-primary-foreground/20 mt-8 pt-8 text-center text-sm text-primary-foreground/60">
-          <p>© 2025 WiseDrive. Todos os direitos reservados.</p>
+          <p>© 2025 Vybo. Todos os direitos reservados.</p>
         </div>
       </div>
     </footer>

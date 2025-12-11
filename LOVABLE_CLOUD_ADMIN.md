@@ -18,7 +18,7 @@ Como seu projeto usa **Lovable Cloud** (não Supabase externo), siga estas instr
 ## Passo 2: Aplicar a Migration no Lovable Cloud
 
 1. Acesse o **Lovable.dev**
-2. Abra seu projeto WiseDrive
+2. Abra seu projeto Vybo
 3. Vá para **Cloud** → **Database** → **Tables**
 4. Clique em **SQL Editor** (ou similar)
 5. Execute este SQL:

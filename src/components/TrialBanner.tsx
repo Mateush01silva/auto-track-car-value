@@ -17,7 +17,7 @@ const TrialBanner = ({ daysRemaining, maintenancesCount = 0, vehiclesCount = 0 }
   const getMessage = () => {
     if (daysRemaining > 75) {
       return {
-        title: "🎉 Bem-vindo ao WiseDrive!",
+        title: "🎉 Bem-vindo ao Vybo!",
         description: `Você tem ${daysRemaining} dias para explorar todos os recursos gratuitamente.`,
         variant: "default" as const,
         showButton: false,
@@ -25,7 +25,7 @@ const TrialBanner = ({ daysRemaining, maintenancesCount = 0, vehiclesCount = 0 }
     } else if (daysRemaining >= 60) {
       return {
         title: "⏰ Faltam 60 dias!",
-        description: "Aproveite todos os recursos e veja como o WiseDrive pode transformar a gestão do seu veículo.",
+        description: "Aproveite todos os recursos e veja como o Vybo pode transformar a gestão do seu veículo.",
         variant: "default" as const,
         showButton: false,
       };

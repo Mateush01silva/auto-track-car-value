@@ -331,7 +331,7 @@ const PublicVehicleHistory = () => {
       <header className="bg-white border-b print:hidden">
         <div className="container mx-auto px-4 py-4">
           <Link to="/" className="text-xl font-bold text-green-600 hover:text-green-700">
-            WiseDrive
+            Vybo
           </Link>
         </div>
       </header>
@@ -538,7 +538,7 @@ const PublicVehicleHistory = () => {
 
               <h3 className="text-xl font-bold mb-4">
                 {vehicle?.user_id
-                  ? "É seu veículo? Entre no WiseDrive!"
+                  ? "É seu veículo? Entre no Vybo!"
                   : "Quer Gerenciar Seu Veículo?"}
               </h3>
 
@@ -578,13 +578,13 @@ const PublicVehicleHistory = () => {
 
         {/* Footer */}
         <footer className="text-center text-sm text-gray-500 pb-8 print:hidden">
-          <p className="mb-2">Gerado por <strong>WiseDrive</strong></p>
+          <p className="mb-2">Gerado por <strong>Vybo</strong></p>
           <div className="flex justify-center gap-4 mb-2">
             <Link to="/about" className="hover:text-gray-700">Sobre</Link>
             <Link to="/terms" className="hover:text-gray-700">Termos</Link>
             <Link to="/privacy" className="hover:text-gray-700">Privacidade</Link>
           </div>
-          <p>&copy; {new Date().getFullYear()} WiseDrive - Transparência que valoriza seu carro</p>
+          <p>&copy; {new Date().getFullYear()} Vybo - Transparência que valoriza seu carro</p>
         </footer>
       </main>
 

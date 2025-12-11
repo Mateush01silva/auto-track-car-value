@@ -292,7 +292,7 @@ const WorkshopDashboard = () => {
               <div className="bg-green-600 rounded-lg p-2">
                 <Wrench className="h-5 w-5 text-white" />
               </div>
-              <span className="text-xl font-bold text-green-600">WiseDrive</span>
+              <span className="text-xl font-bold text-green-600">Vybo</span>
             </div>
 
             {/* Desktop Navigation */}

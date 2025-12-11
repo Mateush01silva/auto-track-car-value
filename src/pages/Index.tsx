@@ -65,9 +65,9 @@ const Index = () => {
             
             <div className="relative animate-fade-in" style={{ animationDelay: '200ms' }}>
               <div className="absolute inset-0 bg-success/20 rounded-3xl blur-3xl" />
-              <img 
+              <img
                 src={heroImage}
-                alt="WiseDrive Dashboard"
+                alt="Vybo Dashboard"
                 className="relative rounded-3xl shadow-2xl w-full"
               />
             </div>
@@ -80,7 +80,7 @@ const Index = () => {
         <div className="container mx-auto px-4">
           <div className="text-center mb-16 animate-fade-in-up">
             <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-              Por que usar o WiseDrive?
+              Por que usar o Vybo?
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Transforme o histórico de manutenção em um ativo de valor para seu veículo
@@ -213,7 +213,7 @@ const Index = () => {
                   <div className="inline-flex items-center justify-center bg-green-600 rounded-full p-4 mb-4">
                     <Wrench className="h-8 w-8 text-white" />
                   </div>
-                  <h3 className="text-2xl font-bold">WiseDrive para Oficinas</h3>
+                  <h3 className="text-2xl font-bold">Vybo para Oficinas</h3>
                   <p className="text-muted-foreground">Comece grátis, cresça com a gente</p>
                 </div>
 
@@ -256,7 +256,7 @@ const Index = () => {
               e mais transparência para o mercado
             </h2>
             <p className="text-xl text-primary-foreground/90">
-              WiseDrive está revolucionando a forma como o histórico de veículos 
+              Vybo está revolucionando a forma como o histórico de veículos
               é compartilhado no Brasil
             </p>
             <Link to="/login">

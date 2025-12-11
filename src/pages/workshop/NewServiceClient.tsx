@@ -173,7 +173,7 @@ const NewServiceClient = () => {
     return cleaned.length === 10 || cleaned.length === 11;
   };
 
-  // Check if client is already a WiseDrive user
+  // Check if client is already a Vybo user
   const checkExistingUser = async (email: string | null, phone: string | null) => {
     if (!email && !phone) return;
 
@@ -394,7 +394,7 @@ const NewServiceClient = () => {
               <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                 <div className="flex items-center gap-2 text-green-700 mb-1">
                   <CheckCircle className="h-4 w-4" />
-                  <span className="font-medium text-sm">Cliente ja cadastrado no WiseDrive</span>
+                  <span className="font-medium text-sm">Cliente ja cadastrado no Vybo</span>
                 </div>
                 <p className="text-xs text-green-600">
                   Este atendimento aparecera automaticamente no app do cliente.
@@ -409,7 +409,7 @@ const NewServiceClient = () => {
                   <span className="font-medium text-sm">Cliente recebera convite</span>
                 </div>
                 <p className="text-xs text-blue-600">
-                  Enviaremos um link para ele ver o historico e criar conta no WiseDrive.
+                  Enviaremos um link para ele ver o historico e criar conta no Vybo.
                 </p>
               </div>
             )}
@@ -463,7 +463,7 @@ const NewServiceClient = () => {
                 <p className="font-medium text-sm text-gray-700">Como funciona?</p>
                 {foundUser || vehicleOwner ? (
                   <p className="text-xs text-gray-500 mt-1">
-                    O cliente ja tem conta no WiseDrive. A manutencao aparecera automaticamente no app dele assim que voce finalizar o cadastro.
+                    O cliente ja tem conta no Vybo. A manutencao aparecera automaticamente no app dele assim que voce finalizar o cadastro.
                   </p>
                 ) : (
                   <p className="text-xs text-gray-500 mt-1">

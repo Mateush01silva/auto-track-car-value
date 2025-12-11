@@ -1,7 +1,7 @@
 /**
  * Feature Flags Configuration
  *
- * Este arquivo centraliza o controle de features do WiseDrive,
+ * Este arquivo centraliza o controle de features do Vybo,
  * permitindo alternar facilmente entre diferentes APIs e modos de operação.
  *
  * Para alternar entre os modos, modifique o arquivo .env na raiz do projeto.
@@ -77,7 +77,7 @@ export const validateConfig = (): string[] => {
  * Log de configuração atual (útil para debug)
  */
 export const logCurrentConfig = () => {
-  console.group('🚗 WiseDrive - Feature Flags');
+  console.group('🚗 Vybo - Feature Flags');
   console.log('Modo de Veículos:', featureConfig.vehicleApiMode);
   console.log('Modo de Manutenção:', featureConfig.maintenanceMode);
   console.log('API URL:', featureConfig.carApi.url || '(não configurada)');

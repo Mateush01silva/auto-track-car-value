@@ -167,13 +167,13 @@ export async function sendMaintenanceEmail({
           </div>
 
           <div class="promo">
-            <strong>Dica!</strong> Instale o WiseDrive como app no seu celular: abra o link acima no navegador, toque no menu (3 pontos) e selecione "Adicionar a tela inicial". Pronto!
+            <strong>Dica!</strong> Instale o Vybo como app no seu celular: abra o link acima no navegador, toque no menu (3 pontos) e selecione "Adicionar a tela inicial". Pronto!
           </div>
         </div>
 
         <div class="footer">
-          <p>Este email foi enviado por <strong>${workshopName}</strong> via WiseDrive</p>
-          <p>&copy; ${new Date().getFullYear()} WiseDrive - Sistema de Gestao Automotiva</p>
+          <p>Este email foi enviado por <strong>${workshopName}</strong> via Vybo</p>
+          <p>&copy; ${new Date().getFullYear()} Vybo - Sistema de Gestao Automotiva</p>
           <p>Transparencia que valoriza seu carro</p>
         </div>
       </div>

@@ -1,8 +1,8 @@
-# Configuração SIMPLIFICADA do Google Login - WiseDrive
+# Configuração SIMPLIFICADA do Google Login - Vybo
 
 ## ⚠️ IMPORTANTE: URLs que você vai usar
 
-Para o WiseDrive funcionar com Google, você precisa dessas **2 URLs EXATAS**:
+Para o Vybo funcionar com Google, você precisa dessas **2 URLs EXATAS**:
 
 ```
 https://www.wisedrive.com.br
@@ -21,7 +21,7 @@ A segunda URL é a **URL de callback do Supabase** - é para onde o Google manda
 
 2. **Criar/Selecionar Projeto:**
    - Se não tem projeto: Clique em "Select a Project" → "New Project"
-   - Nome: **WiseDrive**
+   - Nome: **Vybo**
    - Clique em **Create**
 
 3. **Configurar OAuth Consent Screen:**
@@ -30,7 +30,7 @@ A segunda URL é a **URL de callback do Supabase** - é para onde o Google manda
    - Clique **Create**
 
    **Preencha:**
-   - App name: **WiseDrive**
+   - App name: **Vybo**
    - User support email: **seu-email@gmail.com**
    - Developer contact: **seu-email@gmail.com**
    - Clique **Save and Continue** (3 vezes até finalizar)
@@ -41,7 +41,7 @@ A segunda URL é a **URL de callback do Supabase** - é para onde o Google manda
 
    **Configure:**
    - Application type: **Web application**
-   - Name: **WiseDrive Web Client**
+   - Name: **Vybo Web Client**
 
    **Authorized JavaScript origins:**
    ```

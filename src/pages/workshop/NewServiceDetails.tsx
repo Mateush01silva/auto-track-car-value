@@ -387,7 +387,7 @@ const NewServiceDetails = () => {
       const servicesDescription = serviceItems.map(item => `${item.name}: ${formatCurrency(item.price)}`).join('\n');
       const total = calculateTotal();
 
-      // Build metadata for pending user (if not already a WiseDrive user)
+      // Build metadata for pending user (if not already a Vybo user)
       const metadata: Record<string, string> = {};
       if (!clientData.userId) {
         if (clientData.email) {
