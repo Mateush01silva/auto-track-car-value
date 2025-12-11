@@ -51,7 +51,8 @@ import {
   Filter,
   Bell,
   Building2,
-  Star
+  Star,
+  Shield
 } from "lucide-react";
 
 const Dashboard = () => {
@@ -438,6 +439,10 @@ const Dashboard = () => {
               <DropdownMenuItem onClick={() => setActiveTab("profile")} className="cursor-pointer">
                 <User className="mr-2 h-4 w-4" />
                 Ver Perfil
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/configuracoes/privacidade")} className="cursor-pointer">
+                <Shield className="mr-2 h-4 w-4" />
+                Privacidade e Dados
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-danger focus:text-danger">

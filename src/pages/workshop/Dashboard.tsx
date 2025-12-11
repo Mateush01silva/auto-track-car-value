@@ -37,7 +37,8 @@ import {
   FileText,
   MoreVertical,
   History,
-  Users
+  Users,
+  Shield
 } from "lucide-react";
 import { WorkshopBottomNav } from "@/components/workshop/BottomNav";
 
@@ -348,6 +349,10 @@ const WorkshopDashboard = () => {
                 <DropdownMenuItem onClick={() => navigate("/workshop/settings")}>
                   <User className="h-4 w-4 mr-2" />
                   Perfil da Oficina
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/configuracoes/privacidade")}>
+                  <Shield className="h-4 w-4 mr-2" />
+                  Privacidade e Dados
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
