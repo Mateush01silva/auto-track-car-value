@@ -263,7 +263,7 @@ const PrivacySettings = () => {
                 <div className="flex items-center justify-between">
                   <div className="space-y-1 flex-1">
                     <Label htmlFor="marketing" className="text-base font-semibold">
-                      📧 Marketing e Comunicações
+                      Marketing e Comunicações
                     </Label>
                     <p className="text-sm text-muted-foreground">
                       Receber e-mails com novidades, promoções e conteúdos relevantes da Vybo.
@@ -281,7 +281,7 @@ const PrivacySettings = () => {
                 <div className="flex items-center justify-between">
                   <div className="space-y-1 flex-1">
                     <Label htmlFor="dataSharing" className="text-base font-semibold">
-                      📊 Compartilhamento de Dados Agregados
+                      Compartilhamento de Dados Agregados
                     </Label>
                     <p className="text-sm text-muted-foreground">
                       Permitir que a Vybo compartilhe dados anonimizados com parceiros para pesquisas e análises de
@@ -300,7 +300,7 @@ const PrivacySettings = () => {
                 <div className="flex items-center justify-between">
                   <div className="space-y-1 flex-1">
                     <Label htmlFor="notifications" className="text-base font-semibold">
-                      🔔 Notificações de Manutenção
+                      Notificações de Manutenção
                     </Label>
                     <p className="text-sm text-muted-foreground">
                       Receber lembretes e alertas sobre manutenções do seu veículo.
@@ -332,23 +332,23 @@ const PrivacySettings = () => {
                 {cookiePrefs ? (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                      <span className="font-medium">🔒 Essenciais</span>
+                      <span className="font-medium">Essenciais</span>
                       <span className="text-sm text-green-600 font-semibold">Sempre Ativo</span>
                     </div>
                     <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                      <span className="font-medium">⚙️ Funcionais</span>
+                      <span className="font-medium">Funcionais</span>
                       <span className={`text-sm font-semibold ${cookiePrefs.functional ? "text-green-600" : "text-red-600"}`}>
                         {cookiePrefs.functional ? "Ativo" : "Desativado"}
                       </span>
                     </div>
                     <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                      <span className="font-medium">📊 Analíticos</span>
+                      <span className="font-medium">Analíticos</span>
                       <span className={`text-sm font-semibold ${cookiePrefs.analytics ? "text-green-600" : "text-red-600"}`}>
                         {cookiePrefs.analytics ? "Ativo" : "Desativado"}
                       </span>
                     </div>
                     <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                      <span className="font-medium">📢 Marketing</span>
+                      <span className="font-medium">Marketing</span>
                       <span className={`text-sm font-semibold ${cookiePrefs.marketing ? "text-green-600" : "text-red-600"}`}>
                         {cookiePrefs.marketing ? "Ativo" : "Desativado"}
                       </span>
@@ -486,17 +486,17 @@ const PrivacySettings = () => {
           <CardContent className="flex flex-wrap gap-4">
             <Link to="/politica-de-privacidade">
               <Button variant="link" className="p-0">
-                📄 Política de Privacidade
+                Política de Privacidade
               </Button>
             </Link>
             <Link to="/politica-de-cookies">
               <Button variant="link" className="p-0">
-                🍪 Política de Cookies
+                Política de Cookies
               </Button>
             </Link>
             <a href="mailto:privacidade@vybo.com.br">
               <Button variant="link" className="p-0">
-                📧 Contatar DPO (Encarregado de Dados)
+                Contatar DPO (Encarregado de Dados)
               </Button>
             </a>
           </CardContent>

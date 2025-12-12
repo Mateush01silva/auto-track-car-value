@@ -37,7 +37,7 @@ const CookiePolicy = () => {
 
       {/* Content */}
       <main className="container mx-auto px-4 py-12 max-w-4xl">
-        <article className="prose prose-slate lg:prose-lg dark:prose-invert max-w-none">
+        <article className="prose prose-slate max-w-none prose-headings:font-semibold prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
         </article>
       </main>

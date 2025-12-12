@@ -150,7 +150,7 @@ Através de:
 
 ### 6.1. A Vybo como CONTROLADORA usa seus dados para:
 
-✅ **Prestação dos Serviços:**
+**Prestação dos Serviços:**
 - Criar e gerenciar sua conta
 - Permitir cadastro e acompanhamento de veículos
 - Registrar e exibir históricos de manutenção
@@ -158,30 +158,30 @@ Através de:
 - Enviar alertas e lembretes de manutenção
 - Processar pagamentos e emitir cobranças
 
-✅ **Comunicação:**
+**Comunicação:**
 - Responder suas dúvidas e solicitações
 - Enviar notificações sobre o serviço
 - Avisar sobre mudanças em nossas políticas
 
-✅ **Melhorias e Desenvolvimento:**
+**Melhorias e Desenvolvimento:**
 - Analisar padrões de uso da plataforma
 - Desenvolver novos recursos e funcionalidades
 - Realizar pesquisas e estatísticas agregadas
 - Aprimorar a experiência do usuário
 
-✅ **Marketing Próprio:**
+**Marketing Próprio:**
 - Enviar newsletters e conteúdos relevantes
 - Oferecer promoções e novidades
 - Comunicar eventos e parcerias
 - *(Você pode cancelar a qualquer momento)*
 
-✅ **Análises e Pesquisas:**
+**Análises e Pesquisas:**
 - Criar perfis comportamentais agregados
 - Realizar análises preditivas (ex: previsão de manutenções)
 - Gerar insights sobre padrões de manutenção automotiva
 - Desenvolver modelos estatísticos
 
-✅ **Compartilhamento com Terceiros (dados anonimizados ou agregados):**
+**Compartilhamento com Terceiros (dados anonimizados ou agregados):**
 - **Montadoras:** Estatísticas sobre desempenho de modelos de veículos
 - **Seguradoras:** Padrões de manutenção para precificação de seguros
 - **Empresas de autopeças:** Tendências de mercado e demanda
@@ -189,7 +189,7 @@ Através de:
 
 **IMPORTANTE:** Quando compartilhamos com terceiros, **NUNCA** incluímos dados de contato direto (e-mail, telefone) ou informações que possam identificá-lo individualmente, apenas dados estatísticos agregados ou anonimizados.
 
-✅ **Segurança e Conformidade:**
+**Segurança e Conformidade:**
 - Prevenir fraudes e abusos
 - Garantir a segurança da plataforma
 - Cumprir obrigações legais e regulatórias
@@ -199,18 +199,18 @@ Através de:
 
 As oficinas parceiras atuam como **controladoras** dos dados de seus próprios clientes para:
 
-✅ **Gestão do Relacionamento:**
+**Gestão do Relacionamento:**
 - Manter cadastro de clientes
 - Registrar histórico de atendimentos
 - Gerenciar agendamentos
 
-✅ **Marketing Direto:**
+**Marketing Direto:**
 - Enviar lembretes de manutenção preventiva
 - Oferecer promoções e serviços
 - Comunicar via e-mail, WhatsApp ou SMS
 - *(Com seu consentimento prévio)*
 
-✅ **Exportação de Dados:**
+**Exportação de Dados:**
 - Oficinas podem exportar históricos de manutenção dos seus clientes
 
 **Nestes casos, a Vybo atua como OPERADORA, processando dados sob as instruções da oficina.**
@@ -244,19 +244,19 @@ Tratamos seus dados com base nas seguintes hipóteses legais previstas na LGPD:
 
 Seus dados podem ser compartilhados com:
 
-**🔹 Oficinas Mecânicas Parceiras**
+**Oficinas Mecânicas Parceiras**
 - Acesso aos seus dados de contato (e-mail, telefone)
 - Acesso ao histórico de manutenções do seu veículo
 - **Finalidade:** Prestação de serviços e comunicação sobre manutenções
 
-**🔹 Prestadores de Serviços (Operadores)**
+**Prestadores de Serviços (Operadores)**
 - Supabase (armazenamento de dados)
 - Serviços de e-mail (envio de mensagens)
 - Google Analytics (análise de uso)
 - Processadores de pagamento
 - **Finalidade:** Suporte técnico e operacional da plataforma
 
-**🔹 Terceiros (Dados Agregados/Anonimizados)**
+**Terceiros (Dados Agregados/Anonimizados)**
 - Montadoras de veículos
 - Seguradoras
 - Empresas de autopeças
@@ -264,7 +264,7 @@ Seus dados podem ser compartilhados com:
 - **Finalidade:** Análises estatísticas e pesquisas de mercado
 - **IMPORTANTE:** Dados pessoais identificáveis (nome, e-mail, telefone) **NUNCA** são compartilhados
 
-**🔹 Autoridades e Órgãos Governamentais**
+**Autoridades e Órgãos Governamentais**
 - Quando exigido por lei ou ordem judicial
 - Para proteção de direitos da Vybo
 - Em casos de investigações de fraude ou crimes
@@ -290,7 +290,7 @@ Seus dados são armazenados em:
 
 Implementamos diversas medidas técnicas e organizacionais:
 
-🔒 **Técnicas:**
+**Técnicas:**
 - Criptografia de dados sensíveis (senhas, informações bancárias)
 - Conexões HTTPS/TLS em todas as transmissões
 - Backups regulares automatizados
@@ -299,13 +299,13 @@ Implementamos diversas medidas técnicas e organizacionais:
 - Autenticação multifator para administradores
 - Logs de auditoria
 
-🔒 **Organizacionais:**
+**Organizacionais:**
 - Treinamento de equipe em proteção de dados
 - Políticas internas de segurança da informação
 - Análises de risco periódicas
 - Plano de resposta a incidentes
 
-**⚠️ Importante:** Nenhum sistema é 100% seguro. Em caso de incidente de segurança que possa gerar risco aos seus direitos, você será notificado conforme exige a LGPD.
+**Importante:** Nenhum sistema é 100% seguro. Em caso de incidente de segurança que possa gerar risco aos seus direitos, você será notificado conforme exige a LGPD.
 
 ### 9.3. Quanto Tempo Mantemos seus Dados
 
@@ -327,40 +327,40 @@ Implementamos diversas medidas técnicas e organizacionais:
 
 A LGPD garante diversos direitos sobre seus dados pessoais. Você pode exercê-los a qualquer momento:
 
-### ✅ Seus Direitos:
+### Seus Direitos:
 
-**📋 Confirmação e Acesso** (Art. 18, I e II)
+**Confirmação e Acesso** (Art. 18, I e II)
 - Confirmar se tratamos seus dados
 - Acessar todos os dados que temos sobre você
 
-**🔄 Correção** (Art. 18, III)
+**Correção** (Art. 18, III)
 - Corrigir dados incompletos, inexatos ou desatualizados
 
-**🗑️ Eliminação** (Art. 18, VI)
+**Eliminação** (Art. 18, VI)
 - Solicitar exclusão de dados tratados com seu consentimento
 - Solicitar exclusão de dados desnecessários ou excessivos
 
-**🚫 Anonimização/Bloqueio** (Art. 18, IV)
+**Anonimização/Bloqueio** (Art. 18, IV)
 - Solicitar anonimização de dados quando não mais necessários
 - Bloquear dados desnecessários ou excessivos
 
-**📦 Portabilidade** (Art. 18, V)
+**Portabilidade** (Art. 18, V)
 - Receber seus dados em formato estruturado (CSV, JSON)
 - Transferir para outro serviço
 
-**❌ Revogação do Consentimento** (Art. 18, IX)
+**Revogação do Consentimento** (Art. 18, IX)
 - Retirar consentimento para marketing
 - Cancelar autorizações específicas
 
-**ℹ️ Informações Sobre Compartilhamento** (Art. 18, VII)
+**Informações Sobre Compartilhamento** (Art. 18, VII)
 - Saber com quem compartilhamos seus dados
 - Conhecer as finalidades do compartilhamento
 
-**🛡️ Revisão de Decisões Automatizadas** (Art. 18, §2º)
+**Revisão de Decisões Automatizadas** (Art. 18, §2º)
 - Contestar decisões tomadas apenas por algoritmos
 - Solicitar revisão humana
 
-### 📧 Como Exercer Seus Direitos:
+### Como Exercer Seus Direitos:
 
 Entre em contato com nosso Encarregado de Dados:
 - **E-mail:** privacidade@vybo.com.br
@@ -381,7 +381,7 @@ Utilizamos cookies e tecnologias similares. Para detalhes completos, consulte no
 
 ### Resumo:
 
-**🍪 O que são cookies?**
+**O que são cookies?**
 Pequenos arquivos de texto armazenados no seu dispositivo para melhorar sua experiência.
 
 **Tipos que utilizamos:**
@@ -402,7 +402,7 @@ Pequenos arquivos de texto armazenados no seu dispositivo para melhorar sua expe
 
 ## 12. CRIANÇAS E ADOLESCENTES
 
-❌ **Nossa plataforma NÃO é destinada a menores de 18 anos.**
+**Nossa plataforma NÃO é destinada a menores de 18 anos.**
 
 Como nosso serviço envolve gestão de veículos automotores, exigimos que todos os usuários sejam maiores de idade.
 
@@ -420,9 +420,9 @@ Podemos atualizar esta Política periodicamente para refletir:
 - Alterações legais
 
 **Quando houver alterações:**
-- ✉️ Notificaremos por e-mail (mudanças relevantes)
-- 📱 Exibiremos aviso na plataforma
-- 📅 Atualizaremos a data no topo deste documento
+- Notificaremos por e-mail (mudanças relevantes)
+- Exibiremos aviso na plataforma
+- Atualizaremos a data no topo deste documento
 
 **Alterações substanciais** (que afetem seus direitos) exigirão novo consentimento quando aplicável.
 
@@ -443,13 +443,13 @@ Esta Política é regida pelas leis brasileiras, especialmente:
 
 **Tem dúvidas sobre privacidade? Entre em contato:**
 
-📧 **Encarregado de Dados (DPO):**
+**Encarregado de Dados (DPO):**
 - E-mail: privacidade@vybo.com.br
 
-📧 **Suporte Geral:**
+**Suporte Geral:**
 - E-mail: contato@vybo.com.br
 
-📧 **Suporte Técnico:**
+**Suporte Técnico:**
 - E-mail: suporte@vybo.com.br
 
 **Horário de atendimento:** Segunda a sexta, 9h às 18h
@@ -460,18 +460,18 @@ Esta Política é regida pelas leis brasileiras, especialmente:
 
 Se não ficar satisfeito com nossas respostas, você pode recorrer a:
 
-🏛️ **Autoridade Nacional de Proteção de Dados (ANPD)**
+**Autoridade Nacional de Proteção de Dados (ANPD)**
 - Site: gov.br/anpd
 - Ouvidoria: ouvidoria@anpd.gov.br
 
-⚖️ **Procon de sua cidade**
+**Procon de sua cidade**
 
-⚖️ **Poder Judiciário**
+**Poder Judiciário**
 
 ---
 
 **Vybo - Gestão de Manutenção Automotiva**
-*Cuidando dos seus dados com a mesma atenção que você cuida do seu veículo.* 🚗🔒
+*Cuidando dos seus dados com a mesma atenção que você cuida do seu veículo.*
 
 ---
 
