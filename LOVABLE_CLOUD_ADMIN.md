@@ -56,7 +56,7 @@ Você deve ver `is_admin: true`
 
 ## Passo 4: Fazer Logout e Login
 
-1. Saia da sua conta no wisedrive.com.br
+1. Saia da sua conta no vybo.com.br
 2. Faça login novamente
 3. Pronto! Agora você tem acesso total a todas as funcionalidades
 

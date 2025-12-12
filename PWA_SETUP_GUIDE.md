@@ -56,7 +56,7 @@ Para melhor experiência na loja de apps:
 
 ### No Android (Chrome):
 
-1. Acesse: https://www.wisedrive.com.br
+1. Acesse: https://www.vybo.com.br
 2. Menu (⋮) → **"Adicionar à tela inicial"** ou **"Instalar app"**
 3. Confirme a instalação
 4. O ícone do Vybo aparecerá na tela inicial
@@ -64,7 +64,7 @@ Para melhor experiência na loja de apps:
 
 ### No iPhone (Safari):
 
-1. Acesse: https://www.wisedrive.com.br
+1. Acesse: https://www.vybo.com.br
 2. Toque no botão de **Compartilhar** (ícone quadrado com seta)
 3. Role para baixo e toque em **"Adicionar à Tela de Início"**
 4. Confirme
@@ -72,7 +72,7 @@ Para melhor experiência na loja de apps:
 
 ### No Desktop (Chrome/Edge):
 
-1. Acesse: https://www.wisedrive.com.br
+1. Acesse: https://www.vybo.com.br
 2. Na barra de endereço, clique no ícone de **instalação** (➕ ou computador)
 3. Clique em **"Instalar"**
 4. O app abrirá em uma janela separada sem barra de navegação

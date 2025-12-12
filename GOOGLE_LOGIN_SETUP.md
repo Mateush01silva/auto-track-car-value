@@ -5,7 +5,7 @@
 Para o Vybo funcionar com Google, você precisa dessas **2 URLs EXATAS**:
 
 ```
-https://www.wisedrive.com.br
+https://www.vybo.com.br
 https://sqnoxtuzoccjstlzekhc.supabase.co/auth/v1/callback
 ```
 
@@ -45,7 +45,7 @@ A segunda URL é a **URL de callback do Supabase** - é para onde o Google manda
 
    **Authorized JavaScript origins:**
    ```
-   https://www.wisedrive.com.br
+   https://www.vybo.com.br
    ```
 
    **Authorized redirect URIs** (COPIE EXATAMENTE):
@@ -82,12 +82,12 @@ A segunda URL é a **URL de callback do Supabase** - é para onde o Google manda
 
    **Site URL:**
    ```
-   https://www.wisedrive.com.br
+   https://www.vybo.com.br
    ```
 
    **Redirect URLs** (adicione essa linha):
    ```
-   https://www.wisedrive.com.br/**
+   https://www.vybo.com.br/**
    ```
 
    - Clique **Save**
@@ -96,11 +96,11 @@ A segunda URL é a **URL de callback do Supabase** - é para onde o Google manda
 
 ## ✅ Teste Final
 
-1. Acesse: https://www.wisedrive.com.br/login
+1. Acesse: https://www.vybo.com.br/login
 2. Clique no botão **Google**
 3. Deve abrir popup do Google
 4. Selecione sua conta
-5. Deve redirecionar para: https://www.wisedrive.com.br/dashboard
+5. Deve redirecionar para: https://www.vybo.com.br/dashboard
 
 ---
 
@@ -143,7 +143,7 @@ Antes de testar, confirme:
 - [ ] Projeto criado no Google Cloud Console
 - [ ] OAuth Consent Screen configurado
 - [ ] Credenciais OAuth criadas
-- [ ] JavaScript origins: `https://www.wisedrive.com.br`
+- [ ] JavaScript origins: `https://www.vybo.com.br`
 - [ ] Redirect URI: `https://sqnoxtuzoccjstlzekhc.supabase.co/auth/v1/callback`
 - [ ] Client ID e Secret copiados
 - [ ] Google Provider ativado no Supabase

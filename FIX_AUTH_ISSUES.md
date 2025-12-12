@@ -54,7 +54,7 @@ O Google OAuth não está configurado no Supabase OU a URL de redirect não est�
    - Name: **Vybo**
    - Authorized JavaScript origins:
      ```
-     https://www.wisedrive.com.br
+     https://www.vybo.com.br
      https://sqnoxtuzoccjstlzekhc.supabase.co
      ```
    - Authorized redirect URIs:
@@ -75,7 +75,7 @@ O Google OAuth não está configurado no Supabase OU a URL de redirect não est�
 1. Vá em: https://app.supabase.com/project/sqnoxtuzoccjstlzekhc/auth/url-configuration
 2. Em **Redirect URLs**, adicione:
    ```
-   https://www.wisedrive.com.br/*
+   https://www.vybo.com.br/*
    http://localhost:3000/* (para desenvolvimento)
    ```
 
@@ -84,13 +84,13 @@ O Google OAuth não está configurado no Supabase OU a URL de redirect não est�
 ## Verificação Rápida
 
 ### Testar criação de conta:
-1. Acesse: https://www.wisedrive.com.br/login
+1. Acesse: https://www.vybo.com.br/login
 2. Vá na aba "Criar Conta"
 3. Preencha o formulário
 4. Se "Confirm email" estiver desativado, o login deve ser automático ✅
 
 ### Testar login com Google:
-1. Acesse: https://www.wisedrive.com.br/login
+1. Acesse: https://www.vybo.com.br/login
 2. Clique no botão "Google"
 3. Deve abrir popup do Google para seleção de conta ✅
 
