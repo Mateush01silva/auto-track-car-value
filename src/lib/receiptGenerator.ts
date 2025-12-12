@@ -223,7 +223,7 @@ export const generateReceipt = async (data: ReceiptData): Promise<Blob> => {
   // Footer
   doc.setFontSize(8);
   doc.setTextColor(...lightGray);
-  doc.text('Gerado por Vybo - wisedrive.com.br', pageWidth / 2, pageHeight - 10, { align: 'center' });
+  doc.text('Gerado por Vybo - vybo.com.br', pageWidth / 2, pageHeight - 10, { align: 'center' });
 
   // Return as blob
   return doc.output('blob');

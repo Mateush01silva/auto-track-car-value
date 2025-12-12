@@ -148,7 +148,7 @@ const priceId = plan === "monthly"
 
 ### Teste Básico:
 
-1. Acesse: https://www.wisedrive.com.br/dashboard
+1. Acesse: https://www.vybo.com.br/dashboard
 2. Tente adicionar mais de 1 veículo OU mais de 3 manutenções
 3. Deve aparecer o dialog de upgrade
 4. Clique em **"Assinar Mensal"**
@@ -165,7 +165,7 @@ Use estes dados de teste do Stripe:
 ### Verificar se funcionou:
 
 1. Após completar pagamento no Stripe, volte para o Dashboard
-2. Deve redirecionar para: `https://www.wisedrive.com.br/dashboard?checkout=success`
+2. Deve redirecionar para: `https://www.vybo.com.br/dashboard?checkout=success`
 3. Verifique no Supabase se o usuário foi atualizado:
    ```sql
    SELECT email, subscription_plan, subscription_status

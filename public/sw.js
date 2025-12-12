@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wisedrive-v1';
+const CACHE_NAME = 'vybo-v1';
 const urlsToCache = [
   '/',
   '/index.html',
