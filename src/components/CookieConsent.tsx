@@ -157,7 +157,7 @@ const CookieConsent = () => {
             <div className="flex items-start gap-3 flex-1">
               <Cookie className="h-6 w-6 text-primary mt-0.5 flex-shrink-0" />
               <div className="flex-1">
-                <h3 className="font-semibold text-lg mb-1">🍪 Cookies e Privacidade</h3>
+                <h3 className="font-semibold text-lg mb-1">Cookies e Privacidade</h3>
                 <p className="text-sm text-muted-foreground">
                   Usamos cookies para melhorar sua experiência, personalizar conteúdo e analisar o tráfego.{" "}
                   <Link to="/politica-de-cookies" className="text-primary hover:underline">
@@ -216,7 +216,7 @@ const CookieConsent = () => {
             {/* Essenciais */}
             <div className="flex items-start justify-between">
               <div className="space-y-1 flex-1">
-                <Label className="text-base font-semibold">🔒 Cookies Essenciais</Label>
+                <Label className="text-base font-semibold">Cookies Essenciais</Label>
                 <p className="text-sm text-muted-foreground">
                   Necessários para o funcionamento básico do site (login, navegação, segurança).
                 </p>
@@ -228,7 +228,7 @@ const CookieConsent = () => {
             <div className="flex items-start justify-between">
               <div className="space-y-1 flex-1">
                 <Label htmlFor="functional" className="text-base font-semibold">
-                  ⚙️ Cookies Funcionais
+                  Cookies Funcionais
                 </Label>
                 <p className="text-sm text-muted-foreground">
                   Lembram suas preferências e configurações personalizadas.
@@ -248,7 +248,7 @@ const CookieConsent = () => {
             <div className="flex items-start justify-between">
               <div className="space-y-1 flex-1">
                 <Label htmlFor="analytics" className="text-base font-semibold">
-                  📊 Cookies Analíticos
+                  Cookies Analíticos
                 </Label>
                 <p className="text-sm text-muted-foreground">
                   Nos ajudam a entender como você usa o site para melhorar a experiência.
@@ -268,7 +268,7 @@ const CookieConsent = () => {
             <div className="flex items-start justify-between">
               <div className="space-y-1 flex-1">
                 <Label htmlFor="marketing" className="text-base font-semibold">
-                  📢 Cookies de Marketing
+                  Cookies de Marketing
                 </Label>
                 <p className="text-sm text-muted-foreground">
                   Permitem mostrar anúncios relevantes em outros sites.
