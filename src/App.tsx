@@ -22,6 +22,7 @@ import WorkshopClients from "./pages/workshop/Clients";
 import WorkshopPlans from "./pages/workshop/Plans";
 import WorkshopOnboarding from "./pages/workshop/Onboarding";
 import WorkshopOpportunities from "./pages/workshop/Opportunities";
+import WorkshopPricing from "./pages/workshop/Pricing";
 import PublicVehicleHistory from "./pages/PublicVehicleHistory";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import CookiePolicy from "./pages/CookiePolicy";
@@ -100,6 +101,11 @@ const App = () => (
             <Route path="/workshop/opportunities" element={
               <ProtectedRoute>
                 <WorkshopOpportunities />
+              </ProtectedRoute>
+            } />
+            <Route path="/workshop/pricing" element={
+              <ProtectedRoute>
+                <WorkshopPricing />
               </ProtectedRoute>
             } />
             <Route path="/report/:vehicleId" element={<Report />} />
