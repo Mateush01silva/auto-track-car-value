@@ -104,6 +104,15 @@ const calculateLaborCost = (partsCost: number, criticidade: string): number => {
   return Math.round(partsCost * laborPercentage);
 };
 
+// Interface para preços customizados da oficina
+interface WorkshopServicePrice {
+  service_category: string;
+  service_item: string;
+  min_price: number; // em centavos
+  max_price: number; // em centavos
+  labor_percentage: number;
+}
+
 const WorkshopOpportunities = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
@@ -114,6 +123,7 @@ const WorkshopOpportunities = () => {
   const [opportunities, setOpportunities] = useState<ClientOpportunity[]>([]);
   const [sortBy, setSortBy] = useState<"criticality" | "revenue" | "days">("criticality");
   const [filterCriticality, setFilterCriticality] = useState<string>("all");
+  const [customPrices, setCustomPrices] = useState<WorkshopServicePrice[]>([]);
 
   // Modal state
   const [selectedOpportunity, setSelectedOpportunity] = useState<ClientOpportunity | null>(null);
@@ -139,6 +149,14 @@ const WorkshopOpportunities = () => {
           setLoading(false);
           return;
         }
+
+        // Get custom service prices from workshop
+        const { data: pricesData } = await supabase
+          .from('workshop_service_prices')
+          .select('service_category, service_item, min_price, max_price, labor_percentage')
+          .eq('workshop_id', workshopData.id);
+
+        setCustomPrices(pricesData || []);
 
         // Get maintenance IDs from workshop
         const { data: workshopMaintenances } = await supabase
@@ -229,6 +247,22 @@ const WorkshopOpportunities = () => {
     fetchData();
   }, [user]);
 
+  // Helper function to get custom price for a service
+  const getCustomPrice = (category: string, item: string): { min: number; max: number } | null => {
+    const customPrice = customPrices.find(
+      (p) => p.service_category === category && p.service_item === item
+    );
+
+    if (customPrice) {
+      return {
+        min: customPrice.min_price / 100, // Convert cents to reais
+        max: customPrice.max_price / 100, // Convert cents to reais
+      };
+    }
+
+    return null;
+  };
+
   useEffect(() => {
     if (alerts.length === 0 || vehicles.length === 0) {
       setOpportunities([]);
@@ -310,13 +344,18 @@ const WorkshopOpportunities = () => {
           break;
       }
 
+      // Get custom price if available, otherwise use API price
+      const customPrice = getCustomPrice(alert.recommendation.category, alert.recommendation.item);
+      const minPrice = customPrice ? customPrice.min : alert.recommendation.custoMinimo;
+      const maxPrice = customPrice ? customPrice.max : alert.recommendation.custoMaximo;
+
       // Sum revenue potential (parts only)
-      opportunity.minRevenue += alert.recommendation.custoMinimo;
-      opportunity.maxRevenue += alert.recommendation.custoMaximo;
+      opportunity.minRevenue += minPrice;
+      opportunity.maxRevenue += maxPrice;
 
       // Calculate labor costs
-      const minLabor = calculateLaborCost(alert.recommendation.custoMinimo, alert.recommendation.criticidade);
-      const maxLabor = calculateLaborCost(alert.recommendation.custoMaximo, alert.recommendation.criticidade);
+      const minLabor = calculateLaborCost(minPrice, alert.recommendation.criticidade);
+      const maxLabor = calculateLaborCost(maxPrice, alert.recommendation.criticidade);
 
       opportunity.minLabor += minLabor;
       opportunity.maxLabor += maxLabor;
@@ -373,7 +412,7 @@ const WorkshopOpportunities = () => {
     });
 
     setOpportunities(opportunitiesArray);
-  }, [alerts, vehicles, maintenances, sortBy, filterCriticality]);
+  }, [alerts, vehicles, maintenances, sortBy, filterCriticality, customPrices]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -480,11 +519,16 @@ const WorkshopOpportunities = () => {
     let lowCount = 0;
 
     selectedAlertsArray.forEach(alert => {
-      minRevenue += alert.recommendation.custoMinimo;
-      maxRevenue += alert.recommendation.custoMaximo;
+      // Get custom price if available, otherwise use API price
+      const customPrice = getCustomPrice(alert.recommendation.category, alert.recommendation.item);
+      const minPrice = customPrice ? customPrice.min : alert.recommendation.custoMinimo;
+      const maxPrice = customPrice ? customPrice.max : alert.recommendation.custoMaximo;
 
-      const minL = calculateLaborCost(alert.recommendation.custoMinimo, alert.recommendation.criticidade);
-      const maxL = calculateLaborCost(alert.recommendation.custoMaximo, alert.recommendation.criticidade);
+      minRevenue += minPrice;
+      maxRevenue += maxPrice;
+
+      const minL = calculateLaborCost(minPrice, alert.recommendation.criticidade);
+      const maxL = calculateLaborCost(maxPrice, alert.recommendation.criticidade);
       minLabor += minL;
       maxLabor += maxL;
 
@@ -1031,10 +1075,16 @@ const WorkshopOpportunities = () => {
                   {selectedOpportunity.alerts.map((alert) => {
                     const isSelected = selectedAlerts.has(alert.id);
                     const rec = alert.recommendation;
-                    const minLabor = calculateLaborCost(rec.custoMinimo, rec.criticidade);
-                    const maxLabor = calculateLaborCost(rec.custoMaximo, rec.criticidade);
-                    const minTotal = rec.custoMinimo + minLabor;
-                    const maxTotal = rec.custoMaximo + maxLabor;
+
+                    // Get custom price if available, otherwise use API price
+                    const customPrice = getCustomPrice(rec.category, rec.item);
+                    const minPrice = customPrice ? customPrice.min : rec.custoMinimo;
+                    const maxPrice = customPrice ? customPrice.max : rec.custoMaximo;
+
+                    const minLabor = calculateLaborCost(minPrice, rec.criticidade);
+                    const maxLabor = calculateLaborCost(maxPrice, rec.criticidade);
+                    const minTotal = minPrice + minLabor;
+                    const maxTotal = maxPrice + maxLabor;
 
                     return (
                       <div
@@ -1083,11 +1133,15 @@ const WorkshopOpportunities = () => {
                                   {formatCurrency(minTotal)} - {formatCurrency(maxTotal)}
                                 </p>
                                 <p className="text-xs text-gray-500">
-                                  Peças: {formatCurrency(rec.custoMinimo)} - {formatCurrency(rec.custoMaximo)}
+                                  Peças: {formatCurrency(minPrice)} - {formatCurrency(maxPrice)}
+                                  {customPrice && <span className="text-blue-600 ml-1">*</span>}
                                 </p>
                                 <p className="text-xs text-gray-500">
                                   M.O.: {formatCurrency(minLabor)} - {formatCurrency(maxLabor)}
                                 </p>
+                                {customPrice && (
+                                  <p className="text-[10px] text-blue-600 mt-1">* Preço customizado</p>
+                                )}
                               </div>
                             </div>
                             <p className="text-sm text-orange-600 mt-2">

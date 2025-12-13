@@ -362,7 +362,7 @@ export const VehicleFormDialog = ({ open, onOpenChange, vehicle }: VehicleFormDi
                 {vehicleData && (
                   <Alert>
                     <AlertDescription className="text-xs">
-                      <strong>Encontrado:</strong> {vehicleData.brand} {vehicleData.model} ({vehicleData.year})
+                      <strong>Encontrado:</strong> {vehicleData.brand} {vehicleData.model} {vehicleData.version && `- ${vehicleData.version}`} ({vehicleData.year})
                     </AlertDescription>
                   </Alert>
                 )}

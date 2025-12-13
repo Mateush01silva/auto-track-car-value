@@ -9,7 +9,8 @@ import {
   Settings,
   FileText,
   CreditCard,
-  TrendingUp
+  TrendingUp,
+  DollarSign
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -34,6 +35,7 @@ const NAV_ITEMS: NavItem[] = [
 
 const MORE_ITEMS = [
   { icon: TrendingUp, label: "Oportunidades", path: "/workshop/opportunities" },
+  { icon: DollarSign, label: "Tabela de Preços", path: "/workshop/pricing" },
   { icon: FileText, label: "Templates", path: "/workshop/templates" },
   { icon: Settings, label: "Configurações", path: "/workshop/settings" },
   { icon: CreditCard, label: "Planos", path: "/workshop/plans" },
