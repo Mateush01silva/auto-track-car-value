@@ -10,6 +10,7 @@ export interface Vehicle {
   model: string;
   version: string | null;
   year: number;
+  year_fab?: number | null; // Ano de fabricação (opcional)
   plate: string;
   initial_km: number; // KM de cadastro/compra
   current_km: number; // KM atual (atualizado automaticamente)

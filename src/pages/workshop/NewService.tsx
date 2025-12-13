@@ -99,6 +99,7 @@ const NewService = () => {
     brand: string;
     model: string;
     year: number;
+    yearFab?: number;
     version?: string;
     color?: string;
   } | null>(null);
@@ -243,6 +244,7 @@ const NewService = () => {
                 brand: plateSearchApi.result.brand,
                 model: plateSearchApi.result.model,
                 year: plateSearchApi.result.year,
+                yearFab: plateSearchApi.result.yearFab,
                 version: plateSearchApi.result.version,
                 color: plateSearchApi.result.color,
               });
@@ -580,18 +582,38 @@ const NewService = () => {
             <CardContent>
               <div className="space-y-4">
                 {/* Vehicle Info */}
-                <div className="flex items-center gap-4">
-                  <div className="bg-white rounded-lg p-4 shadow-sm">
-                    <Car className="h-12 w-12 text-blue-400" />
+                <div className="bg-white rounded-lg p-4 shadow-sm">
+                  <div className="flex items-center gap-2 mb-3 pb-3 border-b">
+                    <Car className="h-5 w-5 text-blue-600" />
+                    <span className="text-xl font-bold font-mono">{plate}</span>
                   </div>
-                  <div>
-                    <p className="text-2xl font-bold font-mono">{plate}</p>
-                    <p className="text-lg">{suivVehicleData.brand} {suivVehicleData.model}</p>
-                    <p className="text-gray-500">
-                      {suivVehicleData.year}
-                      {suivVehicleData.version && ` - ${suivVehicleData.version}`}
-                      {suivVehicleData.color && ` - ${suivVehicleData.color}`}
-                    </p>
+                  <div className="grid grid-cols-[110px_1fr] gap-y-2 text-sm">
+                    <span className="font-medium text-gray-600">Marca:</span>
+                    <span className="font-semibold text-gray-900">{suivVehicleData.brand}</span>
+
+                    <span className="font-medium text-gray-600">Modelo:</span>
+                    <span className="font-semibold text-gray-900">{suivVehicleData.model}</span>
+
+                    {suivVehicleData.version && (
+                      <>
+                        <span className="font-medium text-gray-600">Versão:</span>
+                        <span className="font-semibold text-gray-900">{suivVehicleData.version}</span>
+                      </>
+                    )}
+
+                    <span className="font-medium text-gray-600">Ano:</span>
+                    <span className="font-semibold text-gray-900">
+                      {suivVehicleData.yearFab && suivVehicleData.yearFab !== suivVehicleData.year
+                        ? `${suivVehicleData.yearFab}/${suivVehicleData.year}`
+                        : suivVehicleData.year}
+                    </span>
+
+                    {suivVehicleData.color && (
+                      <>
+                        <span className="font-medium text-gray-600">Cor:</span>
+                        <span className="font-semibold text-gray-900">{suivVehicleData.color}</span>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -611,6 +633,7 @@ const NewService = () => {
                       brand: suivVehicleData.brand,
                       model: suivVehicleData.model,
                       year: suivVehicleData.year,
+                      year_fab: suivVehicleData.yearFab || null,
                       color: suivVehicleData.color || null,
                       km: null,
                       isNew: true,

@@ -49,6 +49,7 @@ export const VehicleFormDialog = ({ open, onOpenChange, vehicle }: VehicleFormDi
     brand: string;
     model: string;
     year: number;
+    yearFab?: number;
     version?: string;
   } | null>(null);
 
@@ -209,6 +210,7 @@ export const VehicleFormDialog = ({ open, onOpenChange, vehicle }: VehicleFormDi
         brand: plateSearch.result.brand,
         model: plateSearch.result.model,
         year: plateSearch.result.year,
+        yearFab: plateSearch.result.yearFab,
         version: plateSearch.result.version,
       });
       setPlate(plateSearch.result.plate || plateSearchInput);
@@ -225,6 +227,8 @@ export const VehicleFormDialog = ({ open, onOpenChange, vehicle }: VehicleFormDi
       let yearNumber = 0;
       let version: string | null = null;
 
+      let yearFab: number | null = null;
+
       // Modo Plate: usa dados da busca
       if (vehicleMode.isPlateMode) {
         if (!vehicleData) {
@@ -233,6 +237,7 @@ export const VehicleFormDialog = ({ open, onOpenChange, vehicle }: VehicleFormDi
         brandName = vehicleData.brand;
         modelName = vehicleData.model;
         yearNumber = vehicleData.year;
+        yearFab = vehicleData.yearFab || null;
         version = vehicleData.version || null;
       }
       // Modo Fipe: usa seleções dos dropdowns
@@ -250,6 +255,7 @@ export const VehicleFormDialog = ({ open, onOpenChange, vehicle }: VehicleFormDi
         model: modelName,
         version,
         year: yearNumber,
+        year_fab: yearFab,
         plate: plate.toUpperCase(),
         initial_km: vehicle ? vehicle.initial_km : kmValue, // Mantém initial_km em edição
         current_km: kmValue,
@@ -360,9 +366,32 @@ export const VehicleFormDialog = ({ open, onOpenChange, vehicle }: VehicleFormDi
                   </Alert>
                 )}
                 {vehicleData && (
-                  <Alert>
-                    <AlertDescription className="text-xs">
-                      <strong>Encontrado:</strong> {vehicleData.brand} {vehicleData.model} {vehicleData.version && `- ${vehicleData.version}`} ({vehicleData.year})
+                  <Alert className="bg-primary/5 border-primary/20">
+                    <AlertDescription>
+                      <div className="space-y-1">
+                        <div className="text-xs font-semibold text-muted-foreground mb-2">VEÍCULO ENCONTRADO</div>
+                        <div className="grid grid-cols-[100px_1fr] gap-y-1 text-sm">
+                          <span className="font-medium text-muted-foreground">Marca:</span>
+                          <span className="font-semibold">{vehicleData.brand}</span>
+
+                          <span className="font-medium text-muted-foreground">Modelo:</span>
+                          <span className="font-semibold">{vehicleData.model}</span>
+
+                          {vehicleData.version && (
+                            <>
+                              <span className="font-medium text-muted-foreground">Versão:</span>
+                              <span className="font-semibold">{vehicleData.version}</span>
+                            </>
+                          )}
+
+                          <span className="font-medium text-muted-foreground">Ano:</span>
+                          <span className="font-semibold">
+                            {vehicleData.yearFab && vehicleData.yearFab !== vehicleData.year
+                              ? `${vehicleData.yearFab}/${vehicleData.year}`
+                              : vehicleData.year}
+                          </span>
+                        </div>
+                      </div>
                     </AlertDescription>
                   </Alert>
                 )}
