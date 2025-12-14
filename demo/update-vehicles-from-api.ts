@@ -18,6 +18,8 @@ import * as path from 'path'
 
 // Carregar .env do diretório raiz
 dotenv.config({ path: path.resolve(__dirname, '../.env') })
+// Carregar .env.local da pasta demo/ (sobrescreve se existir)
+dotenv.config({ path: path.resolve(__dirname, '.env.local') })
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || ''
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || ''
