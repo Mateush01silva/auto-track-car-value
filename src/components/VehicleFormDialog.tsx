@@ -206,6 +206,9 @@ export const VehicleFormDialog = ({ open, onOpenChange, vehicle }: VehicleFormDi
 
     // Se encontrou o veículo, preenche os dados
     if (plateSearch.result) {
+      // Garante que a placa sempre seja preenchida (API retorna ou usa input)
+      const finalPlate = plateSearch.result.plate || plateSearchInput;
+
       setVehicleData({
         brand: plateSearch.result.brand,
         model: plateSearch.result.model,
@@ -213,7 +216,13 @@ export const VehicleFormDialog = ({ open, onOpenChange, vehicle }: VehicleFormDi
         yearFab: plateSearch.result.yearFab,
         version: plateSearch.result.version,
       });
-      setPlate(plateSearch.result.plate || plateSearchInput);
+      setPlate(finalPlate);
+
+      console.log('[DEBUG] Dados preenchidos:', {
+        vehicleData: 'SET',
+        plate: finalPlate,
+        canSubmitNow: 'precisa preencher KM'
+      });
     }
   };
 
@@ -299,7 +308,9 @@ export const VehicleFormDialog = ({ open, onOpenChange, vehicle }: VehicleFormDi
 
     if (vehicleMode.isPlateMode) {
       // Modo Plate: precisa ter buscado o veículo
-      return vehicleData && plate && currentKm;
+      const result = !!(vehicleData && plate && currentKm);
+      console.log('[DEBUG] canSubmit:', { vehicleData: !!vehicleData, plate: !!plate, currentKm: !!currentKm, result });
+      return result;
     }
 
     // Modo Fipe: precisa de todos os selects
