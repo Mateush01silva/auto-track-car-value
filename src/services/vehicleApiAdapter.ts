@@ -21,6 +21,7 @@ export interface VehicleData {
   model: string;
   version?: string;
   year: number;
+  yearFab?: number;
   plate?: string;
   // Campos adicionais da Plate API (opcionais)
   color?: string;
@@ -102,6 +103,7 @@ class VehicleApiAdapter {
           model: result.model,
           version: result.version,
           year: result.year,
+          yearFab: result.yearFab,
           plate: result.plate,
           color: result.color,
           fuel: result.fuel,

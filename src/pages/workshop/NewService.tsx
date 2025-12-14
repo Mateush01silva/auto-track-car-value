@@ -234,12 +234,16 @@ const NewService = () => {
         setSearchComplete(true);
       } else {
         // ETAPA 2: Não encontrou no banco, tentar API SUIV (se habilitada)
+        console.log('[WORKSHOP] Veículo não encontrado no banco. Modo:', vehicleMode.isPlateMode ? 'PLATE (SUIV)' : 'FIPE');
+
         if (vehicleMode.isPlateMode) {
           try {
+            console.log('[WORKSHOP] Buscando na API SUIV para placa:', normalizedPlate);
             await plateSearchApi.searchByPlate(normalizedPlate);
 
             if (plateSearchApi.result) {
               // Sucesso! Encontrou na API SUIV
+              console.log('[WORKSHOP] ✅ Veículo encontrado na API SUIV:', plateSearchApi.result);
               setSuivVehicleData({
                 brand: plateSearchApi.result.brand,
                 model: plateSearchApi.result.model,
@@ -251,19 +255,21 @@ const NewService = () => {
               setSearchComplete(true);
             } else {
               // Não encontrou na API SUIV, mostrar formulário manual
+              console.log('[WORKSHOP] ⚠️ API SUIV não retornou resultado, usando FIPE');
               setShowManualForm(true);
               loadBrands();
               setSearchComplete(true);
             }
           } catch (suivError) {
             // Erro na API SUIV, fallback para formulário manual
-            console.warn('Erro na API SUIV, usando formulário manual:', suivError);
+            console.error('[WORKSHOP] ❌ Erro na API SUIV, usando formulário manual:', suivError);
             setShowManualForm(true);
             loadBrands();
             setSearchComplete(true);
           }
         } else {
           // ETAPA 3: Modo Fipe - mostrar formulário manual direto
+          console.log('[WORKSHOP] Modo FIPE ativado, mostrando formulário manual');
           setShowManualForm(true);
           loadBrands();
           setSearchComplete(true);
