@@ -1,0 +1,20 @@
+{
+  "name": "vybo-demo-scripts",
+  "version": "1.0.0",
+  "description": "Scripts para configurar ambiente de demonstração do VYBO",
+  "private": true,
+  "scripts": {
+    "update-vehicles": "tsx update-vehicles-from-api.ts",
+    "populate-cache": "tsx populate-revisions-cache.ts",
+    "create-users": "tsx create-demo-users.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  }
+}
