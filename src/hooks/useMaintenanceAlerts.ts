@@ -44,6 +44,38 @@ export const useMaintenanceAlerts = (
 ): MaintenanceAlert[] => {
   const [alerts, setAlerts] = useState<MaintenanceAlert[]>([]);
 
+  // Busca proativa: quando o hook é montado, verifica e busca revisões se necessário
+  useEffect(() => {
+    const ensureRevisionsAreFetched = async () => {
+      if (!vehicles || vehicles.length === 0) return;
+
+      console.log('[ALERTS] Verificando revisões para', vehicles.length, 'veículos...');
+
+      // Para cada veículo, garantir que as revisões foram buscadas
+      for (const vehicle of vehicles) {
+        try {
+          // getVehicleRevisions já faz o check interno, mas vamos logar
+          const revisions = await getVehicleRevisions(
+            vehicle.id,
+            vehicle.brand,
+            vehicle.model,
+            vehicle.year
+          );
+
+          if (revisions.length > 0) {
+            console.log(`[ALERTS] ✅ ${vehicle.brand} ${vehicle.model}: ${revisions.length} revisões disponíveis`);
+          } else {
+            console.warn(`[ALERTS] ⚠️ ${vehicle.brand} ${vehicle.model}: Nenhuma revisão encontrada`);
+          }
+        } catch (error) {
+          console.error(`[ALERTS] ❌ Erro ao buscar revisões para ${vehicle.brand} ${vehicle.model}:`, error);
+        }
+      }
+    };
+
+    ensureRevisionsAreFetched();
+  }, [vehicles]); // Re-executa quando a lista de veículos muda
+
   useEffect(() => {
     const calculateAlerts = async () => {
       const allAlerts: MaintenanceAlert[] = [];
@@ -57,7 +89,7 @@ export const useMaintenanceAlerts = (
         );
 
         if (cachedRevisions.length === 0) {
-          console.warn('Sem revisões para', vehicle.brand, vehicle.model);
+          console.warn('[ALERTS] Sem revisões para', vehicle.brand, vehicle.model);
           continue;
         }
 
