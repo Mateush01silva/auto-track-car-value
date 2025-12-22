@@ -431,6 +431,48 @@ const WorkshopClients = () => {
     return Math.round(visitsScore + spendingScore + recencyScore);
   };
 
+  // Card #12: Predict next return based on average interval - Previsão de retorno
+  const predictNextReturn = (client: ClientData): { daysUntilReturn: number; expectedDate: string; isOverdue: boolean } => {
+    if (client.totalMaintenances < 2) {
+      // Não há dados suficientes, assume 90 dias
+      const daysSince = getDaysSinceVisit(client.lastVisit);
+      const daysUntilReturn = 90 - daysSince;
+      const expectedDate = new Date();
+      expectedDate.setDate(expectedDate.getDate() + daysUntilReturn);
+      return {
+        daysUntilReturn,
+        expectedDate: expectedDate.toLocaleDateString('pt-BR'),
+        isOverdue: daysUntilReturn < 0
+      };
+    }
+
+    // Calcular intervalo médio entre visitas
+    const sortedMaintenances = [...client.maintenances].sort((a, b) =>
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+
+    let totalIntervals = 0;
+    for (let i = 1; i < sortedMaintenances.length; i++) {
+      const prevDate = new Date(sortedMaintenances[i - 1].date);
+      const currDate = new Date(sortedMaintenances[i].date);
+      const intervalDays = Math.floor((currDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24));
+      totalIntervals += intervalDays;
+    }
+
+    const avgInterval = Math.round(totalIntervals / (sortedMaintenances.length - 1));
+    const daysSinceLastVisit = getDaysSinceVisit(client.lastVisit);
+    const daysUntilReturn = avgInterval - daysSinceLastVisit;
+
+    const expectedDate = new Date();
+    expectedDate.setDate(expectedDate.getDate() + daysUntilReturn);
+
+    return {
+      daysUntilReturn,
+      expectedDate: expectedDate.toLocaleDateString('pt-BR'),
+      isOverdue: daysUntilReturn < 0
+    };
+  };
+
   // Determine client segment
   const determineSegment = (client: ClientData, daysSince: number, avgSpent: number): ClientSegment => {
     // New clients: 1-2 visits
@@ -707,6 +749,97 @@ const WorkshopClients = () => {
           </Card>
         )}
 
+        {/* Analytics Cards - Card #11 (LTV) & Card #17 (Health Score) */}
+        {clients.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            {/* Top Clientes por LTV - Card #11 */}
+            <Card className="md:col-span-2">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Crown className="h-4 w-4 text-yellow-600" />
+                    <h3 className="font-semibold text-sm">Top 10 Clientes (LTV)</h3>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <AlertCircle className="h-3 w-3 text-gray-400" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs max-w-xs">Lifetime Value (LTV) é o valor total gasto por cada cliente. Foque atenção nos top 20% que geram 80% da receita.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  <Badge variant="outline" className="text-xs">
+                    {clients.slice(0, 10).reduce((sum, c) => sum + c.totalSpent, 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  </Badge>
+                </div>
+                <div className="space-y-2">
+                  {clients
+                    .sort((a, b) => b.totalSpent - a.totalSpent)
+                    .slice(0, 5)
+                    .map((client, idx) => (
+                      <div key={client.plate} className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <span className="font-mono text-gray-400">#{idx + 1}</span>
+                          <span className="truncate">{client.clientName || client.plate}</span>
+                          {client.segment === 'vip' && <Crown className="h-3 w-3 text-yellow-600 flex-shrink-0" />}
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <Badge variant="secondary" className="text-[10px] px-1">
+                            {client.totalMaintenances}x
+                          </Badge>
+                          <span className="font-semibold">
+                            {client.totalSpent.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Health Score Médio - Card #17 */}
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <h3 className="font-semibold text-sm">Health Score</h3>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <AlertCircle className="h-3 w-3 text-gray-400" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-xs max-w-xs">Pontuação de 0-100 que avalia a saúde do relacionamento com base em frequência (40%), gastos (30%) e recência (30%).</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-green-600">
+                    {Math.round(clients.reduce((sum, c) => sum + (c.loyaltyScore || 0), 0) / clients.length)}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">Média geral</p>
+                  <div className="mt-3 space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-green-600">🟢 Excelente (&gt;70)</span>
+                      <span className="font-semibold">{clients.filter(c => (c.loyaltyScore || 0) > 70).length}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-yellow-600">🟡 Atenção (40-70)</span>
+                      <span className="font-semibold">{clients.filter(c => (c.loyaltyScore || 0) >= 40 && (c.loyaltyScore || 0) <= 70).length}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-red-600">🔴 Risco (&lt;40)</span>
+                      <span className="font-semibold">{clients.filter(c => (c.loyaltyScore || 0) < 40).length}</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {/* Search */}
         <div className="mb-6">
           <div className="relative">
@@ -765,7 +898,7 @@ const WorkshopClients = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredClients.map((client) => {
               const daysSince = getDaysSinceVisit(client.lastVisit);
-              const priority = getReturnPriority(daysSince);
+              const prediction = predictNextReturn(client); // Card #12: Previsão inteligente de retorno
 
               return (
                 <Card
@@ -809,11 +942,23 @@ const WorkshopClients = () => {
                           {client.brand} {client.model} {client.year}
                         </p>
 
-                        {/* Loyalty Score */}
+                        {/* Loyalty Score - Card #17 Health Score visual */}
                         {client.loyaltyScore !== undefined && (
                           <div className="mb-3">
                             <div className="flex items-center justify-between text-xs mb-1">
-                              <span className="text-gray-500">Score de Fidelidade</span>
+                              <div className="flex items-center gap-1">
+                                <span className="text-gray-500">Health Score</span>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <AlertCircle className="h-2.5 w-2.5 text-gray-400" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p className="text-xs">Saúde do relacionamento: frequência + gastos + recência</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </div>
                               <span className={`font-semibold ${getLoyaltyScoreColor(client.loyaltyScore)}`}>
                                 {client.loyaltyScore}/100
                               </span>
@@ -843,20 +988,32 @@ const WorkshopClients = () => {
                           </div>
                           <div className="flex items-center gap-1 col-span-2">
                             <Calendar className="h-3 w-3 text-gray-400" />
-                            <span>Ultima: {formatDate(client.lastVisit)}</span>
+                            <span>Última: {formatDate(client.lastVisit)}</span>
                           </div>
                         </div>
 
-                        {/* Next Return (Pro only) */}
+                        {/* Card #12: Next Return Prediction (Pro only) */}
                         {isProfessional ? (
                           <div className="mt-3 pt-3 border-t">
                             <div className="flex items-center justify-between">
-                              <span className="text-xs text-gray-500">Retorno em:</span>
-                              <Badge className={`${priority.color} text-xs`}>
-                                {priority.status === 'overdue' && (
+                              <div className="flex items-center gap-1">
+                                <span className="text-xs text-gray-500">Previsão retorno:</span>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <AlertCircle className="h-2.5 w-2.5 text-gray-400" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p className="text-xs">Baseado no histórico de visitas do cliente</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </div>
+                              <Badge className={`${prediction.isOverdue ? 'bg-red-100 text-red-700' : prediction.daysUntilReturn < 15 ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'} text-xs`}>
+                                {prediction.isOverdue && (
                                   <AlertCircle className="h-3 w-3 mr-1" />
                                 )}
-                                {priority.label}
+                                {prediction.isOverdue ? `${Math.abs(prediction.daysUntilReturn)}d atrasado` : `${prediction.daysUntilReturn}d`}
                               </Badge>
                             </div>
                           </div>
@@ -866,7 +1023,7 @@ const WorkshopClients = () => {
                               <TooltipTrigger asChild>
                                 <div className="mt-3 pt-3 border-t opacity-50">
                                   <div className="flex items-center justify-between">
-                                    <span className="text-xs text-gray-500">Retorno em:</span>
+                                    <span className="text-xs text-gray-500">Previsão retorno:</span>
                                     <Badge variant="secondary" className="text-xs blur-sm">
                                       <Crown className="h-3 w-3 mr-1" />
                                       Pro
@@ -875,7 +1032,7 @@ const WorkshopClients = () => {
                                 </div>
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>Recurso disponivel no plano Professional</p>
+                                <p>Recurso disponível no plano Professional</p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
