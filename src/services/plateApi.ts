@@ -299,16 +299,74 @@ class PlateApiClient {
       description: string;
     }
 
+    console.log(`[SUIV API] 🔍 Nome original do modelo: "${modelName}"`);
+
+    // Normalizar nome do modelo (remover versão/motor/transmissão)
+    const normalizedModel = this.normalizeModelName(modelName);
+    console.log(`[SUIV API] 🔧 Nome normalizado do modelo: "${normalizedModel}"`);
+
     const models = await this.request<Model[]>('/api/v4/Models', {
       makerId: makerId.toString(),
     });
 
-    // Busca aproximada por substring (modelo pode vir com anos e detalhes)
-    const model = models.find(m =>
-      m.description.toUpperCase().includes(modelName.toUpperCase())
+    // Busca exata primeiro
+    let model = models.find(m =>
+      m.description.toUpperCase() === normalizedModel.toUpperCase()
     );
 
+    // Se não encontrar, busca por substring (modelo pode ter variações na API)
+    if (!model) {
+      console.log(`[SUIV API] Busca exata falhou, tentando busca por substring...`);
+      model = models.find(m =>
+        m.description.toUpperCase().includes(normalizedModel.toUpperCase()) ||
+        normalizedModel.toUpperCase().includes(m.description.toUpperCase())
+      );
+    }
+
+    if (model) {
+      console.log(`[SUIV API] ✅ Modelo encontrado: "${model.description}" (ID: ${model.id})`);
+    }
+
     return model?.id || null;
+  }
+
+  /**
+   * Normaliza o nome do modelo removendo versões e detalhes
+   * @private
+   */
+  private normalizeModelName(model: string): string {
+    // Remove números de motor, anos, e detalhes técnicos
+    // Ex: "COBALT LTZ 1.8 8V Econo.Flex 4p Aut." → "COBALT"
+
+    // Lista de palavras-chave que indicam início de versão/detalhes
+    const versionKeywords = [
+      'LTZ', 'LT', 'LS', 'LX', 'LXS', 'EX', 'EXL', 'DX', 'SX',
+      'PREMIER', 'COMFORT', 'STYLE', 'TECH', 'SPORT', 'TURBO',
+      'PLUS', 'ACTIV', 'MIDNIGHT', 'RS', 'SS',
+      'FLEX', 'ECONO', 'AUTOMÁTICO', 'MANUAL', 'AUT', 'MEC',
+      'ADVANTAGE', 'ESSENCE', 'INTENSE', 'ZEN',
+      '1.0', '1.4', '1.6', '1.8', '2.0', '2.4', '3.0',
+      '4P', '5P', '2P', // portas
+    ];
+
+    const words = model.trim().split(/\s+/);
+    const normalizedWords: string[] = [];
+
+    for (const word of words) {
+      const upperWord = word.toUpperCase();
+
+      // Para se encontrar número ou palavra-chave de versão
+      if (/^\d/.test(upperWord) || versionKeywords.some(kw => upperWord.includes(kw))) {
+        break;
+      }
+
+      normalizedWords.push(word);
+    }
+
+    // Pega no máximo 2 palavras (ex: "LAND CRUISER", "SANTA FE")
+    const normalized = normalizedWords.slice(0, 2).join(' ');
+
+    return normalized || model.split(/\s+/)[0]; // Fallback: primeira palavra
   }
 
   /**
