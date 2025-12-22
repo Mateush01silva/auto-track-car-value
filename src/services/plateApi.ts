@@ -306,34 +306,56 @@ class PlateApiClient {
     model: string,
     year: number
   ): Promise<ManufacturerRevision[]> {
+    console.log(`[SUIV API] 🚀 Iniciando busca de revisões para ${brand} ${model} ${year}`);
+
     try {
       // Passo 1: Buscar ID da marca
+      console.log(`[SUIV API] 1️⃣ Buscando ID da marca "${brand}"...`);
       const makerId = await this.getMakerId(brand);
       if (!makerId) {
+        console.error(`[SUIV API] ❌ Marca "${brand}" não encontrada na API SUIV`);
         throw new PlateApiError(`Marca "${brand}" não encontrada na API SUIV`);
       }
+      console.log(`[SUIV API] ✅ Marca encontrada! ID: ${makerId}`);
 
       // Passo 2: Buscar ID do modelo
+      console.log(`[SUIV API] 2️⃣ Buscando ID do modelo "${model}" (makerId: ${makerId})...`);
       const modelId = await this.getModelId(makerId, model);
       if (!modelId) {
+        console.error(`[SUIV API] ❌ Modelo "${model}" não encontrado para a marca "${brand}"`);
         throw new PlateApiError(`Modelo "${model}" não encontrado para a marca "${brand}"`);
       }
+      console.log(`[SUIV API] ✅ Modelo encontrado! ID: ${modelId}`);
 
       // Passo 3: Buscar ID da versão
+      console.log(`[SUIV API] 3️⃣ Buscando ID da versão para ano ${year} (modelId: ${modelId})...`);
       const versionId = await this.getVersionId(modelId, year);
       if (!versionId) {
+        console.error(`[SUIV API] ❌ Versão não encontrada para ${brand} ${model} (${year})`);
         throw new PlateApiError(`Versão não encontrada para ${brand} ${model} (${year})`);
       }
+      console.log(`[SUIV API] ✅ Versão encontrada! ID: ${versionId}`);
 
       // Passo 4: Buscar plano de revisão
+      console.log(`[SUIV API] 4️⃣ Buscando plano de revisão (versionId: ${versionId}, year: ${year})...`);
       const revisionPlan = await this.request<RevisionPlanItem[]>('/api/v4/RevisionPlan', {
         versionId: versionId.toString(),
         year: year.toString(),
       });
+      console.log(`[SUIV API] ✅ Plano de revisão retornado! ${revisionPlan?.length || 0} itens`);
+
+      if (revisionPlan && revisionPlan.length > 0) {
+        console.log(`[SUIV API] 📋 Primeiro item do plano:`, JSON.stringify(revisionPlan[0], null, 2));
+      }
 
       // Converte o plano de revisão SUIV para o formato ManufacturerRevision
-      return this.convertRevisionPlanToManufacturerRevisions(revisionPlan);
+      console.log(`[SUIV API] 🔄 Convertendo plano de revisão para formato interno...`);
+      const converted = this.convertRevisionPlanToManufacturerRevisions(revisionPlan);
+      console.log(`[SUIV API] ✅ Conversão concluída! ${converted.length} revisões geradas`);
+
+      return converted;
     } catch (error) {
+      console.error(`[SUIV API] ❌ Erro durante busca de revisões:`, error);
       if (error instanceof PlateApiError) {
         throw error;
       }
@@ -348,42 +370,60 @@ class PlateApiClient {
   private convertRevisionPlanToManufacturerRevisions(
     revisionPlan: RevisionPlanItem[]
   ): ManufacturerRevision[] {
+    console.log(`[SUIV CONVERT] 🔄 Iniciando conversão de ${revisionPlan?.length || 0} itens do plano...`);
+
+    if (!revisionPlan || revisionPlan.length === 0) {
+      console.warn(`[SUIV CONVERT] ⚠️ Plano de revisão vazio ou null`);
+      return [];
+    }
+
     const revisions: ManufacturerRevision[] = [];
+    let totalParts = 0;
+    let totalInspections = 0;
 
     for (const item of revisionPlan) {
+      console.log(`[SUIV CONVERT] 📦 Item ${item.kilometers}km/${item.months}m: ${item.changedParts?.length || 0} peças, ${item.inspections?.length || 0} inspeções`);
+
       // Adiciona peças a serem trocadas
-      for (const part of item.changedParts) {
-        revisions.push({
-          id: `part_${item.kilometers}_${part.nicknameId}`,
-          category: part.setDescription,
-          item: part.description,
-          description: `Troca de ${part.description} (${part.amount}x)`,
-          kmInterval: item.kilometers,
-          timeInterval: item.months,
-          type: 'Preventiva',
-          criticidade: this.estimateCriticality(part.setDescription),
-          custoEstimado: item.fullPrice || undefined,
-          tempoEstimado: item.durationMinutes || undefined,
-        });
+      if (item.changedParts && item.changedParts.length > 0) {
+        for (const part of item.changedParts) {
+          revisions.push({
+            id: `part_${item.kilometers}_${part.nicknameId}`,
+            category: part.setDescription,
+            item: part.description,
+            description: `Troca de ${part.description} (${part.amount}x)`,
+            kmInterval: item.kilometers,
+            timeInterval: item.months,
+            type: 'Preventiva',
+            criticidade: this.estimateCriticality(part.setDescription),
+            custoEstimado: item.fullPrice || undefined,
+            tempoEstimado: item.durationMinutes || undefined,
+          });
+          totalParts++;
+        }
       }
 
       // Adiciona inspeções
-      for (const inspection of item.inspections) {
-        revisions.push({
-          id: `inspection_${item.kilometers}_${inspection.inspectionId}`,
-          category: 'Inspeção',
-          item: inspection.description,
-          description: `Inspeção: ${inspection.description}`,
-          kmInterval: item.kilometers,
-          timeInterval: item.months,
-          type: 'Preventiva',
-          criticidade: 'Baixa',
-          custoEstimado: 0,
-          tempoEstimado: item.durationMinutes || undefined,
-        });
+      if (item.inspections && item.inspections.length > 0) {
+        for (const inspection of item.inspections) {
+          revisions.push({
+            id: `inspection_${item.kilometers}_${inspection.inspectionId}`,
+            category: 'Inspeção',
+            item: inspection.description,
+            description: `Inspeção: ${inspection.description}`,
+            kmInterval: item.kilometers,
+            timeInterval: item.months,
+            type: 'Preventiva',
+            criticidade: 'Baixa',
+            custoEstimado: 0,
+            tempoEstimado: item.durationMinutes || undefined,
+          });
+          totalInspections++;
+        }
       }
     }
 
+    console.log(`[SUIV CONVERT] ✅ Conversão concluída: ${totalParts} peças + ${totalInspections} inspeções = ${revisions.length} revisões totais`);
     return revisions;
   }
 
