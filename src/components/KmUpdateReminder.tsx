@@ -7,9 +7,10 @@ import { useAuth } from "@/contexts/AuthContext";
 
 interface KmUpdateReminderProps {
   onUpdateClick?: () => void;
+  vehicles?: any[]; // Add vehicles prop to force re-render
 }
 
-export const KmUpdateReminder = ({ onUpdateClick }: KmUpdateReminderProps) => {
+export const KmUpdateReminder = ({ onUpdateClick, vehicles }: KmUpdateReminderProps) => {
   const [showReminder, setShowReminder] = useState(false);
   const [daysSinceUpdate, setDaysSinceUpdate] = useState(0);
   const { user } = useAuth();
@@ -36,6 +37,7 @@ export const KmUpdateReminder = ({ onUpdateClick }: KmUpdateReminderProps) => {
 
         // Se dispensou há menos de 7 dias, não mostrar
         if (daysSinceDismiss < 7) {
+          setShowReminder(false);
           return;
         }
       }
@@ -49,17 +51,40 @@ export const KmUpdateReminder = ({ onUpdateClick }: KmUpdateReminderProps) => {
         .limit(1)
         .single();
 
-      if (lastMaintenance) {
-        const lastUpdate = new Date(lastMaintenance.date);
-        const daysSince = Math.floor((Date.now() - lastUpdate.getTime()) / (1000 * 60 * 60 * 24));
+      // Buscar a última atualização de veículo (updated_at)
+      const { data: lastVehicleUpdate } = await supabase
+        .from("vehicles")
+        .select("updated_at")
+        .eq("user_id", user.id)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      // Pegar a data mais recente entre manutenção e atualização de veículo
+      let mostRecentDate: Date | null = null;
+
+      if (lastMaintenance && lastVehicleUpdate) {
+        const maintenanceDate = new Date(lastMaintenance.date);
+        const vehicleUpdateDate = new Date(lastVehicleUpdate.updated_at);
+        mostRecentDate = maintenanceDate > vehicleUpdateDate ? maintenanceDate : vehicleUpdateDate;
+      } else if (lastMaintenance) {
+        mostRecentDate = new Date(lastMaintenance.date);
+      } else if (lastVehicleUpdate) {
+        mostRecentDate = new Date(lastVehicleUpdate.updated_at);
+      }
+
+      if (mostRecentDate) {
+        const daysSince = Math.floor((Date.now() - mostRecentDate.getTime()) / (1000 * 60 * 60 * 24));
         setDaysSinceUpdate(daysSince);
 
         // Mostrar lembrete se passou mais de 7 dias
         if (daysSince >= 7) {
           setShowReminder(true);
+        } else {
+          setShowReminder(false);
         }
       } else {
-        // Se não tem manutenções, verificar há quanto tempo criou a conta
+        // Se não tem manutenções nem veículos, verificar há quanto tempo criou a conta
         const { data: profile } = await supabase
           .from("profiles")
           .select("created_at")
@@ -74,13 +99,15 @@ export const KmUpdateReminder = ({ onUpdateClick }: KmUpdateReminderProps) => {
           if (daysSince >= 7) {
             setDaysSinceUpdate(daysSince);
             setShowReminder(true);
+          } else {
+            setShowReminder(false);
           }
         }
       }
     };
 
     checkLastUpdate();
-  }, [user, isTestMode]);
+  }, [user, isTestMode, vehicles]); // Add vehicles to dependencies to re-check when vehicles change
 
   const handleDismiss = () => {
     if (user) {

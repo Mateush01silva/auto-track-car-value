@@ -673,10 +673,10 @@ const WorkshopClients = () => {
               </Button>
               <div>
                 <h1 className="text-xl font-bold flex items-center gap-2">
-                  Meus Clientes
+                  CRM Inteligente
                   <Badge variant="secondary">{clients.length}</Badge>
                 </h1>
-                <p className="text-sm text-gray-500">Clientes unicos atendidos</p>
+                <p className="text-sm text-gray-500">Gestão inteligente de relacionamento com clientes</p>
               </div>
             </div>
           </div>
@@ -684,6 +684,29 @@ const WorkshopClients = () => {
       </header>
 
       <main className="container mx-auto px-4 py-6 max-w-6xl">
+        {/* CRM Info Banner */}
+        {clients.length > 0 && (
+          <Card className="mb-6 border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <div className="bg-blue-500 rounded-full p-2">
+                  <Users className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-blue-900 mb-1">
+                    🎯 CRM Inteligente
+                  </h3>
+                  <p className="text-sm text-blue-700">
+                    Veja seus clientes segmentados automaticamente por valor e comportamento.
+                    Clientes <strong>VIP</strong> têm alto gasto e frequência, <strong>Em Risco</strong> não retornam há tempo,
+                    <strong>Regulares</strong> são fiéis, e <strong>Novos</strong> acabaram de conhecer sua oficina.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Search */}
         <div className="mb-6">
           <div className="relative">

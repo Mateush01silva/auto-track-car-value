@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { getVehicleRevisions } from "@/services/vehicleRevisionsCache";
 
 export interface Vehicle {
   id: string;
@@ -66,6 +67,20 @@ export const useVehicles = () => {
 
       // Atualizar lista localmente primeiro
       setVehicles((prev) => [data as Vehicle, ...prev]);
+
+      // Buscar revisões do fabricante em background (não bloqueia o fluxo)
+      // Isso popula os alertas de manutenção para o veículo recém-adicionado
+      getVehicleRevisions(
+        data.id,
+        vehicleData.brand,
+        vehicleData.model,
+        vehicleData.year
+      ).then((revisions) => {
+        console.log(`[VEHICLE] Fetched ${revisions.length} maintenance revisions for new vehicle`);
+      }).catch((err) => {
+        console.error('[VEHICLE] Error fetching revisions:', err);
+        // Não mostrar erro ao usuário - é um processo em background
+      });
 
       // Forçar refetch para garantir sincronização completa
       setTimeout(() => fetchVehicles(), 100);
