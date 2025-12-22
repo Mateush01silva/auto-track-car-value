@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -47,6 +48,9 @@ import {
   Crown,
   Loader2,
   ExternalLink,
+  FileText,
+  Save,
+  Trash2,
 } from "lucide-react";
 import { WorkshopBottomNav } from "@/components/workshop/BottomNav";
 
@@ -101,6 +105,20 @@ const WorkshopClients = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedClient, setSelectedClient] = useState<ClientData | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [birthdays, setBirthdays] = useState<Array<{ userId: string; name: string; phone: string | null; birthDate: Date }>>([]);
+
+  // Card #10: Customer notes
+  const [notes, setNotes] = useState<Array<{ id: string; note_text: string; created_by: string; created_at: string; creator_name: string }>>([]);
+  const [newNoteText, setNewNoteText] = useState("");
+  const [savingNote, setSavingNote] = useState(false);
+
+  // Card #13: Tags
+  const [tags, setTags] = useState<Array<{ id: string; name: string; color: string }>>([]);
+  const [customerTags, setCustomerTags] = useState<Array<{ id: string; tag_id: string; tag_name: string; tag_color: string }>>([]);
+  const [showTagManager, setShowTagManager] = useState(false);
+  const [newTagName, setNewTagName] = useState("");
+  const [newTagColor, setNewTagColor] = useState("#3B82F6");
+  const [savingTag, setSavingTag] = useState(false);
 
   // Load workshop
   useEffect(() => {
@@ -332,6 +350,54 @@ const WorkshopClients = () => {
     loadClients();
   }, [workshop, toast]);
 
+  // Card #9: Load birthdays of the month
+  useEffect(() => {
+    const loadBirthdays = async () => {
+      if (!workshop) return;
+
+      const now = new Date();
+      const currentMonth = now.getMonth() + 1; // 1-12
+
+      try {
+        // Get all user_ids from clients
+        const userIds = clients
+          .filter(c => c.userId)
+          .map(c => c.userId) as string[];
+
+        if (userIds.length === 0) return;
+
+        // Fetch profiles with birth_date in current month
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id, full_name, phone, birth_date')
+          .in('id', userIds)
+          .not('birth_date', 'is', null);
+
+        if (profilesData) {
+          const birthdaysThisMonth = profilesData
+            .filter(p => {
+              if (!p.birth_date) return false;
+              const birthDate = new Date(p.birth_date);
+              return birthDate.getMonth() + 1 === currentMonth;
+            })
+            .map(p => ({
+              userId: p.id,
+              name: p.full_name || 'Cliente',
+              phone: p.phone,
+              birthDate: new Date(p.birth_date!)
+            }))
+            .sort((a, b) => a.birthDate.getDate() - b.birthDate.getDate());
+
+          setBirthdays(birthdaysThisMonth);
+        }
+      } catch (error) {
+        console.error('Error loading birthdays:', error);
+      }
+    };
+
+    loadBirthdays();
+  }, [workshop, clients]);
+
   // Filter clients
   useEffect(() => {
     if (!searchTerm.trim()) {
@@ -540,10 +606,279 @@ const WorkshopClients = () => {
   };
 
   // Open client details
-  const handleClientClick = (client: ClientData) => {
+  const handleClientClick = async (client: ClientData) => {
     setSelectedClient(client);
     setShowModal(true);
+
+    // Card #10: Load notes for this client
+    // Card #13: Load tags for this client
+    if (client.userId && workshop) {
+      await loadCustomerNotes(client.userId);
+      await loadCustomerTags(client.userId);
+    }
   };
+
+  // Card #10: Load customer notes
+  const loadCustomerNotes = async (userId: string) => {
+    if (!workshop) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('customer_notes')
+        .select(`
+          id,
+          note_text,
+          created_by,
+          created_at,
+          profiles:created_by (
+            full_name
+          )
+        `)
+        .eq('customer_user_id', userId)
+        .eq('workshop_id', workshop.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const formattedNotes = (data || []).map(note => ({
+        id: note.id,
+        note_text: note.note_text,
+        created_by: note.created_by,
+        created_at: note.created_at,
+        creator_name: (note.profiles as any)?.full_name || 'Desconhecido'
+      }));
+
+      setNotes(formattedNotes);
+    } catch (error) {
+      console.error('Error loading notes:', error);
+    }
+  };
+
+  // Card #10: Save new note
+  const handleSaveNote = async () => {
+    if (!selectedClient?.userId || !workshop || !user || !newNoteText.trim()) return;
+
+    setSavingNote(true);
+    try {
+      const { error } = await supabase
+        .from('customer_notes')
+        .insert({
+          customer_user_id: selectedClient.userId,
+          workshop_id: workshop.id,
+          note_text: newNoteText.trim(),
+          created_by: user.id
+        });
+
+      if (error) throw error;
+
+      setNewNoteText("");
+      await loadCustomerNotes(selectedClient.userId);
+
+      toast({
+        title: "Nota salva",
+        description: "A nota foi adicionada com sucesso",
+      });
+    } catch (error) {
+      console.error('Error saving note:', error);
+      toast({
+        title: "Erro ao salvar nota",
+        description: "Não foi possível salvar a nota",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingNote(false);
+    }
+  };
+
+  // Card #10: Delete note
+  const handleDeleteNote = async (noteId: string) => {
+    if (!selectedClient?.userId) return;
+
+    try {
+      const { error } = await supabase
+        .from('customer_notes')
+        .delete()
+        .eq('id', noteId)
+        .eq('created_by', user?.id); // Only creator can delete
+
+      if (error) throw error;
+
+      await loadCustomerNotes(selectedClient.userId);
+
+      toast({
+        title: "Nota excluída",
+        description: "A nota foi removida com sucesso",
+      });
+    } catch (error) {
+      console.error('Error deleting note:', error);
+      toast({
+        title: "Erro ao excluir nota",
+        description: "Não foi possível excluir a nota",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Card #13: Load all workshop tags
+  const loadTags = async () => {
+    if (!workshop) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('tags')
+        .select('id, name, color')
+        .eq('workshop_id', workshop.id)
+        .order('name');
+
+      if (error) throw error;
+      setTags(data || []);
+    } catch (error) {
+      console.error('Error loading tags:', error);
+    }
+  };
+
+  // Card #13: Load tags for a specific customer
+  const loadCustomerTags = async (userId: string) => {
+    if (!workshop) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('customer_tags')
+        .select(`
+          id,
+          tag_id,
+          tags:tag_id (
+            name,
+            color
+          )
+        `)
+        .eq('customer_user_id', userId)
+        .eq('workshop_id', workshop.id);
+
+      if (error) throw error;
+
+      const formattedTags = (data || []).map(ct => ({
+        id: ct.id,
+        tag_id: ct.tag_id,
+        tag_name: (ct.tags as any)?.name || '',
+        tag_color: (ct.tags as any)?.color || '#3B82F6'
+      }));
+
+      setCustomerTags(formattedTags);
+    } catch (error) {
+      console.error('Error loading customer tags:', error);
+    }
+  };
+
+  // Card #13: Create new tag
+  const handleCreateTag = async () => {
+    if (!workshop || !newTagName.trim()) return;
+
+    setSavingTag(true);
+    try {
+      const { error } = await supabase
+        .from('tags')
+        .insert({
+          workshop_id: workshop.id,
+          name: newTagName.trim(),
+          color: newTagColor
+        });
+
+      if (error) throw error;
+
+      setNewTagName("");
+      setNewTagColor("#3B82F6");
+      await loadTags();
+
+      toast({
+        title: "Tag criada",
+        description: "A tag foi criada com sucesso",
+      });
+    } catch (error: any) {
+      console.error('Error creating tag:', error);
+      toast({
+        title: "Erro ao criar tag",
+        description: error.message.includes('unique') ? 'Já existe uma tag com este nome' : 'Não foi possível criar a tag',
+        variant: "destructive",
+      });
+    } finally {
+      setSavingTag(false);
+    }
+  };
+
+  // Card #13: Delete tag
+  const handleDeleteTag = async (tagId: string) => {
+    try {
+      const { error } = await supabase
+        .from('tags')
+        .delete()
+        .eq('id', tagId);
+
+      if (error) throw error;
+
+      await loadTags();
+
+      toast({
+        title: "Tag excluída",
+        description: "A tag foi removida com sucesso",
+      });
+    } catch (error) {
+      console.error('Error deleting tag:', error);
+      toast({
+        title: "Erro ao excluir tag",
+        description: "Não foi possível excluir a tag",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Card #13: Toggle tag assignment to customer
+  const handleToggleTag = async (tagId: string) => {
+    if (!selectedClient?.userId || !workshop) return;
+
+    const isAssigned = customerTags.some(ct => ct.tag_id === tagId);
+
+    try {
+      if (isAssigned) {
+        // Unassign tag
+        const { error } = await supabase
+          .from('customer_tags')
+          .delete()
+          .eq('customer_user_id', selectedClient.userId)
+          .eq('tag_id', tagId)
+          .eq('workshop_id', workshop.id);
+
+        if (error) throw error;
+      } else {
+        // Assign tag
+        const { error } = await supabase
+          .from('customer_tags')
+          .insert({
+            customer_user_id: selectedClient.userId,
+            tag_id: tagId,
+            workshop_id: workshop.id
+          });
+
+        if (error) throw error;
+      }
+
+      await loadCustomerTags(selectedClient.userId);
+    } catch (error) {
+      console.error('Error toggling tag:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar a tag",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Load tags when workshop is loaded
+  useEffect(() => {
+    if (workshop) {
+      loadTags();
+    }
+  }, [workshop]);
 
   // Start new service for client
   const handleNewService = (client: ClientData) => {
@@ -713,13 +1048,22 @@ const WorkshopClients = () => {
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Voltar
               </Button>
-              <div>
+              <div className="flex-1">
                 <h1 className="text-xl font-bold flex items-center gap-2">
                   CRM Inteligente
                   <Badge variant="secondary">{clients.length}</Badge>
                 </h1>
                 <p className="text-sm text-gray-500">Gestão inteligente de relacionamento com clientes</p>
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowTagManager(true)}
+                className="hidden md:flex"
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Gerenciar Tags
+              </Button>
             </div>
           </div>
         </div>
@@ -838,6 +1182,61 @@ const WorkshopClients = () => {
               </CardContent>
             </Card>
           </div>
+        )}
+
+        {/* Card #9: Birthdays of the Month */}
+        {birthdays.length > 0 && (
+          <Card className="mb-6 border-pink-200 bg-gradient-to-r from-pink-50 to-purple-50">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <div className="bg-pink-500 rounded-full p-2">
+                  <Calendar className="h-5 w-5 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-pink-900 mb-1">
+                    🎂 Aniversariantes do Mês
+                  </h3>
+                  <p className="text-sm text-pink-700 mb-3">
+                    {birthdays.length} {birthdays.length === 1 ? 'cliente faz' : 'clientes fazem'} aniversário este mês. Envie uma mensagem personalizada!
+                  </p>
+                  <div className="space-y-2">
+                    {birthdays.slice(0, 5).map((birthday) => (
+                      <div key={birthday.userId} className="flex items-center justify-between text-sm bg-white/60 rounded-md p-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">🎉</span>
+                          <div>
+                            <p className="font-medium text-pink-900">{birthday.name}</p>
+                            <p className="text-xs text-pink-600">
+                              {birthday.birthDate.getDate()}/{birthday.birthDate.getMonth() + 1}
+                            </p>
+                          </div>
+                        </div>
+                        {birthday.phone && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs h-7"
+                            onClick={() => {
+                              const message = `Olá ${birthday.name}! 🎉 A equipe da ${workshop?.name} deseja um feliz aniversário! Que este novo ano seja repleto de conquistas e momentos especiais. Conte sempre conosco! 🎂`;
+                              window.open(`https://wa.me/55${birthday.phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
+                            }}
+                          >
+                            <MessageCircle className="h-3 w-3 mr-1" />
+                            WhatsApp
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                    {birthdays.length > 5 && (
+                      <p className="text-xs text-pink-600 text-center mt-2">
+                        + {birthdays.length - 5} {birthdays.length - 5 === 1 ? 'outro' : 'outros'}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Search */}
@@ -1182,6 +1581,124 @@ const WorkshopClients = () => {
                   </div>
                 </div>
 
+                {/* Tags */}
+                <div className="mt-4 pt-4 border-t">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-purple-600" />
+                      <h3 className="font-semibold text-sm">Tags</h3>
+                    </div>
+                    {tags.length === 0 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowTagManager(true)}
+                        className="text-xs"
+                      >
+                        Criar tags
+                      </Button>
+                    )}
+                  </div>
+
+                  {tags.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {tags.map((tag) => {
+                        const isAssigned = customerTags.some(ct => ct.tag_id === tag.id);
+                        return (
+                          <button
+                            key={tag.id}
+                            onClick={() => handleToggleTag(tag.id)}
+                            className={cn(
+                              "px-3 py-1 rounded-full text-xs font-medium transition-all border-2",
+                              isAssigned
+                                ? "border-transparent"
+                                : "border-dashed border-gray-300 bg-white hover:border-gray-400"
+                            )}
+                            style={{
+                              backgroundColor: isAssigned ? tag.color : undefined,
+                              color: isAssigned ? '#ffffff' : '#666666',
+                            }}
+                          >
+                            {isAssigned && '✓ '}{tag.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500">
+                      Nenhuma tag criada ainda. Crie tags para categorizar seus clientes.
+                    </p>
+                  )}
+                </div>
+
+                {/* Customer Notes */}
+                <div className="mt-4 pt-4 border-t">
+                  <div className="flex items-center gap-2 mb-3">
+                    <FileText className="h-4 w-4 text-blue-600" />
+                    <h3 className="font-semibold text-sm">Notas e Interações</h3>
+                  </div>
+
+                  {/* Existing notes timeline */}
+                  {notes.length > 0 ? (
+                    <div className="space-y-3 mb-4 max-h-[200px] overflow-y-auto">
+                      {notes.map((note) => (
+                        <div key={note.id} className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 text-sm">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1">
+                              <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{note.note_text}</p>
+                              <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
+                                <span className="font-medium">{note.creator_name}</span>
+                                <span>•</span>
+                                <span>{formatDistance(new Date(note.created_at), new Date(), { addSuffix: true, locale: ptBR })}</span>
+                              </div>
+                            </div>
+                            {note.created_by === user?.id && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteNote(note.id)}
+                                className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 mb-4">Nenhuma nota registrada ainda.</p>
+                  )}
+
+                  {/* New note input */}
+                  <div className="space-y-2">
+                    <Textarea
+                      placeholder="Adicionar nova nota ou registro de interação..."
+                      value={newNoteText}
+                      onChange={(e) => setNewNoteText(e.target.value)}
+                      className="min-h-[80px] resize-none"
+                    />
+                    <Button
+                      onClick={handleSaveNote}
+                      disabled={!newNoteText.trim() || savingNote}
+                      size="sm"
+                      className="w-full"
+                    >
+                      {savingNote ? (
+                        <>
+                          <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+                          Salvando...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="h-3 w-3 mr-2" />
+                          Salvar Nota
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
                 {/* Actions */}
                 <div className="flex flex-col gap-2 pt-4 border-t">
                   <Button
@@ -1241,6 +1758,103 @@ const WorkshopClients = () => {
               </div>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Tag Manager Dialog */}
+      <Dialog open={showTagManager} onOpenChange={setShowTagManager}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Gerenciar Tags</DialogTitle>
+            <DialogDescription>
+              Crie e gerencie tags personalizadas para categorizar seus clientes
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Create new tag */}
+            <div className="space-y-3 p-4 bg-gray-50 rounded-lg">
+              <h4 className="font-medium text-sm">Criar Nova Tag</h4>
+              <div className="space-y-2">
+                <Input
+                  placeholder="Nome da tag"
+                  value={newTagName}
+                  onChange={(e) => setNewTagName(e.target.value)}
+                  maxLength={50}
+                />
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-gray-600">Cor:</label>
+                  <input
+                    type="color"
+                    value={newTagColor}
+                    onChange={(e) => setNewTagColor(e.target.value)}
+                    className="h-10 w-20 rounded cursor-pointer border border-gray-300"
+                  />
+                  <div
+                    className="flex-1 px-3 py-2 rounded text-xs font-medium text-white text-center"
+                    style={{ backgroundColor: newTagColor }}
+                  >
+                    {newTagName || 'Preview'}
+                  </div>
+                </div>
+                <Button
+                  onClick={handleCreateTag}
+                  disabled={!newTagName.trim() || savingTag}
+                  size="sm"
+                  className="w-full"
+                >
+                  {savingTag ? (
+                    <>
+                      <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+                      Criando...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-3 w-3 mr-2" />
+                      Criar Tag
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {/* Existing tags list */}
+            <div>
+              <h4 className="font-medium text-sm mb-3">Tags Existentes</h4>
+              {tags.length > 0 ? (
+                <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                  {tags.map((tag) => (
+                    <div
+                      key={tag.id}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="px-3 py-1 rounded-full text-xs font-medium text-white"
+                          style={{ backgroundColor: tag.color }}
+                        >
+                          {tag.name}
+                        </div>
+                        <span className="text-xs text-gray-500">{tag.color}</span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteTag(tag.id)}
+                        className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 text-center py-4">
+                  Nenhuma tag criada ainda
+                </p>
+              )}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
