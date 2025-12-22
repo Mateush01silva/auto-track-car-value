@@ -30,7 +30,7 @@ const NAV_ITEMS: NavItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/workshop/dashboard" },
   { icon: PlusCircle, label: "Novo", path: "/workshop/new-service", isAction: true },
   { icon: History, label: "Histórico", path: "/workshop/history" },
-  { icon: Users, label: "Clientes", path: "/workshop/clients" },
+  { icon: Users, label: "CRM", path: "/workshop/clients" },
 ];
 
 const MORE_ITEMS = [
