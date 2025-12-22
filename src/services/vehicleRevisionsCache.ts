@@ -83,14 +83,9 @@ export async function fetchAndCacheRevisions(
       console.warn(`  2. A API SUIV não tem dados para este veículo`);
       console.warn(`  3. Houve erro na busca por marca/modelo/versão`);
 
-      // Mesmo sem revisões, marca como "fetched" para não tentar novamente
-      await supabase
-        .from('vehicles')
-        .update({
-          revisions_fetched: true,
-          revisions_fetched_at: new Date().toISOString(),
-        })
-        .eq('id', vehicleId);
+      // ⚠️ NÃO marca como fetched quando retorna vazio
+      // Isso permite tentar novamente depois (pode ser problema temporário da API)
+      console.warn(`[CACHE] ⚠️ NÃO marcando como fetched - permitirá nova tentativa`);
 
       return [];
     }
