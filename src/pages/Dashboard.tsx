@@ -22,6 +22,7 @@ import { MaintenanceAlerts } from "@/components/MaintenanceAlerts";
 import { ProfileEditDialog } from "@/components/ProfileEditDialog";
 import { AttachmentViewer } from "@/components/AttachmentViewer";
 import { KmUpdateReminder } from "@/components/KmUpdateReminder";
+import { KmUpdateDialog } from "@/components/KmUpdateDialog";
 import { ProfileCompletionReminder } from "@/components/ProfileCompletionReminder";
 import { Onboarding } from "@/components/Onboarding";
 import { UpgradeCTA } from "@/components/UpgradeCTA";
@@ -92,6 +93,7 @@ const Dashboard = () => {
   const [isUpgradeDialogOpen, setIsUpgradeDialogOpen] = useState(false);
   const [isAttachmentViewerOpen, setIsAttachmentViewerOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  const [isKmUpdateDialogOpen, setIsKmUpdateDialogOpen] = useState(false);
   const [selectedAttachment, setSelectedAttachment] = useState<string | null>(null);
   const [upgradeFeature, setUpgradeFeature] = useState<string>("");
   const [editingVehicle, setEditingVehicle] = useState<any>(null);
@@ -474,11 +476,10 @@ const Dashboard = () => {
         {/* KM Update Reminder */}
         <div className="mb-6">
           <KmUpdateReminder
+            vehicles={vehicles}
             onUpdateClick={() => {
-              // Pega o primeiro veículo do usuário e abre o diálogo de edição
               if (vehicles.length > 0) {
-                setEditingVehicle(vehicles[0]);
-                setIsVehicleDialogOpen(true);
+                setIsKmUpdateDialogOpen(true);
               }
             }}
           />
@@ -1363,6 +1364,17 @@ const Dashboard = () => {
         open={isProfileDialogOpen}
         onOpenChange={setIsProfileDialogOpen}
         onProfileUpdated={loadProfile}
+      />
+
+      <KmUpdateDialog
+        open={isKmUpdateDialogOpen}
+        onOpenChange={setIsKmUpdateDialogOpen}
+        vehicles={vehicles}
+        onSuccess={() => {
+          refetchVehicles();
+          // Force re-render of KmUpdateReminder by triggering a state update
+          // The KmUpdateReminder will re-check and hide if KM was updated via maintenance
+        }}
       />
 
       <Onboarding

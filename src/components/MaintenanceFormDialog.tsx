@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Upload, FileCheck } from "lucide-react";
 import { MAINTENANCE_CATEGORIES, getSubcategoriesByCategory, getFullServiceLabel } from "@/constants/maintenanceCategories";
 import type { Maintenance } from "@/hooks/useMaintenances";
 import { supabase } from "@/integrations/supabase/client";
@@ -314,34 +314,48 @@ export function MaintenanceFormDialog({
           </div>
           <div className="space-y-2">
             <Label htmlFor="attachment">Comprovante (opcional)</Label>
-            <Input
-              id="attachment"
-              type="file"
-              accept="image/jpeg,image/png,image/webp,application/pdf"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  if (file.size > 5 * 1024 * 1024) {
-                    toast({
-                      title: "Arquivo muito grande",
-                      description: "O arquivo deve ter no máximo 5MB",
-                      variant: "destructive",
-                    });
-                    e.target.value = "";
-                    return;
+            <div className="relative">
+              <Input
+                id="attachment"
+                type="file"
+                accept="image/jpeg,image/png,image/webp,application/pdf"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    if (file.size > 5 * 1024 * 1024) {
+                      toast({
+                        title: "Arquivo muito grande",
+                        description: "O arquivo deve ter no máximo 5MB",
+                        variant: "destructive",
+                      });
+                      e.target.value = "";
+                      return;
+                    }
+                    setAttachmentFile(file);
                   }
-                  setAttachmentFile(file);
-                }
-              }}
-            />
+                }}
+                className="hidden"
+              />
+              <label
+                htmlFor="attachment"
+                className="flex items-center justify-center gap-2 w-full h-10 px-4 py-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground rounded-md cursor-pointer transition-colors duration-200 text-sm font-medium focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
+              >
+                {attachmentFile ? (
+                  <>
+                    <FileCheck className="h-4 w-4 text-success" />
+                    <span className="text-success">{attachmentFile.name}</span>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-4 w-4" />
+                    <span>Escolher arquivo</span>
+                  </>
+                )}
+              </label>
+            </div>
             <p className="text-xs text-muted-foreground">
               Formatos aceitos: JPG, PNG, WEBP, PDF (máx. 5MB)
             </p>
-            {attachmentFile && (
-              <p className="text-xs text-success">
-                ✓ {attachmentFile.name}
-              </p>
-            )}
           </div>
           <div className="flex gap-3 pt-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
