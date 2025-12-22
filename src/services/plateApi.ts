@@ -233,12 +233,60 @@ class PlateApiClient {
       description: string;
     }
 
+    console.log(`[SUIV API] 🔍 Nome original da marca: "${brandName}"`);
+
+    // Normalizar nome da marca (remover extras como modelo/versão)
+    const normalizedBrand = this.normalizeBrandName(brandName);
+    console.log(`[SUIV API] 🔧 Nome normalizado da marca: "${normalizedBrand}"`);
+
     const makers = await this.request<Maker[]>('/api/v4/Makers');
-    const maker = makers.find(m =>
-      m.description.toUpperCase() === brandName.toUpperCase()
+
+    // Busca exata primeiro
+    let maker = makers.find(m =>
+      m.description.toUpperCase() === normalizedBrand.toUpperCase()
     );
 
+    // Se não encontrar, tenta busca parcial
+    if (!maker) {
+      console.log(`[SUIV API] Busca exata falhou, tentando busca parcial...`);
+      maker = makers.find(m =>
+        normalizedBrand.toUpperCase().includes(m.description.toUpperCase()) ||
+        m.description.toUpperCase().includes(normalizedBrand.toUpperCase())
+      );
+    }
+
+    if (maker) {
+      console.log(`[SUIV API] ✅ Marca encontrada: "${maker.description}" (ID: ${maker.id})`);
+    }
+
     return maker?.id || null;
+  }
+
+  /**
+   * Normaliza o nome da marca removendo sufixos e extras
+   * @private
+   */
+  private normalizeBrandName(brand: string): string {
+    // Remove tudo após hífen (ex: "GM - Chevrolet" → "GM")
+    let normalized = brand.split('-')[0].trim();
+
+    // Mapeia aliases conhecidos
+    const brandAliases: { [key: string]: string } = {
+      'GM': 'CHEVROLET',
+      'VW': 'VOLKSWAGEN',
+      'MERCEDES': 'MERCEDES-BENZ',
+      'LAND': 'LAND ROVER',
+    };
+
+    const upper = normalized.toUpperCase();
+    for (const [alias, fullName] of Object.entries(brandAliases)) {
+      if (upper === alias) {
+        console.log(`[SUIV API] 🔄 Mapeando alias "${alias}" → "${fullName}"`);
+        return fullName;
+      }
+    }
+
+    return normalized;
   }
 
   /**
