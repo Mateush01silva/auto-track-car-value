@@ -67,14 +67,21 @@ export async function fetchAndCacheRevisions(
   model: string,
   year: number
 ): Promise<CachedRevision[]> {
-  console.log(`[CACHE] Fetching revisions from API for ${brand} ${model} ${year}...`);
+  console.log(`[CACHE] 🔄 Iniciando busca de revisões da API SUIV para ${brand} ${model} ${year}...`);
+  console.log(`[CACHE] 📋 Vehicle ID: ${vehicleId}`);
 
   try {
     // Busca revisões da API SUIV
+    console.log(`[CACHE] 📡 Chamando getManufacturerRevisions...`);
     const apiRevisions = await getManufacturerRevisions(brand, model, year);
+    console.log(`[CACHE] ✅ API retornou ${apiRevisions?.length || 0} revisões`);
 
     if (!apiRevisions || apiRevisions.length === 0) {
-      console.warn(`[CACHE] No revisions found for ${brand} ${model} ${year}`);
+      console.warn(`[CACHE] ⚠️ Nenhuma revisão encontrada para ${brand} ${model} ${year}`);
+      console.warn(`[CACHE] Isso pode significar:`);
+      console.warn(`  1. O fabricante não tem plano de revisão para este modelo/ano`);
+      console.warn(`  2. A API SUIV não tem dados para este veículo`);
+      console.warn(`  3. Houve erro na busca por marca/modelo/versão`);
 
       // Mesmo sem revisões, marca como "fetched" para não tentar novamente
       await supabase
@@ -87,6 +94,8 @@ export async function fetchAndCacheRevisions(
 
       return [];
     }
+
+    console.log(`[CACHE] 💾 Salvando ${apiRevisions.length} revisões no banco de dados...`);
 
     // Converte revisões da API para o formato do banco
     const revisionsToInsert = apiRevisions.map((rev: ManufacturerRevision) => ({
@@ -124,20 +133,22 @@ export async function fetchAndCacheRevisions(
       })
       .eq('id', vehicleId);
 
-    console.log(`[CACHE] Successfully cached ${data.length} revisions for vehicle ${vehicleId}`);
+    console.log(`[CACHE] ✅ Successfully cached ${data.length} revisions for vehicle ${vehicleId}`);
 
     return data as CachedRevision[];
   } catch (error) {
-    console.error('[CACHE] Error fetching revisions from API:', error);
+    console.error('[CACHE] ❌ ERRO ao buscar revisões da API:', error);
 
-    // Marca como fetched mesmo com erro para evitar loops
-    await supabase
-      .from('vehicles')
-      .update({
-        revisions_fetched: true,
-        revisions_fetched_at: new Date().toISOString(),
-      })
-      .eq('id', vehicleId);
+    // Log detalhado do erro
+    if (error instanceof Error) {
+      console.error('[CACHE] Tipo de erro:', error.name);
+      console.error('[CACHE] Mensagem:', error.message);
+      console.error('[CACHE] Stack:', error.stack);
+    }
+
+    // IMPORTANTE: NÃO marcar como fetched em caso de erro
+    // Permite tentar novamente na próxima vez
+    console.warn('[CACHE] ⚠️ Não marcando como fetched devido ao erro - tentará novamente na próxima vez');
 
     return [];
   }
@@ -155,24 +166,32 @@ export async function getVehicleRevisions(
   model: string,
   year: number
 ): Promise<CachedRevision[]> {
+  console.log(`[CACHE] 🔍 getVehicleRevisions chamado para: ${brand} ${model} ${year} (ID: ${vehicleId})`);
+
   // 1. Tenta buscar do cache primeiro
+  console.log(`[CACHE] 1️⃣ Verificando cache local...`);
   const cached = await getCachedRevisions(vehicleId);
 
   if (cached.length > 0) {
-    console.log(`[CACHE] Using ${cached.length} cached revisions for vehicle ${vehicleId}`);
+    console.log(`[CACHE] ✅ Usando ${cached.length} revisões do cache para veículo ${vehicleId}`);
+    console.log(`[CACHE] 💰 API call economizado! 🎉`);
     return cached;
   }
+
+  console.log(`[CACHE] Cache vazio, verificando se já foi consultado antes...`);
 
   // 2. Verifica se já tentamos buscar antes (mesmo que não tenha encontrado nada)
   const alreadyFetched = await hasRevisionsCached(vehicleId);
 
   if (alreadyFetched) {
-    console.log(`[CACHE] Revisions already fetched for vehicle ${vehicleId}, but none found`);
+    console.log(`[CACHE] ⚠️ Revisões já foram consultadas anteriormente, mas nenhuma foi encontrada`);
+    console.log(`[CACHE] Este veículo provavelmente não tem plano de revisão disponível na API SUIV`);
     return [];
   }
 
   // 3. Só agora busca da API (PRIMEIRA E ÚNICA VEZ!)
-  console.log(`[CACHE] 🚨 MAKING API CALL for vehicle ${vehicleId} 🚨`);
+  console.log(`[CACHE] 🚨 FAZENDO CHAMADA À API SUIV 🚨`);
+  console.log(`[CACHE] Vehicle: ${brand} ${model} ${year}`);
   return await fetchAndCacheRevisions(vehicleId, brand, model, year);
 }
 
