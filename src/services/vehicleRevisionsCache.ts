@@ -108,10 +108,14 @@ export async function fetchAndCacheRevisions(
       source: 'suiv',
     }));
 
-    // Salva no banco de dados
+    // Salva no banco de dados usando UPSERT (atualiza se já existe)
+    // Isso evita erro de duplicate key quando já existem revisões
     const { data, error } = await supabase
       .from('vehicle_manufacturer_revisions')
-      .insert(revisionsToInsert)
+      .upsert(revisionsToInsert, {
+        onConflict: 'vehicle_id,category,item',
+        ignoreDuplicates: false, // Atualiza os registros existentes
+      })
       .select();
 
     if (error) {
