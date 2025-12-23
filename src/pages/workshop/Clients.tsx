@@ -26,6 +26,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -53,6 +54,10 @@ import {
   Trash2,
 } from "lucide-react";
 import { WorkshopBottomNav } from "@/components/workshop/BottomNav";
+import { YearOverYearComparison } from "@/components/crm/YearOverYearComparison";
+import { MaintenanceHeatmap } from "@/components/crm/MaintenanceHeatmap";
+import { BulkEmailModal } from "@/components/crm/BulkEmailModal";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface Workshop {
   id: string;
@@ -119,6 +124,10 @@ const WorkshopClients = () => {
   const [newTagName, setNewTagName] = useState("");
   const [newTagColor, setNewTagColor] = useState("#3B82F6");
   const [savingTag, setSavingTag] = useState(false);
+
+  // Card #15: Bulk Email
+  const [selectedClients, setSelectedClients] = useState<Set<string>>(new Set());
+  const [showBulkEmailModal, setShowBulkEmailModal] = useState(false);
 
   // Load workshop
   useEffect(() => {
@@ -1070,8 +1079,21 @@ const WorkshopClients = () => {
       </header>
 
       <main className="container mx-auto px-4 py-6 max-w-6xl">
-        {/* CRM Info Banner */}
-        {clients.length > 0 && (
+        <Tabs defaultValue="clients" className="space-y-6">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="clients">
+              <Users className="h-4 w-4 mr-2" />
+              Clientes
+            </TabsTrigger>
+            <TabsTrigger value="analytics">
+              <TrendingUp className="h-4 w-4 mr-2" />
+              Análises
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="clients" className="space-y-6">
+            {/* CRM Info Banner */}
+            {clients.length > 0 && (
           <Card className="mb-6 border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50">
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
@@ -1252,6 +1274,46 @@ const WorkshopClients = () => {
           </div>
         </div>
 
+        {/* Bulk Actions */}
+        {selectedClients.size > 0 && (
+          <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={selectedClients.size === filteredClients.filter(c => c.clientEmail).length}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      setSelectedClients(new Set(filteredClients.filter(c => c.clientEmail).map(c => c.vehicleId)));
+                    } else {
+                      setSelectedClients(new Set());
+                    }
+                  }}
+                />
+                <span className="text-sm font-medium text-blue-900">
+                  {selectedClients.size} cliente{selectedClients.size !== 1 ? 's' : ''} selecionado{selectedClients.size !== 1 ? 's' : ''}
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedClients(new Set())}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => setShowBulkEmailModal(true)}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <Mail className="h-4 w-4 mr-2" />
+                  Enviar Email
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Clients Grid */}
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1302,10 +1364,33 @@ const WorkshopClients = () => {
               return (
                 <Card
                   key={client.plate}
-                  className="cursor-pointer hover:shadow-md transition-shadow"
+                  className={`cursor-pointer hover:shadow-md transition-shadow ${
+                    selectedClients.has(client.vehicleId) ? 'ring-2 ring-blue-500 bg-blue-50' : ''
+                  }`}
                   onClick={() => handleClientClick(client)}
                 >
-                  <CardContent className="pt-6">
+                  <CardContent className="pt-6 relative">
+                    {/* Selection Checkbox */}
+                    {client.clientEmail && (
+                      <div
+                        className="absolute top-2 right-2"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Checkbox
+                          checked={selectedClients.has(client.vehicleId)}
+                          onCheckedChange={(checked) => {
+                            const newSelected = new Set(selectedClients);
+                            if (checked) {
+                              newSelected.add(client.vehicleId);
+                            } else {
+                              newSelected.delete(client.vehicleId);
+                            }
+                            setSelectedClients(newSelected);
+                          }}
+                        />
+                      </div>
+                    )}
+
                     <div className="flex items-start gap-4">
                       {/* Avatar */}
                       <Avatar className="h-12 w-12">
@@ -1444,6 +1529,19 @@ const WorkshopClients = () => {
             })}
           </div>
         )}
+          </TabsContent>
+
+          <TabsContent value="analytics" className="space-y-6">
+            <MaintenanceHeatmap
+              maintenances={clients.flatMap(client =>
+                client.maintenances.map(m => ({
+                  date: m.date,
+                  cost: m.cost,
+                }))
+              )}
+            />
+          </TabsContent>
+        </Tabs>
       </main>
 
       {/* Client Details Modal */}
@@ -1558,6 +1656,9 @@ const WorkshopClients = () => {
                     <p className="text-xs text-gray-500">Ticket Medio</p>
                   </div>
                 </div>
+
+                {/* Year over Year Comparison */}
+                <YearOverYearComparison maintenances={selectedClient.maintenances} />
 
                 {/* Recent Maintenances */}
                 <div>
@@ -1857,6 +1958,28 @@ const WorkshopClients = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Bulk Email Modal */}
+      <BulkEmailModal
+        open={showBulkEmailModal}
+        onClose={() => {
+          setShowBulkEmailModal(false);
+          setSelectedClients(new Set());
+        }}
+        clients={filteredClients
+          .filter(c => selectedClients.has(c.vehicleId) && c.clientEmail)
+          .map(c => ({
+            email: c.clientEmail!,
+            name: c.clientName || c.plate,
+            plate: c.plate,
+            brand: c.brand,
+            model: c.model,
+            year: c.year,
+            lastVisit: c.lastVisit,
+            totalSpent: c.totalSpent,
+          }))}
+        workshopName={workshop?.name || "Nossa Oficina"}
+      />
 
       {/* Bottom Navigation - Mobile */}
       <WorkshopBottomNav />
