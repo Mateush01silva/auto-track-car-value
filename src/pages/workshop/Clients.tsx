@@ -31,6 +31,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { sendMaintenanceWhatsApp, formatVehicleInfo } from "@/lib/notifications";
+import { cn } from "@/lib/utils";
+import { formatDistance } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import {
   ArrowLeft,
   Search,
