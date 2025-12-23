@@ -31,14 +31,30 @@ export interface CachedRevision {
  * Busca revisões do banco de dados (SEMPRE tenta primeiro!)
  */
 export async function getCachedRevisions(vehicleId: string): Promise<CachedRevision[]> {
+  console.log(`[CACHE] 🔍 getCachedRevisions: Buscando do banco para vehicle_id = ${vehicleId}`);
+
   const { data, error } = await supabase
     .from('vehicle_manufacturer_revisions')
     .select('*')
     .eq('vehicle_id', vehicleId);
 
   if (error) {
-    console.error('Error fetching cached revisions:', error);
+    console.error('[CACHE] ❌ Error fetching cached revisions:', error);
+    console.error('[CACHE] Erro detalhado:', {
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      code: error.code
+    });
     return [];
+  }
+
+  console.log(`[CACHE] 📊 getCachedRevisions: Encontrou ${data?.length || 0} revisões no banco`);
+
+  if (data && data.length > 0) {
+    console.log(`[CACHE] ✅ Revisões encontradas:`, data.map(r => `${r.category} - ${r.item}`));
+  } else {
+    console.log(`[CACHE] ⚠️ Nenhuma revisão encontrada no banco para vehicle_id ${vehicleId}`);
   }
 
   return data || [];

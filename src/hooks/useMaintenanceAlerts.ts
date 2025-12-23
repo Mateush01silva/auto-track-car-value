@@ -78,9 +78,15 @@ export const useMaintenanceAlerts = (
 
   useEffect(() => {
     const calculateAlerts = async () => {
+      console.log('[ALERTS] 🔄 Iniciando cálculo de alertas...');
+      console.log(`[ALERTS] Total de veículos: ${vehicles.length}`);
+      console.log(`[ALERTS] Total de manutenções: ${maintenances.length}`);
+
       const allAlerts: MaintenanceAlert[] = [];
 
       for (const vehicle of vehicles) {
+        console.log(`[ALERTS] 🚗 Processando veículo: ${vehicle.brand} ${vehicle.model} ${vehicle.year} (ID: ${vehicle.id})`);
+
         const cachedRevisions = await getVehicleRevisions(
           vehicle.id,
           vehicle.brand,
@@ -88,12 +94,15 @@ export const useMaintenanceAlerts = (
           vehicle.year
         );
 
+        console.log(`[ALERTS] 📋 Revisões obtidas para ${vehicle.brand} ${vehicle.model}: ${cachedRevisions.length}`);
+
         if (cachedRevisions.length === 0) {
-          console.warn('[ALERTS] Sem revisões para', vehicle.brand, vehicle.model);
+          console.warn('[ALERTS] ⚠️ Sem revisões para', vehicle.brand, vehicle.model);
           continue;
         }
 
         const recommendations = cachedRevisions.map(cachedRevisionToRecommendation);
+        console.log(`[ALERTS] 📝 Convertidas ${recommendations.length} recomendações`);
 
         recommendations.forEach((recommendation) => {
           const relevantMaintenances = maintenances.filter(
@@ -182,6 +191,11 @@ export const useMaintenanceAlerts = (
         if (a.status !== "overdue" && b.status === "overdue") return 1;
         return 0;
       });
+
+      console.log(`[ALERTS] ✅ Cálculo concluído: ${sortedAlerts.length} alertas gerados`);
+      if (sortedAlerts.length > 0) {
+        console.log('[ALERTS] Alertas:', sortedAlerts.map(a => `${a.vehicleName} - ${a.message}`));
+      }
 
       setAlerts(sortedAlerts);
     };
