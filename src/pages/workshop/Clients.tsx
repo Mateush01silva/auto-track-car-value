@@ -55,6 +55,7 @@ import {
   FileText,
   Save,
   Trash2,
+  TrendingUp,
 } from "lucide-react";
 import { WorkshopBottomNav } from "@/components/workshop/BottomNav";
 import { YearOverYearComparison } from "@/components/crm/YearOverYearComparison";
