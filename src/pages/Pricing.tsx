@@ -80,53 +80,13 @@ const Pricing = () => {
 
           {/* Workshop Plans */}
           <TabsContent value="workshop">
-            <div className="grid md:grid-cols-3 gap-8 mb-8">
-              {/* Free Plan */}
-              <Card className="relative border-2 border-gray-200 hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Shield className="h-5 w-5 text-gray-600" />
-                    <CardTitle>Gratuito</CardTitle>
-                  </div>
-                  <div className="mb-4">
-                    <span className="text-4xl font-bold">R$ 0</span>
-                    <span className="text-gray-500">/mês</span>
-                  </div>
-                  <CardDescription>
-                    Experimente por 30 dias gratuitamente
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-3">
-                    {STRIPE_CONFIG.plans.free.features.workshop?.map((feature, i) => (
-                      <li key={i} className="flex items-start gap-2">
-                        <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                        <span className="text-sm text-gray-700">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-                <CardFooter>
-                  <Button
-                    className="w-full"
-                    variant="outline"
-                    onClick={() => handleSelectPlan("free", "workshop")}
-                  >
-                    Começar Grátis
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </CardFooter>
-              </Card>
-
+            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-8">
               {/* Starter Plan */}
               <Card className="relative border-2 border-blue-200 hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="flex items-center gap-2 mb-2">
                     <Zap className="h-5 w-5 text-blue-600" />
                     <CardTitle>Starter</CardTitle>
-                    <Badge className="ml-auto bg-blue-100 text-blue-700">
-                      Mais Popular
-                    </Badge>
                   </div>
                   <div className="mb-4">
                     <span className="text-4xl font-bold">
@@ -225,7 +185,6 @@ const Pricing = () => {
                       <thead>
                         <tr className="border-b">
                           <th className="text-left py-4 px-4">Funcionalidade</th>
-                          <th className="text-center py-4 px-4">Gratuito</th>
                           <th className="text-center py-4 px-4 bg-blue-50">Starter</th>
                           <th className="text-center py-4 px-4 bg-green-50">Professional</th>
                         </tr>
@@ -233,43 +192,36 @@ const Pricing = () => {
                       <tbody className="text-sm">
                         <tr className="border-b">
                           <td className="py-3 px-4">Atendimentos/mês</td>
-                          <td className="text-center py-3 px-4">10</td>
                           <td className="text-center py-3 px-4 bg-blue-50">100</td>
                           <td className="text-center py-3 px-4 bg-green-50 font-medium">Ilimitados</td>
                         </tr>
                         <tr className="border-b">
                           <td className="py-3 px-4">Histórico</td>
-                          <td className="text-center py-3 px-4">Completo</td>
                           <td className="text-center py-3 px-4 bg-blue-50">6 meses</td>
                           <td className="text-center py-3 px-4 bg-green-50 font-medium">Ilimitado</td>
                         </tr>
                         <tr className="border-b">
                           <td className="py-3 px-4">Templates</td>
-                          <td className="text-center py-3 px-4">-</td>
                           <td className="text-center py-3 px-4 bg-blue-50">5</td>
                           <td className="text-center py-3 px-4 bg-green-50 font-medium">Ilimitados</td>
                         </tr>
                         <tr className="border-b">
                           <td className="py-3 px-4">Exportação</td>
-                          <td className="text-center py-3 px-4">-</td>
                           <td className="text-center py-3 px-4 bg-blue-50">CSV</td>
                           <td className="text-center py-3 px-4 bg-green-50 font-medium">CSV + Excel + PDF</td>
                         </tr>
                         <tr className="border-b">
                           <td className="py-3 px-4">Oportunidades de Negócio</td>
-                          <td className="text-center py-3 px-4"><X className="h-4 w-4 text-gray-300 mx-auto" /></td>
                           <td className="text-center py-3 px-4 bg-blue-50"><X className="h-4 w-4 text-gray-300 mx-auto" /></td>
                           <td className="text-center py-3 px-4 bg-green-50"><Check className="h-5 w-5 text-green-600 mx-auto" /></td>
                         </tr>
                         <tr className="border-b">
                           <td className="py-3 px-4">Score de Fidelidade</td>
-                          <td className="text-center py-3 px-4"><X className="h-4 w-4 text-gray-300 mx-auto" /></td>
                           <td className="text-center py-3 px-4 bg-blue-50"><X className="h-4 w-4 text-gray-300 mx-auto" /></td>
                           <td className="text-center py-3 px-4 bg-green-50"><Check className="h-5 w-5 text-green-600 mx-auto" /></td>
                         </tr>
                         <tr>
                           <td className="py-3 px-4">CRM Avançado</td>
-                          <td className="text-center py-3 px-4"><X className="h-4 w-4 text-gray-300 mx-auto" /></td>
                           <td className="text-center py-3 px-4 bg-blue-50"><X className="h-4 w-4 text-gray-300 mx-auto" /></td>
                           <td className="text-center py-3 px-4 bg-green-50"><Check className="h-5 w-5 text-green-600 mx-auto" /></td>
                         </tr>
@@ -283,44 +235,7 @@ const Pricing = () => {
 
           {/* Owner Plans */}
           <TabsContent value="owner">
-            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-              {/* Free Plan */}
-              <Card className="relative border-2 border-gray-200 hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Car className="h-5 w-5 text-gray-600" />
-                    <CardTitle>Gratuito</CardTitle>
-                  </div>
-                  <div className="mb-4">
-                    <span className="text-4xl font-bold">R$ 0</span>
-                    <span className="text-gray-500">/mês</span>
-                  </div>
-                  <CardDescription>
-                    30 dias grátis + Plano gratuito para sempre
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-3">
-                    {STRIPE_CONFIG.plans.free.features.owner?.map((feature, i) => (
-                      <li key={i} className="flex items-start gap-2">
-                        <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                        <span className="text-sm text-gray-700">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-                <CardFooter>
-                  <Button
-                    className="w-full"
-                    variant="outline"
-                    onClick={() => handleSelectPlan("free", "owner")}
-                  >
-                    Começar Grátis
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </CardFooter>
-              </Card>
-
+            <div className="max-w-md mx-auto mb-8">
               {/* Owner Pro Plan */}
               <Card className="relative border-2 border-green-300 hover:shadow-xl transition-shadow bg-gradient-to-br from-white to-green-50">
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2">
@@ -368,54 +283,15 @@ const Pricing = () => {
               </Card>
             </div>
 
-            {/* Owner Comparison */}
-            <div className="mt-12 max-w-4xl mx-auto">
-              <h3 className="text-2xl font-bold text-center mb-8">Compare os Planos</h3>
-              <Card>
-                <CardContent className="p-6">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left py-4 px-4">Funcionalidade</th>
-                          <th className="text-center py-4 px-4">Gratuito</th>
-                          <th className="text-center py-4 px-4 bg-green-50">Pro</th>
-                        </tr>
-                      </thead>
-                      <tbody className="text-sm">
-                        <tr className="border-b">
-                          <td className="py-3 px-4">Veículos</td>
-                          <td className="text-center py-3 px-4">1</td>
-                          <td className="text-center py-3 px-4 bg-green-50 font-medium">Ilimitados</td>
-                        </tr>
-                        <tr className="border-b">
-                          <td className="py-3 px-4">Histórico</td>
-                          <td className="text-center py-3 px-4">6 meses</td>
-                          <td className="text-center py-3 px-4 bg-green-50 font-medium">Ilimitado</td>
-                        </tr>
-                        <tr className="border-b">
-                          <td className="py-3 px-4">Alertas</td>
-                          <td className="text-center py-3 px-4">Genéricos</td>
-                          <td className="text-center py-3 px-4 bg-green-50 font-medium">Inteligentes + API</td>
-                        </tr>
-                        <tr className="border-b">
-                          <td className="py-3 px-4">Exportação de Relatórios</td>
-                          <td className="text-center py-3 px-4"><X className="h-4 w-4 text-gray-300 mx-auto" /></td>
-                          <td className="text-center py-3 px-4 bg-green-50"><Check className="h-5 w-5 text-green-600 mx-auto" /></td>
-                        </tr>
-                        <tr className="border-b">
-                          <td className="py-3 px-4">Análise de Custos</td>
-                          <td className="text-center py-3 px-4"><X className="h-4 w-4 text-gray-300 mx-auto" /></td>
-                          <td className="text-center py-3 px-4 bg-green-50"><Check className="h-5 w-5 text-green-600 mx-auto" /></td>
-                        </tr>
-                        <tr>
-                          <td className="py-3 px-4">Suporte Prioritário</td>
-                          <td className="text-center py-3 px-4"><X className="h-4 w-4 text-gray-300 mx-auto" /></td>
-                          <td className="text-center py-3 px-4 bg-green-50"><Check className="h-5 w-5 text-green-600 mx-auto" /></td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
+            {/* Info Banner */}
+            <div className="mt-12 max-w-2xl mx-auto">
+              <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+                <CardContent className="pt-6 text-center">
+                  <h3 className="text-xl font-bold mb-3">✨ Experimente 30 dias grátis!</h3>
+                  <p className="text-gray-700">
+                    Teste todas as funcionalidades PRO sem compromisso. Cancele a qualquer momento
+                    durante o período de teste e não será cobrado nada.
+                  </p>
                 </CardContent>
               </Card>
             </div>

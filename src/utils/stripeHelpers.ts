@@ -11,11 +11,6 @@ export async function initiateStripeCheckout(
   userId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    // Não fazer checkout para plano free
-    if (planId === 'free') {
-      return { success: true };
-    }
-
     // Obter o Price ID correto baseado no plano
     let priceId: string | undefined;
     switch (planId) {
@@ -112,13 +107,9 @@ export async function getCurrentSubscription(userId: string) {
       .single();
 
     if (error) {
-      // Se não existir assinatura, retorna free
+      // Se não existir assinatura, retorna null
       if (error.code === 'PGRST116') {
-        return {
-          plan_id: 'free' as PlanId,
-          status: 'active',
-          monthly_usage: 0,
-        };
+        return null;
       }
       throw error;
     }
@@ -126,11 +117,7 @@ export async function getCurrentSubscription(userId: string) {
     return data;
   } catch (error) {
     console.error('Erro ao buscar assinatura:', error);
-    return {
-      plan_id: 'free' as PlanId,
-      status: 'active',
-      monthly_usage: 0,
-    };
+    return null;
   }
 }
 
@@ -144,20 +131,13 @@ export async function checkFeatureAccess(
 ): Promise<boolean> {
   try {
     const subscription = await getCurrentSubscription(userId);
-    const planId = subscription.plan_id as PlanId;
 
-    // Verificar limites específicos
-    if (planId === 'free') {
-      const basicWorkshopFeatures = ['gestão básica', 'histórico', 'notificações'];
-      const basicOwnerFeatures = ['1 veículo', 'histórico', 'alertas básicos'];
-
-      if (role === 'workshop') {
-        return basicWorkshopFeatures.some((f) =>
-          feature.toLowerCase().includes(f)
-        );
-      }
-      return basicOwnerFeatures.some((f) => feature.toLowerCase().includes(f));
+    // Se não tiver assinatura, não tem acesso a features pagas
+    if (!subscription) {
+      return false;
     }
+
+    const planId = subscription.plan_id as PlanId;
 
     // Planos pagos
     const plan = STRIPE_CONFIG.plans[planId];

@@ -15,49 +15,6 @@ export const STRIPE_CONFIG = {
 
   // Definição dos planos
   plans: {
-    free: {
-      id: 'free',
-      name: 'Gratuito',
-      price: 0,
-      interval: 'month' as const,
-      trialDays: 30, // Trial de 30 dias para todos
-      monthlyLimit: 10, // Oficinas: 10 atendimentos/mês | Proprietários: 1 veículo
-      features: {
-        workshop: [
-          'Até 10 atendimentos/mês',
-          'Gestão básica de clientes',
-          'Histórico de manutenções',
-          'Notificações por email',
-        ],
-        owner: [
-          '1 veículo por conta',
-          'Histórico de 6 meses',
-          'Alertas genéricos de manutenção',
-          'Dashboard básico',
-          'Compartilhamento público',
-        ],
-      },
-      limitations: {
-        workshop: {
-          monthlyServices: 10,
-          historyMonths: null,
-          templates: null,
-          exportFormats: ['csv'],
-          hasOpportunities: false,
-          hasLoyaltyScore: false,
-          hasCRM: false,
-        },
-        owner: {
-          maxVehicles: 1,
-          historyMonths: 6,
-          hasSmartAlerts: false,
-          hasAPIIntegration: false,
-          hasAdvancedReports: false,
-          hasExport: false,
-        },
-      },
-    },
-
     workshopStarter: {
       id: 'workshop_starter',
       name: 'Vybo Oficina - Starter',
@@ -168,7 +125,7 @@ export const STRIPE_CONFIG = {
   },
 } as const;
 
-export type PlanId = 'free' | 'workshop_starter' | 'workshop_professional' | 'owner_pro';
+export type PlanId = 'workshop_starter' | 'workshop_professional' | 'owner_pro';
 
 export type UserRole = 'owner' | 'workshop';
 
