@@ -27,6 +27,7 @@ import PublicVehicleHistory from "./pages/PublicVehicleHistory";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import CookiePolicy from "./pages/CookiePolicy";
 import PrivacySettings from "./pages/PrivacySettings";
+import Pricing from "./pages/Pricing";
 import CookieConsent from "./components/CookieConsent";
 
 const queryClient = new QueryClient();
@@ -43,6 +44,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/select-type" element={<UserTypeSelection />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/pricing" element={<Pricing />} />
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Dashboard />
