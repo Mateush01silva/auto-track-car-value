@@ -232,7 +232,6 @@ SELECT
   p.id as user_id,
   p.email,
   p.full_name,
-  p.role,
   s.plan_id,
   s.status,
   s.stripe_customer_id,
