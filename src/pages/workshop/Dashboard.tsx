@@ -350,6 +350,10 @@ const WorkshopDashboard = () => {
                   <User className="h-4 w-4 mr-2" />
                   Perfil da Oficina
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/workshop/plans")}>
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Planos e Assinatura
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/configuracoes/privacidade")}>
                   <Shield className="h-4 w-4 mr-2" />
                   Privacidade e Dados
@@ -404,7 +408,7 @@ const WorkshopDashboard = () => {
           {/* Plan Card */}
           <Card
             className="cursor-pointer hover:shadow-md transition-shadow"
-            onClick={() => navigate('/workshop/settings?tab=plan')}
+            onClick={() => navigate('/workshop/plans')}
           >
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-gray-500">Plano Atual</CardTitle>
