@@ -15,27 +15,6 @@ export const STRIPE_CONFIG = {
 
   // Definição dos planos
   plans: {
-    free: {
-      id: 'free',
-      name: 'Gratuito',
-      price: 0,
-      interval: 'month' as const,
-      trialDays: 0,
-      monthlyLimit: 10, // Oficinas: 10 atendimentos/mês | Proprietários: 1 veículo
-      features: {
-        workshop: [
-          'Até 10 atendimentos/mês',
-          'Gestão básica de clientes',
-          'Histórico de manutenções',
-        ],
-        owner: [
-          '1 veículo',
-          'Histórico de manutenções',
-          'Alertas básicos',
-        ],
-      },
-    },
-
     workshopStarter: {
       id: 'workshop_starter',
       name: 'Vybo Oficina - Starter',
@@ -45,13 +24,29 @@ export const STRIPE_CONFIG = {
       monthlyLimit: 100,
       features: {
         workshop: [
-          'Até 100 atendimentos/mês',
-          'Gestão completa de clientes',
-          'Histórico de manutenções',
-          'Exportação CSV',
-          'Notificações WhatsApp',
-          'Dashboard básico',
+          '✅ 100 atendimentos/mês',
+          '✅ Dashboard básico',
+          '✅ Cadastro e busca por placa',
+          '✅ Notificações por email',
+          '✅ Histórico 6 meses',
+          '✅ Exportação CSV',
+          '✅ Até 5 templates',
+          '✅ Lista de clientes com busca',
+          '❌ Sem Oportunidades',
+          '❌ Sem Score de Fidelidade',
+          '❌ Sem exportação Excel/PDF',
         ],
+      },
+      limitations: {
+        workshop: {
+          monthlyServices: 100,
+          historyMonths: 6,
+          templates: 5,
+          exportFormats: ['csv'],
+          hasOpportunities: false,
+          hasLoyaltyScore: false,
+          hasCRM: false,
+        },
       },
     },
 
@@ -64,17 +59,32 @@ export const STRIPE_CONFIG = {
       monthlyLimit: null, // ilimitado
       features: {
         workshop: [
-          '✨ Atendimentos ilimitados',
-          '🎯 CRM Inteligente completo',
-          '📊 Score de Fidelidade',
-          '💼 Oportunidades de negócio',
-          '📤 Exportação Excel/PDF',
-          '📧 Envio de emails em lote',
-          '📈 Análises avançadas (heatmap)',
-          '🏷️ Tags personalizadas',
-          '📝 Histórico de interações',
-          '🎂 Alertas de aniversário',
+          '✅ Atendimentos ilimitados',
+          '✅ Dashboard completo',
+          '✅ Cadastro e busca por placa',
+          '✅ Notificações por email',
+          '✅ Histórico ilimitado',
+          '✅ Exportação CSV + Excel + PDF',
+          '✅ Templates ilimitados',
+          '✅ Oportunidades de Negócio',
+          '✅ Score de Fidelidade completo',
+          '✅ CRM avançado (lembretes, análises)',
+          '✅ Envio de emails em lote',
+          '✅ Análises avançadas (heatmap)',
+          '✅ Tags personalizadas',
+          '✅ Histórico de interações',
         ],
+      },
+      limitations: {
+        workshop: {
+          monthlyServices: null, // ilimitado
+          historyMonths: null, // ilimitado
+          templates: null, // ilimitado
+          exportFormats: ['csv', 'excel', 'pdf'],
+          hasOpportunities: true,
+          hasLoyaltyScore: true,
+          hasCRM: true,
+        },
       },
     },
 
@@ -83,23 +93,39 @@ export const STRIPE_CONFIG = {
       name: 'Vybo Proprietário - Pro',
       price: 5.90,
       interval: 'month' as const,
-      trialDays: 14,
+      trialDays: 30,
       monthlyLimit: null,
       features: {
         owner: [
-          'Múltiplos veículos ilimitados',
-          'Alertas de manutenção inteligentes',
-          'Relatórios detalhados',
-          'Compartilhamento via QR Code',
-          'Comprovantes com fotos',
-          'Histórico completo',
+          '✅ Veículos ilimitados',
+          '✅ Histórico ilimitado',
+          '✅ Alertas inteligentes personalizados',
+          '✅ Integração com API FIPE',
+          '✅ Alertas de revisão por KM',
+          '✅ Dashboard completo com estatísticas',
+          '✅ Exportação de relatórios (PDF/Excel)',
+          '✅ Análise de custos e valorização',
+          '✅ Relatórios profissionais',
+          '✅ Compartilhamento via QR Code',
+          '✅ Galeria de comprovantes ilimitada',
+          '✅ Suporte prioritário',
         ],
+      },
+      limitations: {
+        owner: {
+          maxVehicles: null, // ilimitado
+          historyMonths: null, // ilimitado
+          hasSmartAlerts: true,
+          hasAPIIntegration: true,
+          hasAdvancedReports: true,
+          hasExport: true,
+        },
       },
     },
   },
 } as const;
 
-export type PlanId = 'free' | 'workshop_starter' | 'workshop_professional' | 'owner_pro';
+export type PlanId = 'workshop_starter' | 'workshop_professional' | 'owner_pro';
 
 export type UserRole = 'owner' | 'workshop';
 
