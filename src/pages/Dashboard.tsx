@@ -53,7 +53,8 @@ import {
   Bell,
   Building2,
   Star,
-  Shield
+  Shield,
+  CreditCard
 } from "lucide-react";
 
 const Dashboard = () => {
@@ -441,6 +442,10 @@ const Dashboard = () => {
               <DropdownMenuItem onClick={() => setActiveTab("profile")} className="cursor-pointer">
                 <User className="mr-2 h-4 w-4" />
                 Ver Perfil
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/plans")} className="cursor-pointer">
+                <CreditCard className="mr-2 h-4 w-4" />
+                Planos e Assinatura
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate("/configuracoes/privacidade")} className="cursor-pointer">
                 <Shield className="mr-2 h-4 w-4" />
