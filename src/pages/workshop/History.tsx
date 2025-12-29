@@ -18,13 +18,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -45,12 +38,12 @@ import {
   Calendar,
   Users,
   Loader2,
-  Crown,
   ArrowUpDown,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
 import { WorkshopBottomNav } from "@/components/workshop/BottomNav";
+import { ExportMenu } from "@/components/ExportMenu";
 
 interface Workshop {
   id: string;
@@ -90,7 +83,6 @@ const WorkshopHistory = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [sendingEmail, setSendingEmail] = useState<string | null>(null);
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   // Filters
   const [startDate, setStartDate] = useState(searchParams.get('start') || '');
@@ -368,61 +360,6 @@ const WorkshopHistory = () => {
     });
   };
 
-  // Export to Excel
-  const handleExport = async () => {
-    if (!workshop) return;
-
-    if (workshop.plan === 'starter') {
-      setShowUpgradeModal(true);
-      return;
-    }
-
-    toast({
-      title: "Exportando...",
-      description: "Gerando arquivo Excel com os dados filtrados.",
-    });
-
-    // Simple CSV export for now
-    try {
-      const headers = ['Data', 'Placa', 'Veículo', 'Serviço', 'Valor', 'KM'];
-      const rows = maintenances.map(m => [
-        formatDate(m.date),
-        formatPlate(m.vehicle.plate),
-        `${m.vehicle.brand} ${m.vehicle.model} ${m.vehicle.year}`,
-        m.service_type,
-        m.cost.toString(),
-        m.km.toString(),
-      ]);
-
-      const csvContent = [
-        headers.join(','),
-        ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-      ].join('\n');
-
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', `historico-atendimentos-${new Date().toISOString().split('T')[0]}.csv`);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      toast({
-        title: "Exportacao concluida!",
-        description: "O arquivo foi baixado com sucesso.",
-      });
-    } catch (error) {
-      console.error('Error exporting:', error);
-      toast({
-        title: "Erro ao exportar",
-        description: "Não foi possível gerar o arquivo.",
-        variant: "destructive",
-      });
-    }
-  };
-
   // Calculate pagination
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
   const showingFrom = totalCount > 0 ? (currentPage - 1) * ITEMS_PER_PAGE + 1 : 0;
@@ -456,17 +393,17 @@ const WorkshopHistory = () => {
                 <p className="text-sm text-gray-500">Visualize todos os atendimentos realizados</p>
               </div>
             </div>
-            <Button
-              variant="outline"
-              onClick={handleExport}
-              className="hidden sm:flex"
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Exportar
-              {workshop.plan === 'starter' && (
-                <Badge variant="secondary" className="ml-2 text-xs">Pro</Badge>
-              )}
-            </Button>
+            <div className="hidden sm:block">
+              <ExportMenu
+                data={maintenances}
+                isPro={workshop.plan === 'professional'}
+                options={{
+                  title: 'Histórico de Atendimentos',
+                  workshopName: workshop.name,
+                  period: startDate && endDate ? `${formatDate(startDate)} - ${formatDate(endDate)}` : 'Todos os períodos',
+                }}
+              />
+            </div>
           </div>
         </div>
       </header>
@@ -837,54 +774,6 @@ const WorkshopHistory = () => {
           </CardContent>
         </Card>
       </main>
-
-      {/* Upgrade Modal */}
-      <Dialog open={showUpgradeModal} onOpenChange={setShowUpgradeModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Crown className="h-5 w-5 text-yellow-500" />
-              Recurso Professional
-            </DialogTitle>
-            <DialogDescription>
-              A exportacao para Excel esta disponivel apenas no plano Professional.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <p className="text-sm text-gray-600 mb-4">
-              Faca upgrade para desbloquear:
-            </p>
-            <ul className="space-y-2 text-sm">
-              <li className="flex items-center gap-2">
-                <Download className="h-4 w-4 text-green-600" />
-                Exportacao para Excel/CSV
-              </li>
-              <li className="flex items-center gap-2">
-                <FileText className="h-4 w-4 text-green-600" />
-                Relatorios avancados
-              </li>
-              <li className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-green-600" />
-                500 veiculos/mes
-              </li>
-            </ul>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setShowUpgradeModal(false)} className="flex-1">
-              Cancelar
-            </Button>
-            <Button
-              onClick={() => {
-                setShowUpgradeModal(false);
-                navigate('/workshop/settings');
-              }}
-              className="flex-1 bg-green-600 hover:bg-green-700"
-            >
-              Fazer Upgrade
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Bottom Navigation - Mobile */}
       <WorkshopBottomNav />
