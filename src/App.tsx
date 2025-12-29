@@ -28,6 +28,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import CookiePolicy from "./pages/CookiePolicy";
 import PrivacySettings from "./pages/PrivacySettings";
 import Pricing from "./pages/Pricing";
+import OwnerPlans from "./pages/OwnerPlans";
 import CookieConsent from "./components/CookieConsent";
 
 const queryClient = new QueryClient();
@@ -48,6 +49,11 @@ const App = () => (
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/plans" element={
+              <ProtectedRoute>
+                <OwnerPlans />
               </ProtectedRoute>
             } />
             <Route path="/workshop/dashboard" element={

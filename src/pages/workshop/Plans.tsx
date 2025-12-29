@@ -4,117 +4,117 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { STRIPE_CONFIG, PlanId, formatPrice, getTrialDaysRemaining } from "@/config/stripe";
+import { initiateStripeCheckout, createStripeCustomerPortal, getCurrentSubscription } from "@/utils/stripeHelpers";
 import {
   ArrowLeft,
   Check,
   X,
-  Star,
   Rocket,
   Building2,
-  Users,
-  FileText,
-  Camera,
-  Bell,
-  Download,
-  MessageCircle,
   Loader2,
-  Mail
+  ExternalLink,
+  Settings
 } from "lucide-react";
 
-interface Workshop {
+interface Subscription {
   id: string;
-  name: string;
-  plan: string;
-  monthly_vehicle_limit: number;
-  current_month_vehicles: number;
+  user_id: string;
+  plan_id: PlanId;
+  stripe_customer_id?: string;
+  stripe_subscription_id?: string;
+  status: 'active' | 'trialing' | 'past_due' | 'canceled' | 'incomplete';
+  current_period_end: string;
+  trial_end?: string;
+  cancel_at_period_end: boolean;
+  monthly_usage: number;
 }
-
-interface PlanFeature {
-  name: string;
-  starter: boolean | string;
-  professional: boolean | string;
-  enterprise: boolean | string;
-}
-
-const PLAN_FEATURES: PlanFeature[] = [
-  { name: "Veículos por mês", starter: "150", professional: "400", enterprise: "Ilimitado" },
-  { name: "Cadastro de serviços", starter: true, professional: true, enterprise: true },
-  { name: "Link público do histórico", starter: true, professional: true, enterprise: true },
-  { name: "Templates padrão", starter: true, professional: true, enterprise: true },
-  { name: "Templates customizados", starter: false, professional: true, enterprise: true },
-  { name: "CRM de clientes", starter: false, professional: true, enterprise: true },
-  { name: "Lembretes automáticos", starter: false, professional: true, enterprise: true },
-  { name: "Exportação CSV", starter: false, professional: true, enterprise: true },
-  { name: "Scanner de placa", starter: false, professional: true, enterprise: true },
-  { name: "Relatórios avançados", starter: false, professional: true, enterprise: true },
-  { name: "API de integração", starter: false, professional: false, enterprise: true },
-  { name: "Múltiplos usuários", starter: false, professional: false, enterprise: true },
-  { name: "Suporte prioritário", starter: false, professional: true, enterprise: true },
-  { name: "Whitelabel", starter: false, professional: false, enterprise: true },
-];
 
 const Plans = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-  const [workshop, setWorkshop] = useState<Workshop | null>(null);
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
+  const [processingCheckout, setProcessingCheckout] = useState<PlanId | null>(null);
+  const [loadingPortal, setLoadingPortal] = useState(false);
 
   useEffect(() => {
-    const fetchWorkshop = async () => {
+    const fetchSubscription = async () => {
       if (!user) {
         navigate('/workshop/login');
         return;
       }
 
       try {
-        const { data, error } = await supabase
-          .from('workshops')
-          .select('id, name, plan, monthly_vehicle_limit, current_month_vehicles')
-          .eq('owner_id', user.id)
-          .single();
-
-        if (error) throw error;
-        setWorkshop(data);
+        const data = await getCurrentSubscription(user.id);
+        setSubscription(data);
       } catch (error) {
-        console.error('Error fetching workshop:', error);
-        navigate('/workshop/dashboard');
+        console.error('Error fetching subscription:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchWorkshop();
+    fetchSubscription();
   }, [user, navigate]);
 
-  const handleUpgrade = (plan: string) => {
-    // For now, open email contact
-    const subject = encodeURIComponent(`Upgrade para plano ${plan} - ${workshop?.name}`);
-    const body = encodeURIComponent(
-      `Olá,\n\nGostaria de fazer upgrade para o plano ${plan}.\n\n` +
-      `Oficina: ${workshop?.name}\n` +
-      `Email: ${user?.email}\n\n` +
-      `Aguardo contato.\n\nObrigado!`
-    );
-    window.open(`mailto:contato@wisedrive.com.br?subject=${subject}&body=${body}`, '_blank');
+  const handleSelectPlan = async (planId: PlanId) => {
+    if (!user?.email) {
+      toast({
+        title: "Erro",
+        description: "Email do usuário não encontrado",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    toast({
-      title: "Solicitação de upgrade",
-      description: "Um email foi aberto para você entrar em contato conosco. Em breve teremos pagamento online!",
-    });
+    setProcessingCheckout(planId);
+
+    try {
+      const result = await initiateStripeCheckout(planId, user.email, user.id);
+
+      if (!result.success) {
+        throw new Error(result.error || 'Erro ao processar checkout');
+      }
+
+      // Se chegou aqui e não redirecionou, algo deu errado
+      toast({
+        title: "Atenção",
+        description: "Redirecionando para o checkout...",
+      });
+    } catch (error: any) {
+      console.error('Checkout error:', error);
+      toast({
+        title: "Erro ao processar checkout",
+        description: error.message || "Tente novamente em alguns instantes",
+        variant: "destructive",
+      });
+      setProcessingCheckout(null);
+    }
   };
 
-  const handleContact = () => {
-    const subject = encodeURIComponent(`Interesse no plano Enterprise - ${workshop?.name}`);
-    const body = encodeURIComponent(
-      `Olá,\n\nTenho interesse no plano Enterprise.\n\n` +
-      `Oficina: ${workshop?.name}\n` +
-      `Email: ${user?.email}\n\n` +
-      `Gostaria de mais informações.\n\nObrigado!`
-    );
-    window.open(`mailto:contato@wisedrive.com.br?subject=${subject}&body=${body}`, '_blank');
+  const handleManageSubscription = async () => {
+    if (!user?.id) return;
+
+    setLoadingPortal(true);
+    try {
+      const result = await createStripeCustomerPortal(user.id);
+
+      if (result.success && result.url) {
+        window.location.href = result.url;
+      } else {
+        throw new Error(result.error || 'Erro ao acessar portal');
+      }
+    } catch (error: any) {
+      toast({
+        title: "Erro ao acessar portal",
+        description: error.message || "Tente novamente em alguns instantes",
+        variant: "destructive",
+      });
+      setLoadingPortal(false);
+    }
   };
 
   if (loading) {
@@ -125,7 +125,11 @@ const Plans = () => {
     );
   }
 
-  const currentPlan = workshop?.plan || 'starter';
+  const currentPlanId = subscription?.plan_id;
+  const isTrialing = subscription?.status === 'trialing';
+  const trialDaysRemaining = subscription?.trial_end
+    ? getTrialDaysRemaining(new Date(subscription.trial_end))
+    : 0;
 
   return (
     <div className="min-h-screen bg-surface">
@@ -143,27 +147,69 @@ const Plans = () => {
             </Button>
             <div>
               <h1 className="text-lg font-semibold">Planos e Preços</h1>
-              <p className="text-xs text-muted-foreground">{workshop?.name}</p>
+              {subscription && (
+                <p className="text-xs text-muted-foreground">
+                  Plano atual: {STRIPE_CONFIG.plans[currentPlanId!]?.name || 'Nenhum'}
+                  {isTrialing && ` (Trial - ${trialDaysRemaining} dias restantes)`}
+                </p>
+              )}
             </div>
           </div>
+          {subscription && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleManageSubscription}
+              disabled={loadingPortal}
+            >
+              {loadingPortal ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Settings className="h-4 w-4 mr-2" />
+              )}
+              Gerenciar Assinatura
+            </Button>
+          )}
         </div>
       </header>
 
       <div className="container mx-auto px-4 py-8">
+        {/* Trial Banner */}
+        {isTrialing && trialDaysRemaining > 0 && (
+          <Card className="mb-8 border-warning bg-warning/10">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg mb-1">
+                    🎉 Você está em período de trial!
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Aproveite {trialDaysRemaining} dia{trialDaysRemaining !== 1 ? 's' : ''} restante{trialDaysRemaining !== 1 ? 's' : ''} de acesso completo ao plano {STRIPE_CONFIG.plans[currentPlanId!]?.name}.
+                    Após o período de trial, você será cobrado automaticamente.
+                  </p>
+                </div>
+                <Button onClick={handleManageSubscription} variant="outline">
+                  Gerenciar Trial
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Header Section */}
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold mb-4">Escolha o plano ideal para sua oficina</h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Comece gratuitamente e faça upgrade quando precisar de mais recursos.
-            Todos os planos incluem suporte e atualizações.
+            Todos os planos incluem 14 dias de trial gratuito. Sem cartão de crédito necessário para começar.
+            Cancele quando quiser.
           </p>
         </div>
 
         {/* Plans Grid */}
-        <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-12">
+        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-12">
           {/* Starter Plan */}
-          <Card className={`relative ${currentPlan === 'starter' ? 'border-primary' : ''}`}>
-            {currentPlan === 'starter' && (
+          <Card className={`relative ${currentPlanId === 'workshop_starter' ? 'border-primary border-2' : ''}`}>
+            {currentPlanId === 'workshop_starter' && (
               <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary">
                 Plano Atual
               </Badge>
@@ -171,57 +217,72 @@ const Plans = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Building2 className="h-5 w-5" />
-                Starter
+                Vybo Oficina - Starter
               </CardTitle>
               <CardDescription>Para oficinas começando</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <span className="text-3xl font-bold">Grátis</span>
+                <span className="text-3xl font-bold">{formatPrice(STRIPE_CONFIG.plans.workshopStarter.price)}</span>
+                <span className="text-muted-foreground">/mês</span>
+              </div>
+              <div className="bg-success/10 border border-success/20 rounded-lg p-3">
+                <p className="text-sm font-medium text-success">
+                  ✅ 14 dias de trial gratuito
+                </p>
               </div>
               <ul className="space-y-2">
-                <li className="flex items-center gap-2 text-sm">
-                  <Check className="h-4 w-4 text-success" />
-                  <span>150 veículos/mês</span>
-                </li>
-                <li className="flex items-center gap-2 text-sm">
-                  <Check className="h-4 w-4 text-success" />
-                  <span>Cadastro de serviços</span>
-                </li>
-                <li className="flex items-center gap-2 text-sm">
-                  <Check className="h-4 w-4 text-success" />
-                  <span>Link público</span>
-                </li>
-                <li className="flex items-center gap-2 text-sm">
-                  <Check className="h-4 w-4 text-success" />
-                  <span>Templates padrão</span>
-                </li>
-                <li className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <X className="h-4 w-4" />
-                  <span>CRM de clientes</span>
-                </li>
-                <li className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <X className="h-4 w-4" />
-                  <span>Lembretes automáticos</span>
-                </li>
+                {STRIPE_CONFIG.plans.workshopStarter.features.workshop?.map((feature, idx) => (
+                  <li key={idx} className="flex items-start gap-2 text-sm">
+                    {feature.startsWith('✅') ? (
+                      <>
+                        <Check className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
+                        <span>{feature.replace('✅ ', '')}</span>
+                      </>
+                    ) : (
+                      <>
+                        <X className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                        <span className="text-muted-foreground">{feature.replace('❌ ', '')}</span>
+                      </>
+                    )}
+                  </li>
+                ))}
               </ul>
             </CardContent>
             <CardFooter>
-              {currentPlan === 'starter' ? (
+              {currentPlanId === 'workshop_starter' ? (
                 <Button className="w-full" disabled>
                   Plano Atual
                 </Button>
-              ) : (
+              ) : currentPlanId === 'workshop_professional' ? (
                 <Button className="w-full" variant="outline" disabled>
                   Downgrade não disponível
+                </Button>
+              ) : (
+                <Button
+                  className="w-full"
+                  onClick={() => handleSelectPlan('workshop_starter')}
+                  disabled={processingCheckout !== null}
+                >
+                  {processingCheckout === 'workshop_starter' ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Processando...
+                    </>
+                  ) : (
+                    <>
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Começar Trial de 14 Dias
+                    </>
+                  )}
                 </Button>
               )}
             </CardFooter>
           </Card>
 
           {/* Professional Plan */}
-          <Card className={`relative border-2 ${currentPlan === 'professional' ? 'border-primary' : 'border-primary/50'}`}>
-            {currentPlan === 'professional' ? (
+          <Card className={`relative border-2 ${currentPlanId === 'workshop_professional' ? 'border-primary' : 'border-primary/50'}`}>
+            {currentPlanId === 'workshop_professional' ? (
               <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary">
                 Plano Atual
               </Badge>
@@ -233,117 +294,59 @@ const Plans = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Rocket className="h-5 w-5 text-primary" />
-                Professional
+                Vybo Oficina - Professional
               </CardTitle>
               <CardDescription>Para oficinas em crescimento</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <span className="text-3xl font-bold">R$ 199</span>
+                <span className="text-3xl font-bold">{formatPrice(STRIPE_CONFIG.plans.workshopProfessional.price)}</span>
                 <span className="text-muted-foreground">/mês</span>
               </div>
+              <div className="bg-success/10 border border-success/20 rounded-lg p-3">
+                <p className="text-sm font-medium text-success">
+                  ✅ 14 dias de trial gratuito
+                </p>
+              </div>
               <ul className="space-y-2">
-                <li className="flex items-center gap-2 text-sm">
-                  <Check className="h-4 w-4 text-success" />
-                  <span><strong>400</strong> veículos/mês</span>
-                </li>
-                <li className="flex items-center gap-2 text-sm">
-                  <Check className="h-4 w-4 text-success" />
-                  <span>Tudo do Starter</span>
-                </li>
-                <li className="flex items-center gap-2 text-sm">
-                  <Check className="h-4 w-4 text-success" />
-                  <span>Templates ilimitados</span>
-                </li>
-                <li className="flex items-center gap-2 text-sm">
-                  <Check className="h-4 w-4 text-success" />
-                  <span>CRM de clientes</span>
-                </li>
-                <li className="flex items-center gap-2 text-sm">
-                  <Check className="h-4 w-4 text-success" />
-                  <span>Lembretes automáticos</span>
-                </li>
-                <li className="flex items-center gap-2 text-sm">
-                  <Check className="h-4 w-4 text-success" />
-                  <span>Exportação CSV</span>
-                </li>
+                {STRIPE_CONFIG.plans.workshopProfessional.features.workshop?.map((feature, idx) => (
+                  <li key={idx} className="flex items-start gap-2 text-sm">
+                    <Check className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
+                    <span>{feature.replace('✅ ', '')}</span>
+                  </li>
+                ))}
               </ul>
             </CardContent>
             <CardFooter>
-              {currentPlan === 'professional' ? (
+              {currentPlanId === 'workshop_professional' ? (
                 <Button className="w-full" disabled>
                   Plano Atual
                 </Button>
               ) : (
                 <Button
                   className="w-full"
-                  onClick={() => handleUpgrade('Professional')}
+                  onClick={() => handleSelectPlan('workshop_professional')}
+                  disabled={processingCheckout !== null}
                 >
-                  <Mail className="h-4 w-4 mr-2" />
-                  Fazer Upgrade
+                  {processingCheckout === 'workshop_professional' ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Processando...
+                    </>
+                  ) : (
+                    <>
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      {currentPlanId === 'workshop_starter' ? 'Fazer Upgrade' : 'Começar Trial de 14 Dias'}
+                    </>
+                  )}
                 </Button>
               )}
-            </CardFooter>
-          </Card>
-
-          {/* Enterprise Plan */}
-          <Card className="relative opacity-75">
-            <Badge className="absolute -top-3 left-1/2 -translate-x-1/2" variant="secondary">
-              Em Breve
-            </Badge>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Star className="h-5 w-5 text-warning" />
-                Enterprise
-              </CardTitle>
-              <CardDescription>Para redes e franquias</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <span className="text-3xl font-bold">Sob consulta</span>
-              </div>
-              <ul className="space-y-2">
-                <li className="flex items-center gap-2 text-sm">
-                  <Check className="h-4 w-4 text-success" />
-                  <span><strong>Ilimitado</strong> veículos/mês</span>
-                </li>
-                <li className="flex items-center gap-2 text-sm">
-                  <Check className="h-4 w-4 text-success" />
-                  <span>Tudo do Professional</span>
-                </li>
-                <li className="flex items-center gap-2 text-sm">
-                  <Check className="h-4 w-4 text-success" />
-                  <span>API de integração</span>
-                </li>
-                <li className="flex items-center gap-2 text-sm">
-                  <Check className="h-4 w-4 text-success" />
-                  <span>Múltiplos usuários</span>
-                </li>
-                <li className="flex items-center gap-2 text-sm">
-                  <Check className="h-4 w-4 text-success" />
-                  <span>Whitelabel</span>
-                </li>
-                <li className="flex items-center gap-2 text-sm">
-                  <Check className="h-4 w-4 text-success" />
-                  <span>Suporte dedicado</span>
-                </li>
-              </ul>
-            </CardContent>
-            <CardFooter>
-              <Button
-                className="w-full"
-                variant="outline"
-                onClick={handleContact}
-              >
-                <MessageCircle className="h-4 w-4 mr-2" />
-                Entrar em Contato
-              </Button>
             </CardFooter>
           </Card>
         </div>
 
         {/* Feature Comparison Table */}
-        <Card className="max-w-5xl mx-auto">
+        <Card className="max-w-4xl mx-auto">
           <CardHeader>
             <CardTitle>Comparação completa de recursos</CardTitle>
             <CardDescription>Veja todas as diferenças entre os planos</CardDescription>
@@ -356,63 +359,101 @@ const Plans = () => {
                     <th className="text-left p-3 font-semibold">Recurso</th>
                     <th className="text-center p-3 font-semibold">Starter</th>
                     <th className="text-center p-3 font-semibold">Professional</th>
-                    <th className="text-center p-3 font-semibold">Enterprise</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {PLAN_FEATURES.map((feature, index) => (
-                    <tr key={feature.name} className={index % 2 === 0 ? 'bg-muted/30' : ''}>
-                      <td className="p-3 text-sm">{feature.name}</td>
-                      <td className="p-3 text-center">
-                        {typeof feature.starter === 'boolean' ? (
-                          feature.starter ? (
-                            <Check className="h-4 w-4 text-success mx-auto" />
-                          ) : (
-                            <X className="h-4 w-4 text-muted-foreground mx-auto" />
-                          )
-                        ) : (
-                          <span className="text-sm font-medium">{feature.starter}</span>
-                        )}
-                      </td>
-                      <td className="p-3 text-center">
-                        {typeof feature.professional === 'boolean' ? (
-                          feature.professional ? (
-                            <Check className="h-4 w-4 text-success mx-auto" />
-                          ) : (
-                            <X className="h-4 w-4 text-muted-foreground mx-auto" />
-                          )
-                        ) : (
-                          <span className="text-sm font-medium">{feature.professional}</span>
-                        )}
-                      </td>
-                      <td className="p-3 text-center">
-                        {typeof feature.enterprise === 'boolean' ? (
-                          feature.enterprise ? (
-                            <Check className="h-4 w-4 text-success mx-auto" />
-                          ) : (
-                            <X className="h-4 w-4 text-muted-foreground mx-auto" />
-                          )
-                        ) : (
-                          <span className="text-sm font-medium">{feature.enterprise}</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                  <tr className="border-b bg-muted/30">
+                    <td className="p-3 text-sm font-medium">Atendimentos por mês</td>
+                    <td className="p-3 text-center">
+                      <span className="text-sm font-medium">100</span>
+                    </td>
+                    <td className="p-3 text-center">
+                      <span className="text-sm font-medium text-success">Ilimitado</span>
+                    </td>
+                  </tr>
+                  <tr className="border-b">
+                    <td className="p-3 text-sm">Histórico de serviços</td>
+                    <td className="p-3 text-center text-sm">6 meses</td>
+                    <td className="p-3 text-center text-sm">Ilimitado</td>
+                  </tr>
+                  <tr className="border-b bg-muted/30">
+                    <td className="p-3 text-sm">Templates de serviço</td>
+                    <td className="p-3 text-center text-sm">Até 5</td>
+                    <td className="p-3 text-center text-sm">Ilimitado</td>
+                  </tr>
+                  <tr className="border-b">
+                    <td className="p-3 text-sm">Exportação de dados</td>
+                    <td className="p-3 text-center text-sm">CSV</td>
+                    <td className="p-3 text-center text-sm">CSV + Excel + PDF</td>
+                  </tr>
+                  <tr className="border-b bg-muted/30">
+                    <td className="p-3 text-sm">Oportunidades de Negócio</td>
+                    <td className="p-3 text-center">
+                      <X className="h-4 w-4 text-muted-foreground mx-auto" />
+                    </td>
+                    <td className="p-3 text-center">
+                      <Check className="h-4 w-4 text-success mx-auto" />
+                    </td>
+                  </tr>
+                  <tr className="border-b">
+                    <td className="p-3 text-sm">Score de Fidelidade</td>
+                    <td className="p-3 text-center">
+                      <X className="h-4 w-4 text-muted-foreground mx-auto" />
+                    </td>
+                    <td className="p-3 text-center">
+                      <Check className="h-4 w-4 text-success mx-auto" />
+                    </td>
+                  </tr>
+                  <tr className="border-b bg-muted/30">
+                    <td className="p-3 text-sm">CRM Avançado</td>
+                    <td className="p-3 text-center">
+                      <X className="h-4 w-4 text-muted-foreground mx-auto" />
+                    </td>
+                    <td className="p-3 text-center">
+                      <Check className="h-4 w-4 text-success mx-auto" />
+                    </td>
+                  </tr>
+                  <tr className="border-b">
+                    <td className="p-3 text-sm">Envio de emails em lote</td>
+                    <td className="p-3 text-center">
+                      <X className="h-4 w-4 text-muted-foreground mx-auto" />
+                    </td>
+                    <td className="p-3 text-center">
+                      <Check className="h-4 w-4 text-success mx-auto" />
+                    </td>
+                  </tr>
+                  <tr className="bg-muted/30">
+                    <td className="p-3 text-sm">Análises avançadas</td>
+                    <td className="p-3 text-center">
+                      <X className="h-4 w-4 text-muted-foreground mx-auto" />
+                    </td>
+                    <td className="p-3 text-center">
+                      <Check className="h-4 w-4 text-success mx-auto" />
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             </div>
           </CardContent>
         </Card>
 
-        {/* FAQ or Contact */}
-        <div className="text-center mt-12">
-          <p className="text-muted-foreground mb-4">
-            Tem dúvidas? Entre em contato conosco.
-          </p>
-          <Button variant="outline" onClick={handleContact}>
-            <MessageCircle className="h-4 w-4 mr-2" />
-            Falar com Vendas
-          </Button>
+        {/* Info Section */}
+        <div className="text-center mt-12 max-w-2xl mx-auto">
+          <h3 className="font-semibold mb-3">Como funciona o trial?</h3>
+          <div className="space-y-2 text-sm text-muted-foreground">
+            <p>
+              • Você tem 14 dias de acesso completo ao plano escolhido
+            </p>
+            <p>
+              • Não cobramos nada durante o período de trial
+            </p>
+            <p>
+              • Após o trial, a cobrança é feita automaticamente
+            </p>
+            <p>
+              • Você pode cancelar a qualquer momento através do portal de assinatura
+            </p>
+          </div>
         </div>
       </div>
     </div>
