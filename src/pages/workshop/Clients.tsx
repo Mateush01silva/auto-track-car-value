@@ -62,6 +62,7 @@ import { YearOverYearComparison } from "@/components/crm/YearOverYearComparison"
 import { MaintenanceHeatmap } from "@/components/crm/MaintenanceHeatmap";
 import { BulkEmailModal } from "@/components/crm/BulkEmailModal";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ExportMenu } from "@/components/ExportMenu";
 
 interface Workshop {
   id: string;
@@ -1666,7 +1667,20 @@ const WorkshopClients = () => {
 
                 {/* Recent Maintenances */}
                 <div>
-                  <h4 className="font-medium mb-2">Ultimos Atendimentos</h4>
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium">Ultimos Atendimentos</h4>
+                    {selectedClient.maintenances.length > 0 && (
+                      <ExportMenu
+                        data={selectedClient.maintenances}
+                        isPro={workshop?.plan === 'professional'}
+                        options={{
+                          title: `Histórico - ${selectedClient.clientName || selectedClient.plate}`,
+                          workshopName: workshop?.name || '',
+                          period: 'Completo',
+                        }}
+                      />
+                    )}
+                  </div>
                   <div className="space-y-2 max-h-40 overflow-y-auto">
                     {selectedClient.maintenances.slice(0, 5).map((m) => (
                       <div
