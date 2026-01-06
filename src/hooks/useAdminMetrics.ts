@@ -62,7 +62,7 @@ export interface ApiUsageMonthly {
 
 export interface BillableApiCall {
   date: string;
-  endpoint: string;
+  unique_vehicles: number;
   total_calls: number;
   successful_calls: number;
   failed_calls: number;

@@ -129,7 +129,7 @@ export default function AdminDashboard() {
         <KpiCard
           title="Custo API (Mês)"
           value={formatCurrency(overview?.api_cost_current_month_cents || 0)}
-          description={`${overview?.billable_api_calls_last_30d || 0} chamadas (30d)`}
+          description={`${overview?.billable_api_calls_last_30d || 0} veículos consultados (30d)`}
           icon={<Activity className="w-6 h-6" />}
         />
         <KpiCard
@@ -285,8 +285,8 @@ export default function AdminDashboard() {
             {/* Uso diário */}
             <Card>
               <CardHeader>
-                <CardTitle>Chamadas Billable - Últimos 7 dias</CardTitle>
-                <CardDescription>Apenas VehicleInfo e RevisionPlan (R$ 1,10/cada)</CardDescription>
+                <CardTitle>Veículos Consultados - Últimos 7 dias</CardTitle>
+                <CardDescription>R$ 1,10 por veículo (inclui placa + revisões)</CardDescription>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
@@ -317,7 +317,7 @@ export default function AdminDashboard() {
             <Card>
               <CardHeader>
                 <CardTitle>Custo de API - Últimos 6 meses</CardTitle>
-                <CardDescription>R$ 1,10 por chamada billable (VehicleInfo + RevisionPlan)</CardDescription>
+                <CardDescription>R$ 1,10 por veículo único (placa + revisões = 1 custo)</CardDescription>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
