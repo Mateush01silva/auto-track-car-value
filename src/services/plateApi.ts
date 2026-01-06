@@ -11,6 +11,8 @@
  */
 
 import { featureConfig } from '../config/featureFlags';
+import { logApiUsage } from './apiUsageLogger';
+import { supabase } from '../integrations/supabase/client';
 
 /**
  * Interface para resposta da busca por placa (API SUIV)
@@ -130,6 +132,32 @@ class PlateApiClient {
 
     const url = `${this.baseUrl}${endpoint}?${queryParams}`;
 
+    // Inicia tracking de tempo e busca contexto do usuário
+    const startTime = performance.now();
+    let userId: string | undefined;
+    let workshopId: string | undefined;
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      userId = user?.id;
+
+      // Tenta buscar workshopId se for um usuário de oficina
+      if (userId) {
+        const { data: workshop } = await supabase
+          .from('workshops')
+          .select('id')
+          .eq('owner_id', userId)
+          .single();
+        workshopId = workshop?.id;
+      }
+    } catch {
+      // Ignora erros ao buscar contexto
+    }
+
+    let success = false;
+    let statusCode: number | undefined;
+    let errorMessage: string | undefined;
+
     try {
       const response = await fetch(url, {
         method: 'GET',
@@ -138,8 +166,11 @@ class PlateApiClient {
         },
       });
 
+      statusCode = response.status;
+
       if (!response.ok) {
         const errorData = await response.text().catch(() => '');
+        errorMessage = `${response.status} ${response.statusText}`;
         throw new PlateApiError(
           `Erro na API SUIV: ${response.status} ${response.statusText}`,
           response.status,
@@ -147,17 +178,43 @@ class PlateApiClient {
         );
       }
 
-      return await response.json();
+      success = true;
+      const result = await response.json();
+
+      return result;
     } catch (error) {
       if (error instanceof PlateApiError) {
+        errorMessage = error.message;
+        statusCode = error.statusCode;
         throw error;
       }
 
+      errorMessage = 'Erro ao conectar com a API SUIV';
+      statusCode = 500;
       throw new PlateApiError(
         'Erro ao conectar com a API SUIV',
         undefined,
         error
       );
+    } finally {
+      // Loga a chamada de API (fire and forget)
+      const endTime = performance.now();
+      const responseTimeMs = Math.round(endTime - startTime);
+
+      logApiUsage({
+        userId,
+        workshopId,
+        apiName: 'suiv',
+        endpoint,
+        method: 'GET',
+        success,
+        responseTimeMs,
+        statusCode,
+        errorMessage,
+        requestParams: params,
+      }).catch(() => {
+        // Ignora erros do logging para não quebrar a aplicação
+      });
     }
   }
 
