@@ -30,6 +30,7 @@ import PrivacySettings from "./pages/PrivacySettings";
 import Pricing from "./pages/Pricing";
 import OwnerPlans from "./pages/OwnerPlans";
 import CookieConsent from "./components/CookieConsent";
+import AdminDashboard from "./pages/AdminDashboard";
 
 const queryClient = new QueryClient();
 
@@ -124,6 +125,11 @@ const App = () => (
             <Route path="/configuracoes/privacidade" element={
               <ProtectedRoute>
                 <PrivacySettings />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin" element={
+              <ProtectedRoute>
+                <AdminDashboard />
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
