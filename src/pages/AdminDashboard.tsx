@@ -42,6 +42,7 @@ import {
   useAdminGrowth,
   useApiUsageDaily,
   useApiUsageMonthly,
+  useBillableApiCalls,
   useTopApiUsers,
   useSubscriptionDistribution,
   useTrialConversion,
@@ -87,6 +88,7 @@ export default function AdminDashboard() {
   const { data: growth } = useAdminGrowth();
   const { data: apiUsageDaily } = useApiUsageDaily();
   const { data: apiUsageMonthly } = useApiUsageMonthly();
+  const { data: billableApiCalls } = useBillableApiCalls();
   const { data: topApiUsers } = useTopApiUsers();
   const { data: subscriptionDist } = useSubscriptionDistribution();
   const { data: trialConversion } = useTrialConversion();
@@ -116,13 +118,19 @@ export default function AdminDashboard() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         <KpiCard
           title="MRR"
           value={formatCurrency(overview?.mrr_cents || 0)}
           description="Receita Recorrente Mensal"
           icon={<DollarSign className="w-6 h-6" />}
           trend="+12%"
+        />
+        <KpiCard
+          title="Custo API (Mês)"
+          value={formatCurrency(overview?.api_cost_current_month_cents || 0)}
+          description={`${overview?.billable_api_calls_last_30d || 0} chamadas (30d)`}
+          icon={<Activity className="w-6 h-6" />}
         />
         <KpiCard
           title="ARR"
@@ -277,8 +285,8 @@ export default function AdminDashboard() {
             {/* Uso diário */}
             <Card>
               <CardHeader>
-                <CardTitle>Chamadas de API - Últimos 7 dias</CardTitle>
-                <CardDescription>Volume de requisições por dia</CardDescription>
+                <CardTitle>Chamadas Billable - Últimos 7 dias</CardTitle>
+                <CardDescription>Apenas VehicleInfo e RevisionPlan (R$ 1,10/cada)</CardDescription>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
@@ -309,7 +317,7 @@ export default function AdminDashboard() {
             <Card>
               <CardHeader>
                 <CardTitle>Custo de API - Últimos 6 meses</CardTitle>
-                <CardDescription>Estimativa baseada em R$ 0,015/chamada</CardDescription>
+                <CardDescription>R$ 1,10 por chamada billable (VehicleInfo + RevisionPlan)</CardDescription>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>

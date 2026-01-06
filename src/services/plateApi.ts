@@ -197,24 +197,35 @@ class PlateApiClient {
         error
       );
     } finally {
-      // Loga a chamada de API (fire and forget)
-      const endTime = performance.now();
-      const responseTimeMs = Math.round(endTime - startTime);
+      // Loga a chamada de API APENAS se for um endpoint que gera custo real
+      // Endpoints billable (que você paga): VehicleInfo/byplate e RevisionPlan
+      // Endpoints auxiliares (grátis): Makers, Models, Versions
+      const billableEndpoints = ['/api/v4/VehicleInfo/byplate', '/api/v4/RevisionPlan'];
+      const isBillable = billableEndpoints.includes(endpoint);
 
-      logApiUsage({
-        userId,
-        workshopId,
-        apiName: 'suiv',
-        endpoint,
-        method: 'GET',
-        success,
-        responseTimeMs,
-        statusCode,
-        errorMessage,
-        requestParams: params,
-      }).catch(() => {
-        // Ignora erros do logging para não quebrar a aplicação
-      });
+      if (isBillable) {
+        const endTime = performance.now();
+        const responseTimeMs = Math.round(endTime - startTime);
+
+        console.log(`💰 [API BILLING] Chamada billável detectada: ${endpoint} (R$ 1,10)`);
+
+        logApiUsage({
+          userId,
+          workshopId,
+          apiName: 'suiv',
+          endpoint,
+          method: 'GET',
+          success,
+          responseTimeMs,
+          statusCode,
+          errorMessage,
+          requestParams: params,
+        }).catch(() => {
+          // Ignora erros do logging para não quebrar a aplicação
+        });
+      } else {
+        console.log(`🆓 [API FREE] Chamada auxiliar (sem custo): ${endpoint}`);
+      }
     }
   }
 
