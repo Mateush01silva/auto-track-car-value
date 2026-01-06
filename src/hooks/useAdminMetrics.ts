@@ -28,6 +28,8 @@ export interface AdminOverview {
   arr_cents: number;
   active_trials: number;
   cancellations_last_30d: number;
+  billable_api_calls_last_30d: number;
+  api_cost_current_month_cents: number;
 }
 
 export interface GrowthByWeek {
@@ -56,6 +58,16 @@ export interface ApiUsageMonthly {
   failed_calls: number;
   avg_response_time_ms: number;
   estimated_cost_cents: number;
+}
+
+export interface BillableApiCall {
+  date: string;
+  endpoint: string;
+  total_calls: number;
+  successful_calls: number;
+  failed_calls: number;
+  avg_response_time_ms: number;
+  cost_cents: number;
 }
 
 export interface TopApiUser {
@@ -179,6 +191,26 @@ export function useApiUsageMonthly() {
       return data as ApiUsageMonthly[];
     },
     refetchInterval: 600000, // Atualiza a cada 10 minutos
+  });
+}
+
+/**
+ * Busca chamadas billable (que geram custo real)
+ */
+export function useBillableApiCalls() {
+  return useQuery({
+    queryKey: ['admin', 'api-usage', 'billable'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('admin_billable_api_calls')
+        .select('*')
+        .order('date', { ascending: false })
+        .limit(30);
+
+      if (error) throw error;
+      return data as BillableApiCall[];
+    },
+    refetchInterval: 300000, // Atualiza a cada 5 minutos
   });
 }
 
