@@ -622,6 +622,15 @@ const WorkshopOpportunities = () => {
                 <FileText className="h-4 w-4" />
                 Templates
               </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/workshop/pricing")}
+                className="flex items-center gap-2"
+              >
+                <DollarSign className="h-4 w-4" />
+                Preços
+              </Button>
             </nav>
 
             {/* Menu Dropdown */}
@@ -661,6 +670,34 @@ const WorkshopOpportunities = () => {
             Clientes com manutenções pendentes e potencial de receita
           </p>
         </div>
+
+        {/* Pricing Suggestion Banner */}
+        {customPrices.length === 0 && opportunities.length > 0 && (
+          <Card className="mb-6 border-blue-200 bg-blue-50">
+            <CardContent className="py-4">
+              <div className="flex items-start gap-3">
+                <DollarSign className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <h3 className="font-semibold text-blue-900 mb-1">
+                    💡 Dica: Cadastre seus preços para estimativas mais precisas
+                  </h3>
+                  <p className="text-sm text-blue-700 mb-3">
+                    As estimativas abaixo usam valores da API. Cadastrando os preços reais da sua oficina,
+                    você terá cálculos muito mais precisos de receita potencial.
+                  </p>
+                  <Button
+                    size="sm"
+                    onClick={() => navigate("/workshop/pricing")}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <DollarSign className="h-4 w-4 mr-2" />
+                    Cadastrar Meus Preços
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
