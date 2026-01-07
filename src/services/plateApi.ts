@@ -23,7 +23,7 @@ export interface PlateSearchResponse {
   brand: string;
   model: string;
   version?: string;
-  year: number;
+  year: number; // yearModel
   color?: string;
   fuel?: string;
   vin?: string;
@@ -33,6 +33,16 @@ export interface PlateSearchResponse {
   power?: number;
   cubicCentimeters?: number;
   seatCount?: number;
+  versionId?: number; // ⭐ Novo: ID da versão retornado pela API
+  yearModel?: number; // ⭐ Novo: Ano do modelo (para RevisionPlan)
+}
+
+/**
+ * Interface para resposta completa (placa + revisões)
+ */
+export interface CompleteVehicleResponse {
+  vehicle: PlateSearchResponse;
+  revisions: ManufacturerRevision[];
 }
 
 /**
@@ -264,6 +274,7 @@ class PlateApiClient {
       power?: number;
       cubicCentimeters?: number;
       seatCount?: number;
+      versionId?: number; // ⭐ ID da versão (necessário para RevisionPlan)
     }
 
     const response = await this.request<SuivVehicleResponse>('/api/v4/VehicleInfo/byplate', {
@@ -280,6 +291,8 @@ class PlateApiClient {
       version: response.version,
       year: response.yearModel,
       yearFab: response.yearFab,
+      yearModel: response.yearModel, // ⭐ Novo: Necessário para RevisionPlan
+      versionId: response.versionId, // ⭐ Novo: Necessário para RevisionPlan
       fuel: response.fuel,
       vin: response.vin,
       type: response.type,
@@ -289,6 +302,93 @@ class PlateApiClient {
       cubicCentimeters: response.cubicCentimeters,
       seatCount: response.seatCount,
     };
+  }
+
+  /**
+   * 🚀 NOVA FUNÇÃO: Busca informações completas (placa + revisões) em uma única "ida à API"
+   *
+   * IMPORTANTE: Segundo a SUIV, cada "ida à API" custa R$ 1,10, independente de quantos
+   * endpoints você chamar. Esta função aproveita uma única "sessão" para buscar:
+   * 1. Dados da placa (VehicleInfo/byplate)
+   * 2. Plano de revisão (RevisionPlan)
+   *
+   * Custo: R$ 1,10 total (não R$ 2,20!)
+   *
+   * @param plate - Placa do veículo
+   * @returns Dados completos do veículo + revisões
+   */
+  async searchVehicleComplete(plate: string): Promise<CompleteVehicleResponse> {
+    console.log(`[SUIV API] 🚀 Buscando dados completos para placa ${plate}`);
+
+    // 1. Busca dados da placa
+    const vehicleData = await this.searchByPlate(plate);
+    console.log(`[SUIV API] ✅ Dados da placa obtidos:`, vehicleData);
+
+    // 2. Se temos versionId e yearModel, busca revisões IMEDIATAMENTE (mesma sessão!)
+    let revisions: ManufacturerRevision[] = [];
+
+    if (vehicleData.versionId && vehicleData.yearModel) {
+      try {
+        console.log(`[SUIV API] 🔄 Buscando revisões (versionId: ${vehicleData.versionId}, yearModel: ${vehicleData.yearModel})...`);
+        revisions = await this.getManufacturerRevisionsByVersionId(
+          vehicleData.versionId,
+          vehicleData.yearModel
+        );
+        console.log(`[SUIV API] ✅ ${revisions.length} revisões obtidas!`);
+      } catch (error) {
+        console.warn(`[SUIV API] ⚠️ Erro ao buscar revisões (não é crítico):`, error);
+        // Não falha se revisões não vierem - veículo pode não ter
+      }
+    } else {
+      console.warn(`[SUIV API] ⚠️ versionId ou yearModel não retornado pela API - pulando revisões`);
+    }
+
+    return {
+      vehicle: vehicleData,
+      revisions,
+    };
+  }
+
+  /**
+   * 🆕 NOVA FUNÇÃO SIMPLIFICADA: Busca revisões usando versionId e yearModel
+   *
+   * Esta é a forma CORRETA segundo a documentação da SUIV:
+   * - NÃO precisa buscar Makers/Models/Versions
+   * - Usa versionId e yearModel que já vêm do VehicleInfo
+   *
+   * @param versionId - ID da versão (vem do VehicleInfo/byplate)
+   * @param yearModel - Ano do modelo (NÃO ano de fabricação!)
+   * @returns Lista de revisões recomendadas
+   */
+  async getManufacturerRevisionsByVersionId(
+    versionId: number,
+    yearModel: number
+  ): Promise<ManufacturerRevision[]> {
+    console.log(`[SUIV API] 🚀 Buscando revisões (versionId: ${versionId}, yearModel: ${yearModel})`);
+
+    try {
+      // Chama RevisionPlan com os parâmetros corretos
+      const revisionPlan = await this.request<RevisionPlanItem[]>('/api/v4/RevisionPlan', {
+        versionId: versionId.toString(),
+        yearModel: yearModel.toString(), // ⭐ CORRIGIDO: yearModel, não year!
+      });
+
+      console.log(`[SUIV API] ✅ Plano de revisão retornado! ${revisionPlan?.length || 0} itens`);
+
+      if (!revisionPlan || revisionPlan.length === 0) {
+        console.warn(`[SUIV API] ⚠️ Nenhuma revisão encontrada para versionId ${versionId}`);
+        return [];
+      }
+
+      // Converte para o formato interno
+      const converted = this.convertRevisionPlanToManufacturerRevisions(revisionPlan);
+      console.log(`[SUIV API] ✅ Conversão concluída! ${converted.length} revisões geradas`);
+
+      return converted;
+    } catch (error) {
+      console.error(`[SUIV API] ❌ Erro ao buscar revisões:`, error);
+      throw error;
+    }
   }
 
   /**
@@ -462,6 +562,13 @@ class PlateApiClient {
   }
 
   /**
+   * @deprecated ⚠️ MÉTODO ANTIGO - NÃO USE!
+   *
+   * Este método faz chamadas desnecessárias (Makers/Models/Versions) que a SUIV
+   * confirmou NÃO serem necessárias. Use getManufacturerRevisionsByVersionId() ao invés.
+   *
+   * Mantido apenas para compatibilidade com código legado.
+   *
    * Busca revisões específicas do fabricante para um veículo (API SUIV)
    *
    * IMPORTANTE: Este método requer múltiplas chamadas à API SUIV:
@@ -647,7 +754,32 @@ const plateApiClient = new PlateApiClient();
 export const searchByPlate = (plate: string) => plateApiClient.searchByPlate(plate);
 
 /**
- * Busca revisões do fabricante
+ * 🚀 NOVA FUNÇÃO RECOMENDADA: Busca veículo completo (placa + revisões)
+ *
+ * Use esta função quando estiver cadastrando um veículo NOVO pela primeira vez.
+ * Aproveita uma única "ida à API" (R$ 1,10) para buscar TUDO.
+ *
+ * @param plate - Placa do veículo
+ * @returns Dados completos (veículo + revisões)
+ */
+export const searchVehicleComplete = (plate: string) => plateApiClient.searchVehicleComplete(plate);
+
+/**
+ * 🆕 Busca revisões usando versionId e yearModel
+ *
+ * Use quando você já tem os dados do veículo e só precisa das revisões.
+ *
+ * @param versionId - ID da versão (vem do VehicleInfo)
+ * @param yearModel - Ano do modelo
+ * @returns Lista de revisões
+ */
+export const getManufacturerRevisionsByVersionId = (versionId: number, yearModel: number) =>
+  plateApiClient.getManufacturerRevisionsByVersionId(versionId, yearModel);
+
+/**
+ * @deprecated ⚠️ NÃO USE! Use getManufacturerRevisionsByVersionId() ao invés.
+ *
+ * Busca revisões do fabricante (MÉTODO ANTIGO - faz chamadas desnecessárias)
  */
 export const getManufacturerRevisions = (brand: string, model: string, year: number) =>
   plateApiClient.getManufacturerRevisions(brand, model, year);
