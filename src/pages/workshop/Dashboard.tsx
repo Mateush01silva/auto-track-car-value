@@ -38,7 +38,8 @@ import {
   MoreVertical,
   History,
   Users,
-  Shield
+  Shield,
+  DollarSign
 } from "lucide-react";
 import { WorkshopBottomNav } from "@/components/workshop/BottomNav";
 
@@ -333,6 +334,15 @@ const WorkshopDashboard = () => {
               >
                 <FileText className="h-4 w-4" />
                 Templates
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/workshop/pricing")}
+                className="flex items-center gap-2"
+              >
+                <DollarSign className="h-4 w-4" />
+                Preços
               </Button>
             </nav>
 
