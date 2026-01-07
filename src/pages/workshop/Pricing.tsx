@@ -46,6 +46,12 @@ import {
   ChevronDown,
   LogOut,
   Loader2,
+  TrendingUp,
+  History,
+  Users,
+  FileText,
+  CreditCard,
+  Shield,
 } from "lucide-react";
 import { WorkshopBottomNav } from "@/components/workshop/BottomNav";
 
@@ -318,6 +324,7 @@ const WorkshopPricing = () => {
       <header className="bg-white border-b shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
+            {/* Logo */}
             <div className="flex items-center gap-2">
               <div className="bg-green-600 rounded-lg p-2">
                 <Wrench className="h-5 w-5 text-white" />
@@ -325,6 +332,56 @@ const WorkshopPricing = () => {
               <span className="text-xl font-bold text-green-600">Vybo</span>
             </div>
 
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/workshop/dashboard")}
+                className="flex items-center gap-2"
+              >
+                <TrendingUp className="h-4 w-4" />
+                Dashboard
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/workshop/opportunities")}
+                className="flex items-center gap-2"
+              >
+                <TrendingUp className="h-4 w-4" />
+                Oportunidades
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/workshop/history")}
+                className="flex items-center gap-2"
+              >
+                <History className="h-4 w-4" />
+                Histórico
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/workshop/clients")}
+                className="flex items-center gap-2"
+              >
+                <Users className="h-4 w-4" />
+                Clientes
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/workshop/templates")}
+                className="flex items-center gap-2"
+              >
+                <FileText className="h-4 w-4" />
+                Templates
+              </Button>
+            </nav>
+
+            {/* Menu Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="flex items-center gap-2">
@@ -337,6 +394,14 @@ const WorkshopPricing = () => {
                 <DropdownMenuItem onClick={() => navigate("/workshop/settings")}>
                   <User className="h-4 w-4 mr-2" />
                   Perfil da Oficina
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/workshop/plans")}>
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Planos e Assinatura
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/configuracoes/privacidade")}>
+                  <Shield className="h-4 w-4 mr-2" />
+                  Privacidade e Dados
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
