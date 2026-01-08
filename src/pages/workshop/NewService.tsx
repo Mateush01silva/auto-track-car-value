@@ -17,6 +17,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useVehicleMode, usePlateSearch, usePlateValidation } from "@/hooks/useFeatureFlags";
+import { searchVehicleComplete, type CompleteVehicleResponse } from "@/services/plateApi";
 import {
   ArrowLeft,
   Search,
@@ -102,7 +103,10 @@ const NewService = () => {
     yearFab?: number;
     version?: string;
     color?: string;
+    versionId?: number;
+    yearModel?: number;
   } | null>(null);
+  const [suivRevisions, setSuivRevisions] = useState<any[]>([]);
 
   // Manual registration state
   const [showManualForm, setShowManualForm] = useState(false);
@@ -160,6 +164,7 @@ const NewService = () => {
     setSearchComplete(false);
     setVehicleFound(null);
     setSuivVehicleData(null);
+    setSuivRevisions([]);
     setShowManualForm(false);
   };
 
@@ -195,6 +200,7 @@ const NewService = () => {
     setSearching(true);
     setVehicleFound(null);
     setSuivVehicleData(null);
+    setSuivRevisions([]);
     setShowManualForm(false);
 
     try {
@@ -238,20 +244,27 @@ const NewService = () => {
 
         if (vehicleMode.isPlateMode) {
           try {
-            console.log('[WORKSHOP] Buscando na API SUIV para placa:', normalizedPlate);
-            await plateSearchApi.searchByPlate(normalizedPlate);
+            console.log('[WORKSHOP] Buscando na API SUIV para placa (veículo + revisões):', normalizedPlate);
 
-            if (plateSearchApi.result) {
+            // ⭐ NOVA IMPLEMENTAÇÃO: busca veículo + revisões em UMA sessão (R$ 1,10)
+            const result: CompleteVehicleResponse = await searchVehicleComplete(normalizedPlate);
+
+            if (result.vehicle) {
               // Sucesso! Encontrou na API SUIV
-              console.log('[WORKSHOP] ✅ Veículo encontrado na API SUIV:', plateSearchApi.result);
+              console.log('[WORKSHOP] ✅ Veículo encontrado na API SUIV:', result.vehicle);
+              console.log('[WORKSHOP] 📋 Revisões encontradas:', result.revisions.length);
+
               setSuivVehicleData({
-                brand: plateSearchApi.result.brand,
-                model: plateSearchApi.result.model,
-                year: plateSearchApi.result.year,
-                yearFab: plateSearchApi.result.yearFab,
-                version: plateSearchApi.result.version,
-                color: plateSearchApi.result.color,
+                brand: result.vehicle.brand,
+                model: result.vehicle.model,
+                year: result.vehicle.year,
+                yearFab: result.vehicle.yearFab,
+                version: result.vehicle.version,
+                color: result.vehicle.color,
+                versionId: result.vehicle.versionId,
+                yearModel: result.vehicle.yearModel,
               });
+              setSuivRevisions(result.revisions);
               setSearchComplete(true);
             } else {
               // Não encontrou na API SUIV, mostrar formulário manual
@@ -628,12 +641,17 @@ const NewService = () => {
                   <Info className="h-4 w-4 text-blue-600" />
                   <AlertDescription className="text-xs text-blue-700">
                     Este veículo ainda não está cadastrado no sistema. Ao continuar, ele será registrado automaticamente.
+                    {suivRevisions.length > 0 && (
+                      <div className="mt-2 pt-2 border-t border-blue-200">
+                        <strong>✅ {suivRevisions.length} planos de revisão encontrados</strong> e serão salvos junto com o veículo.
+                      </div>
+                    )}
                   </AlertDescription>
                 </Alert>
 
                 <Button
                   onClick={() => {
-                    // Store SUIV data and continue
+                    // Store SUIV data and continue (incluindo revisões)
                     localStorage.setItem('workshop_new_service_vehicle', JSON.stringify({
                       plate: plate.replace('-', '').toUpperCase(),
                       brand: suivVehicleData.brand,
@@ -643,6 +661,9 @@ const NewService = () => {
                       color: suivVehicleData.color || null,
                       km: null,
                       isNew: true,
+                      versionId: suivVehicleData.versionId,
+                      yearModel: suivVehicleData.yearModel,
+                      revisions: suivRevisions, // ⭐ Revisões buscadas junto com a placa
                     }));
                     navigate('/workshop/new-service/client');
                   }}

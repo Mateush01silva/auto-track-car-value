@@ -75,6 +75,9 @@ interface VehicleData {
   color?: string;
   km?: number;
   isNew: boolean;
+  versionId?: number;
+  yearModel?: number;
+  revisions?: any[]; // ⭐ Revisões buscadas junto com a placa
 }
 
 interface ClientData {
@@ -380,6 +383,35 @@ const NewServiceDetails = () => {
         }
 
         vehicleId = newVehicle.id;
+
+        // ⭐ SALVAR REVISÕES se foram buscadas junto com a placa
+        if (vehicleData.revisions && vehicleData.revisions.length > 0) {
+          console.log('[WORKSHOP] Salvando', vehicleData.revisions.length, 'revisões para o veículo', vehicleId);
+
+          try {
+            const { error: revisionsError } = await supabase
+              .from('manufacturer_revisions')
+              .upsert(
+                vehicleData.revisions.map(revision => ({
+                  vehicle_id: vehicleId,
+                  km: revision.km,
+                  months: revision.months,
+                  service_type: revision.service_type,
+                  description: revision.description || null,
+                  items: revision.items || null,
+                })),
+                { onConflict: 'vehicle_id,km,months' }
+              );
+
+            if (revisionsError) {
+              console.error('[WORKSHOP] ❌ Erro ao salvar revisões:', revisionsError);
+            } else {
+              console.log('[WORKSHOP] ✅ Revisões salvas com sucesso');
+            }
+          } catch (revError) {
+            console.error('[WORKSHOP] ❌ Exceção ao salvar revisões:', revError);
+          }
+        }
       }
 
       // B. Create maintenance record

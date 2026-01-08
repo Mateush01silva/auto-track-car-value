@@ -9,6 +9,8 @@ import { useVehicles, Vehicle } from "@/hooks/useVehicles";
 import { useVehicleMode, usePlateSearch, usePlateValidation } from "@/hooks/useFeatureFlags";
 import { Loader2, Search, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { searchVehicleComplete, type CompleteVehicleResponse } from "@/services/plateApi";
+import { supabase } from "@/integrations/supabase/client";
 
 interface VehicleFormDialogProps {
   open: boolean;
@@ -45,13 +47,17 @@ export const VehicleFormDialog = ({ open, onOpenChange, vehicle }: VehicleFormDi
 
   // Estados do modo Plate API
   const [plateSearchInput, setPlateSearchInput] = useState("");
+  const [plateSearching, setPlateSearching] = useState(false);
   const [vehicleData, setVehicleData] = useState<{
     brand: string;
     model: string;
     year: number;
     yearFab?: number;
     version?: string;
+    versionId?: number;
+    yearModel?: number;
   } | null>(null);
+  const [vehicleRevisions, setVehicleRevisions] = useState<any[]>([]);
 
   useEffect(() => {
     if (open && !vehicle) {
@@ -202,27 +208,44 @@ export const VehicleFormDialog = ({ open, onOpenChange, vehicle }: VehicleFormDi
       return;
     }
 
-    await plateSearch.searchByPlate(plateSearchInput);
+    setPlateSearching(true);
+    try {
+      console.log('[VEHICLE_FORM] Buscando veículo + revisões para placa:', plateSearchInput);
 
-    // Se encontrou o veículo, preenche os dados
-    if (plateSearch.result) {
-      // Garante que a placa sempre seja preenchida (API retorna ou usa input)
-      const finalPlate = plateSearch.result.plate || plateSearchInput;
+      // ⭐ NOVA IMPLEMENTAÇÃO: busca veículo + revisões em UMA sessão (R$ 1,10)
+      const result: CompleteVehicleResponse = await searchVehicleComplete(plateSearchInput);
 
-      setVehicleData({
-        brand: plateSearch.result.brand,
-        model: plateSearch.result.model,
-        year: plateSearch.result.year,
-        yearFab: plateSearch.result.yearFab,
-        version: plateSearch.result.version,
-      });
-      setPlate(finalPlate);
+      // Se encontrou o veículo, preenche os dados
+      if (result.vehicle) {
+        // Garante que a placa sempre seja preenchida (API retorna ou usa input)
+        const finalPlate = result.vehicle.plate || plateSearchInput;
 
-      console.log('[DEBUG] Dados preenchidos:', {
-        vehicleData: 'SET',
-        plate: finalPlate,
-        canSubmitNow: 'precisa preencher KM'
-      });
+        console.log('[VEHICLE_FORM] ✅ Veículo encontrado:', result.vehicle);
+        console.log('[VEHICLE_FORM] 📋 Revisões encontradas:', result.revisions.length);
+
+        setVehicleData({
+          brand: result.vehicle.brand,
+          model: result.vehicle.model,
+          year: result.vehicle.year,
+          yearFab: result.vehicle.yearFab,
+          version: result.vehicle.version,
+          versionId: result.vehicle.versionId,
+          yearModel: result.vehicle.yearModel,
+        });
+        setVehicleRevisions(result.revisions);
+        setPlate(finalPlate);
+
+        console.log('[DEBUG] Dados preenchidos:', {
+          vehicleData: 'SET',
+          plate: finalPlate,
+          revisions: result.revisions.length,
+          canSubmitNow: 'precisa preencher KM'
+        });
+      }
+    } catch (error) {
+      console.error('[VEHICLE_FORM] ❌ Erro ao buscar veículo:', error);
+    } finally {
+      setPlateSearching(false);
     }
   };
 
@@ -271,10 +294,43 @@ export const VehicleFormDialog = ({ open, onOpenChange, vehicle }: VehicleFormDi
         status: "up-to-date" as const,
       };
 
+      let vehicleId: string;
+
       if (vehicle) {
         await updateVehicle(vehicle.id, vehicleDataToSave);
+        vehicleId = vehicle.id;
       } else {
-        await addVehicle(vehicleDataToSave);
+        const newVehicle = await addVehicle(vehicleDataToSave);
+        vehicleId = newVehicle.id;
+      }
+
+      // ⭐ SALVAR REVISÕES se foram buscadas junto com a placa
+      if (vehicleRevisions.length > 0 && vehicleId) {
+        console.log('[VEHICLE_FORM] Salvando', vehicleRevisions.length, 'revisões para o veículo', vehicleId);
+
+        try {
+          const { error: revisionsError } = await supabase
+            .from('manufacturer_revisions')
+            .upsert(
+              vehicleRevisions.map(revision => ({
+                vehicle_id: vehicleId,
+                km: revision.km,
+                months: revision.months,
+                service_type: revision.service_type,
+                description: revision.description || null,
+                items: revision.items || null,
+              })),
+              { onConflict: 'vehicle_id,km,months' }
+            );
+
+          if (revisionsError) {
+            console.error('[VEHICLE_FORM] ❌ Erro ao salvar revisões:', revisionsError);
+          } else {
+            console.log('[VEHICLE_FORM] ✅ Revisões salvas com sucesso');
+          }
+        } catch (revError) {
+          console.error('[VEHICLE_FORM] ❌ Exceção ao salvar revisões:', revError);
+        }
       }
 
       onOpenChange(false);
@@ -296,7 +352,8 @@ export const VehicleFormDialog = ({ open, onOpenChange, vehicle }: VehicleFormDi
     setYears([]);
     setPlateSearchInput("");
     setVehicleData(null);
-    plateSearch.reset();
+    setVehicleRevisions([]);
+    setPlateSearching(false);
   };
 
   // Determina se o formulário pode ser submetido
@@ -361,21 +418,15 @@ export const VehicleFormDialog = ({ open, onOpenChange, vehicle }: VehicleFormDi
                   <Button
                     type="button"
                     onClick={handlePlateSearch}
-                    disabled={!plateSearchInput || !plateValidation.isValid(plateSearchInput) || plateSearch.isLoading}
+                    disabled={!plateSearchInput || !plateValidation.isValid(plateSearchInput) || plateSearching}
                   >
-                    {plateSearch.isLoading ? (
+                    {plateSearching ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
                       <Search className="h-4 w-4" />
                     )}
                   </Button>
                 </div>
-                {plateSearch.error && (
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription className="text-xs">{plateSearch.error}</AlertDescription>
-                  </Alert>
-                )}
                 {vehicleData && (
                   <Alert className="bg-primary/5 border-primary/20">
                     <AlertDescription>
@@ -402,6 +453,11 @@ export const VehicleFormDialog = ({ open, onOpenChange, vehicle }: VehicleFormDi
                               : vehicleData.year}
                           </span>
                         </div>
+                        {vehicleRevisions.length > 0 && (
+                          <div className="mt-2 pt-2 border-t border-primary/20">
+                            <span className="text-xs font-semibold text-primary">✅ {vehicleRevisions.length} planos de revisão encontrados</span>
+                          </div>
+                        )}
                       </div>
                     </AlertDescription>
                   </Alert>
