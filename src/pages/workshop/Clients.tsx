@@ -391,15 +391,24 @@ const WorkshopClients = () => {
           const birthdaysThisMonth = profilesData
             .filter(p => {
               if (!p.birth_date) return false;
-              const birthDate = new Date(p.birth_date);
-              return birthDate.getMonth() + 1 === currentMonth;
+              // Parse date correctly to avoid timezone issues (D-1 bug)
+              const dateStr = p.birth_date.split('T')[0]; // Get YYYY-MM-DD
+              const [year, month, day] = dateStr.split('-').map(Number);
+              return month === currentMonth;
             })
-            .map(p => ({
-              userId: p.id,
-              name: p.full_name || 'Cliente',
-              phone: p.phone,
-              birthDate: new Date(p.birth_date!)
-            }))
+            .map(p => {
+              // Parse date correctly to avoid timezone issues (D-1 bug)
+              const dateStr = p.birth_date!.split('T')[0]; // Get YYYY-MM-DD
+              const [year, month, day] = dateStr.split('-').map(Number);
+              const birthDate = new Date(year, month - 1, day); // month is 0-indexed
+
+              return {
+                userId: p.id,
+                name: p.full_name || 'Cliente',
+                phone: p.phone,
+                birthDate: birthDate
+              };
+            })
             .sort((a, b) => a.birthDate.getDate() - b.birthDate.getDate());
 
           setBirthdays(birthdaysThisMonth);

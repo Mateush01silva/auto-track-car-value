@@ -38,7 +38,8 @@ import {
   MoreVertical,
   History,
   Users,
-  Shield
+  Shield,
+  MessageCircle
 } from "lucide-react";
 import { WorkshopBottomNav } from "@/components/workshop/BottomNav";
 
@@ -80,6 +81,7 @@ const WorkshopDashboard = () => {
   const [todayCount, setTodayCount] = useState(0);
   const [monthCount, setMonthCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [birthdays, setBirthdays] = useState<Array<{ userId: string; name: string; phone: string | null; birthDate: Date }>>([]);
 
   // Open public link in new tab
   const handleViewDetails = (publicToken: string | null) => {
@@ -218,6 +220,78 @@ const WorkshopDashboard = () => {
 
     fetchData();
   }, [user]);
+
+  // Load birthdays of the month
+  useEffect(() => {
+    const loadBirthdays = async () => {
+      if (!workshop) return;
+
+      const now = new Date();
+      const currentMonth = now.getMonth() + 1; // 1-12
+
+      try {
+        // Get all vehicles from workshop_maintenances
+        const { data: workshopMaintenances } = await supabase
+          .from('workshop_maintenances')
+          .select('maintenance_id')
+          .eq('workshop_id', workshop.id);
+
+        if (!workshopMaintenances || workshopMaintenances.length === 0) return;
+
+        const maintenanceIds = workshopMaintenances.map(wm => wm.maintenance_id);
+
+        // Get all user_ids from those maintenances
+        const { data: maintenancesData } = await supabase
+          .from('maintenances')
+          .select('user_id')
+          .in('id', maintenanceIds);
+
+        if (!maintenancesData) return;
+
+        const userIds = [...new Set(maintenancesData.map(m => m.user_id))];
+
+        if (userIds.length === 0) return;
+
+        // Fetch profiles with birth_date in current month
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id, full_name, phone, birth_date')
+          .in('id', userIds)
+          .not('birth_date', 'is', null);
+
+        if (profilesData) {
+          const birthdaysThisMonth = profilesData
+            .filter(p => {
+              if (!p.birth_date) return false;
+              // Parse date correctly to avoid timezone issues (D-1 bug)
+              const dateStr = p.birth_date.split('T')[0]; // Get YYYY-MM-DD
+              const [year, month, day] = dateStr.split('-').map(Number);
+              return month === currentMonth;
+            })
+            .map(p => {
+              // Parse date correctly to avoid timezone issues (D-1 bug)
+              const dateStr = p.birth_date!.split('T')[0]; // Get YYYY-MM-DD
+              const [year, month, day] = dateStr.split('-').map(Number);
+              const birthDate = new Date(year, month - 1, day); // month is 0-indexed
+
+              return {
+                userId: p.id,
+                name: p.full_name || 'Cliente',
+                phone: p.phone,
+                birthDate: birthDate
+              };
+            })
+            .sort((a, b) => a.birthDate.getDate() - b.birthDate.getDate());
+
+          setBirthdays(birthdaysThisMonth);
+        }
+      } catch (error) {
+        console.error('Error loading birthdays:', error);
+      }
+    };
+
+    loadBirthdays();
+  }, [workshop]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -453,6 +527,66 @@ const WorkshopDashboard = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Birthdays of the Month */}
+        {birthdays.length > 0 && (
+          <Card className="mb-6 border-pink-200 bg-gradient-to-r from-pink-50 to-purple-50">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <div className="bg-pink-500 rounded-full p-2">
+                  <Calendar className="h-5 w-5 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-pink-900 mb-1">
+                    🎂 Aniversariantes do Mês
+                  </h3>
+                  <p className="text-sm text-pink-700 mb-3">
+                    {birthdays.length} {birthdays.length === 1 ? 'cliente faz' : 'clientes fazem'} aniversário este mês. Envie uma mensagem personalizada!
+                  </p>
+                  <div className="space-y-2">
+                    {birthdays.slice(0, 3).map((birthday) => (
+                      <div key={birthday.userId} className="flex items-center justify-between text-sm bg-white/60 rounded-md p-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">🎉</span>
+                          <div>
+                            <p className="font-medium text-pink-900">{birthday.name}</p>
+                            <p className="text-xs text-pink-600">
+                              {birthday.birthDate.getDate()}/{birthday.birthDate.getMonth() + 1}
+                            </p>
+                          </div>
+                        </div>
+                        {birthday.phone && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs h-7"
+                            onClick={() => {
+                              const message = `Olá ${birthday.name}! 🎉 A equipe da ${workshop?.name} deseja um feliz aniversário! Que este novo ano seja repleto de conquistas e momentos especiais. Conte sempre conosco! 🎂`;
+                              window.open(`https://wa.me/55${birthday.phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
+                            }}
+                          >
+                            <MessageCircle className="h-3 w-3 mr-1" />
+                            WhatsApp
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                    {birthdays.length > 3 && (
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="text-xs text-pink-600 w-full"
+                        onClick={() => navigate('/workshop/clients')}
+                      >
+                        Ver todos os {birthdays.length} aniversariantes →
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Recent Services */}
         <Card>

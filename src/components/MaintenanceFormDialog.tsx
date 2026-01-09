@@ -207,9 +207,9 @@ export function MaintenanceFormDialog({
               <SelectTrigger className="bg-background">
                 <SelectValue placeholder="Selecione o veículo" />
               </SelectTrigger>
-              <SelectContent className="bg-popover border border-border shadow-lg">
+              <SelectContent className="bg-white dark:bg-gray-800 border border-border shadow-lg z-50">
                 {vehicles.map((vehicle) => (
-                  <SelectItem key={vehicle.id} value={vehicle.id}>
+                  <SelectItem key={vehicle.id} value={vehicle.id} className="bg-white dark:bg-gray-800">
                     {vehicle.brand} {vehicle.model} - {vehicle.plate}
                   </SelectItem>
                 ))}
@@ -237,9 +237,9 @@ export function MaintenanceFormDialog({
               <SelectTrigger className="bg-background">
                 <SelectValue placeholder="Selecione a categoria" />
               </SelectTrigger>
-              <SelectContent className="bg-popover border border-border shadow-lg">
+              <SelectContent className="bg-white dark:bg-gray-800 border border-border shadow-lg z-50">
                 {MAINTENANCE_CATEGORIES.map((category) => (
-                  <SelectItem key={category.value} value={category.value}>
+                  <SelectItem key={category.value} value={category.value} className="bg-white dark:bg-gray-800">
                     {category.label}
                   </SelectItem>
                 ))}
@@ -257,9 +257,9 @@ export function MaintenanceFormDialog({
                 <SelectTrigger className="bg-background">
                   <SelectValue placeholder="Selecione o serviço" />
                 </SelectTrigger>
-                <SelectContent className="bg-popover border border-border shadow-lg">
+                <SelectContent className="bg-white dark:bg-gray-800 border border-border shadow-lg z-50">
                   {getSubcategoriesByCategory(formData.category).map((subcategory) => (
-                    <SelectItem key={subcategory.value} value={subcategory.value}>
+                    <SelectItem key={subcategory.value} value={subcategory.value} className="bg-white dark:bg-gray-800">
                       {subcategory.label}
                     </SelectItem>
                   ))}
