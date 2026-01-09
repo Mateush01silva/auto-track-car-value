@@ -34,6 +34,7 @@ interface Maintenance {
   cost: number;
   km: number;
   vehicle_id: string;
+  attachment_url?: string | null;
 }
 
 const Report = () => {
@@ -65,7 +66,7 @@ const Report = () => {
         // Load maintenances for this vehicle
         const { data: maintenancesData, error: maintenancesError } = await supabase
           .from("maintenances")
-          .select("*")
+          .select("id, date, service_type, cost, km, vehicle_id, attachment_url")
           .eq("vehicle_id", vehicleId)
           .order("date", { ascending: false });
 
@@ -94,7 +95,7 @@ const Report = () => {
           // Load maintenances for this vehicle
           const { data: maintenancesData, error: maintenancesError } = await supabase
             .from("maintenances")
-            .select("*")
+            .select("id, date, service_type, cost, km, vehicle_id, attachment_url")
             .eq("vehicle_id", vehiclesData.id)
             .order("date", { ascending: false });
 
@@ -270,6 +271,38 @@ const Report = () => {
                       <p className="text-xs text-muted-foreground">
                         Quilometragem: {maintenance.km.toLocaleString()} km
                       </p>
+                      {maintenance.attachment_url && (
+                        <div className="mt-3 pt-3 border-t border-border">
+                          <p className="text-xs text-muted-foreground mb-2">📎 Comprovante anexado:</p>
+                          {maintenance.attachment_url.toLowerCase().endsWith('.pdf') ? (
+                            <a
+                              href={maintenance.attachment_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 px-3 py-2 text-xs bg-primary/10 hover:bg-primary/20 text-primary rounded-md transition-colors"
+                            >
+                              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                              </svg>
+                              Ver PDF
+                            </a>
+                          ) : (
+                            <a
+                              href={maintenance.attachment_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="block"
+                            >
+                              <img
+                                src={maintenance.attachment_url}
+                                alt="Comprovante"
+                                className="max-w-full h-auto rounded-md border border-border hover:opacity-90 transition-opacity cursor-pointer"
+                                style={{ maxHeight: '200px', objectFit: 'contain' }}
+                              />
+                            </a>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}

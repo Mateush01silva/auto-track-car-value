@@ -373,11 +373,28 @@ const Dashboard = () => {
     }
 
     try {
-      const vehicleId = selectedVehicleFilter !== "all" ? selectedVehicleFilter : vehicles[0]?.id;
+      let vehicleId: string | undefined;
+
+      // Se já tem um veículo selecionado no filtro, usa esse
+      if (selectedVehicleFilter !== "all") {
+        vehicleId = selectedVehicleFilter;
+      } else if (vehicles.length === 1) {
+        // Se tem apenas 1 veículo, usa esse
+        vehicleId = vehicles[0]?.id;
+      } else if (vehicles.length > 1) {
+        // Se tem mais de 1 veículo, precisa escolher
+        toast({
+          title: "Escolha um veículo",
+          description: "Selecione qual veículo deseja compartilhar usando o filtro acima",
+          variant: "default",
+        });
+        return;
+      }
+
       if (!vehicleId) {
         toast({
           title: "Erro",
-          description: "Selecione um veículo para gerar o QR Code",
+          description: "Nenhum veículo disponível para gerar QR Code",
           variant: "destructive",
         });
         return;
