@@ -57,6 +57,12 @@ import {
   CreditCard
 } from "lucide-react";
 
+// Helper function to parse date strings from database without timezone issues
+const parseDateString = (dateString: string): Date => {
+  const [year, month, day] = dateString.split('-').map(Number);
+  return new Date(year, month - 1, day); // month is 0-indexed in JS
+};
+
 const Dashboard = () => {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
@@ -109,7 +115,10 @@ const Dashboard = () => {
   const [selectedYear, setSelectedYear] = useState<string>("all");
   const [selectedMonth, setSelectedMonth] = useState<string>("all");
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>("");
+  const [qrCodeVehicleId, setQrCodeVehicleId] = useState<string>("");
   const [showQrDialog, setShowQrDialog] = useState(false);
+  const [showVehicleSelectionDialog, setShowVehicleSelectionDialog] = useState(false);
+  const [selectedVehicleForQrCode, setSelectedVehicleForQrCode] = useState<string>("");
 
   const statusConfig = {
     "up-to-date": { label: "Em dia", color: "success" as const },
@@ -372,17 +381,36 @@ const Dashboard = () => {
       return;
     }
 
-    try {
-      const vehicleId = selectedVehicleFilter !== "all" ? selectedVehicleFilter : vehicles[0]?.id;
-      if (!vehicleId) {
-        toast({
-          title: "Erro",
-          description: "Selecione um veículo para gerar o QR Code",
-          variant: "destructive",
-        });
-        return;
-      }
+    // Determinar qual veículo usar
+    let vehicleId: string | undefined;
 
+    if (selectedVehicleFilter !== "all") {
+      // Se há um veículo específico selecionado no filtro, usa ele
+      vehicleId = selectedVehicleFilter;
+    } else if (vehicles.length === 1) {
+      // Se há apenas 1 veículo, usa ele diretamente
+      vehicleId = vehicles[0]?.id;
+    } else if (vehicles.length > 1) {
+      // Se há múltiplos veículos e filtro está em "all", abrir dialog de seleção
+      setShowVehicleSelectionDialog(true);
+      return;
+    }
+
+    if (!vehicleId) {
+      toast({
+        title: "Erro",
+        description: "Nenhum veículo disponível para gerar o QR Code",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    await generateQrCodeForVehicle(vehicleId);
+  };
+
+  // Function to generate QR Code for a specific vehicle
+  const generateQrCodeForVehicle = async (vehicleId: string) => {
+    try {
       const url = `${window.location.origin}/report/${vehicleId}`;
       const qrDataUrl = await QRCode.toDataURL(url, {
         width: 300,
@@ -392,9 +420,11 @@ const Dashboard = () => {
           light: '#FFFFFF'
         }
       });
-      
+
       setQrCodeDataUrl(qrDataUrl);
+      setQrCodeVehicleId(vehicleId);
       setShowQrDialog(true);
+      setShowVehicleSelectionDialog(false);
     } catch (error) {
       console.error("Erro ao gerar QR Code:", error);
       toast({
@@ -1168,7 +1198,7 @@ const Dashboard = () => {
                     <div className="space-y-1">
                       <Label className="text-muted-foreground">Data de nascimento</Label>
                       <p className="text-foreground font-medium">
-                        {profile?.date_of_birth ? new Date(profile.date_of_birth).toLocaleDateString('pt-BR') : "Não informado"}
+                        {profile?.date_of_birth ? parseDateString(profile.date_of_birth).toLocaleDateString('pt-BR') : "Não informado"}
                       </p>
                     </div>
                     <div className="space-y-1">
@@ -1388,6 +1418,51 @@ const Dashboard = () => {
       />
 
       {/* QR Code Dialog */}
+      {/* Vehicle Selection Dialog for QR Code */}
+      <Dialog open={showVehicleSelectionDialog} onOpenChange={setShowVehicleSelectionDialog}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Selecione o Veículo</DialogTitle>
+            <DialogDescription>
+              Escolha qual veículo você deseja compartilhar o histórico
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="space-y-3">
+              {vehicles.map((vehicle) => (
+                <Card
+                  key={vehicle.id}
+                  className="cursor-pointer hover:border-primary transition-colors"
+                  onClick={() => {
+                    setSelectedVehicleForQrCode(vehicle.id);
+                    generateQrCodeForVehicle(vehicle.id);
+                  }}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold text-foreground">
+                          {vehicle.brand} {vehicle.model}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {vehicle.year} • {vehicle.plate}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline">
+                          {vehicle.current_km.toLocaleString()} km
+                        </Badge>
+                        <QrCodeIcon className="h-5 w-5 text-primary" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={showQrDialog} onOpenChange={setShowQrDialog}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -1403,16 +1478,16 @@ const Dashboard = () => {
                 <div className="w-full space-y-2">
                   <Label>Link compartilhável</Label>
                   <div className="flex gap-2">
-                    <Input 
-                      readOnly 
-                      value={`${window.location.origin}/report/${selectedVehicleFilter !== "all" ? selectedVehicleFilter : vehicles[0]?.id}`}
+                    <Input
+                      readOnly
+                      value={`${window.location.origin}/report/${qrCodeVehicleId}`}
                       className="font-mono text-xs"
                     />
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        navigator.clipboard.writeText(`${window.location.origin}/report/${selectedVehicleFilter !== "all" ? selectedVehicleFilter : vehicles[0]?.id}`);
+                        navigator.clipboard.writeText(`${window.location.origin}/report/${qrCodeVehicleId}`);
                         toast({
                           title: "Link copiado!",
                           description: "O link foi copiado para a área de transferência",

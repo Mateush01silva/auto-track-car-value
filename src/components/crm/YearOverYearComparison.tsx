@@ -41,11 +41,6 @@ export const YearOverYearComparison = ({ maintenances }: YearOverYearComparisonP
       .filter(data => data.totalSpent > 0); // Apenas anos com gastos
   }, [maintenances]);
 
-  // Não mostrar se tiver dados de apenas 1 ano ou menos
-  if (yearlyData.length < 2) {
-    return null;
-  }
-
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -57,6 +52,32 @@ export const YearOverYearComparison = ({ maintenances }: YearOverYearComparisonP
     if (previous === 0) return 0;
     return ((current - previous) / previous) * 100;
   };
+
+  // Se não houver dados suficientes, mostrar mensagem informativa
+  if (yearlyData.length < 2) {
+    return (
+      <Card className="bg-gradient-to-r from-blue-50 to-purple-50">
+        <CardContent className="p-4">
+          <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-blue-600" />
+            Comparativo Ano vs Ano
+          </h4>
+          <div className="bg-white rounded-lg p-4 text-center">
+            <p className="text-sm text-gray-600">
+              {yearlyData.length === 0
+                ? "Nenhum atendimento registrado ainda."
+                : "É necessário ter atendimentos em pelo menos 2 anos diferentes para visualizar a comparação."}
+            </p>
+            {yearlyData.length === 1 && (
+              <p className="text-xs text-gray-500 mt-2">
+                Dados disponíveis apenas de {yearlyData[0].year}
+              </p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="bg-gradient-to-r from-blue-50 to-purple-50">

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { SeloVeiculo } from "@/components/SeloVeiculo";
 import { calcularSeloVeiculo, buscarSeloVeiculo, VeiculoSelo } from "@/services/seloQualidade";
+import { GaleriaComprovantes, Comprovante } from "@/components/GaleriaComprovantes";
 
 interface Vehicle {
   id: string;
@@ -34,6 +35,8 @@ interface Maintenance {
   cost: number;
   km: number;
   vehicle_id: string;
+  attachments: string[] | null;
+  notes: string | null;
 }
 
 const Report = () => {
@@ -270,6 +273,24 @@ const Report = () => {
                       <p className="text-xs text-muted-foreground">
                         Quilometragem: {maintenance.km.toLocaleString()} km
                       </p>
+
+                      {/* Comprovantes */}
+                      {maintenance.attachments && maintenance.attachments.length > 0 && (
+                        <div className="mt-3">
+                          <p className="text-xs font-medium text-muted-foreground mb-2">
+                            Comprovantes ({maintenance.attachments.length})
+                          </p>
+                          <GaleriaComprovantes
+                            comprovantes={maintenance.attachments.map((url) => {
+                              const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
+                              return {
+                                url,
+                                tipo: isImage ? "imagem" : "pdf",
+                              } as Comprovante;
+                            })}
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
