@@ -64,6 +64,12 @@ import { BulkEmailModal } from "@/components/crm/BulkEmailModal";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ExportMenu } from "@/components/ExportMenu";
 
+// Helper function to parse date strings from database without timezone issues
+const parseDateString = (dateString: string): Date => {
+  const [year, month, day] = dateString.split('-').map(Number);
+  return new Date(year, month - 1, day); // month is 0-indexed in JS
+};
+
 interface Workshop {
   id: string;
   name: string;
@@ -391,14 +397,14 @@ const WorkshopClients = () => {
           const birthdaysThisMonth = profilesData
             .filter(p => {
               if (!p.birth_date) return false;
-              const birthDate = new Date(p.birth_date);
+              const birthDate = parseDateString(p.birth_date);
               return birthDate.getMonth() + 1 === currentMonth;
             })
             .map(p => ({
               userId: p.id,
               name: p.full_name || 'Cliente',
               phone: p.phone,
-              birthDate: new Date(p.birth_date!)
+              birthDate: parseDateString(p.birth_date!)
             }))
             .sort((a, b) => a.birthDate.getDate() - b.birthDate.getDate());
 
